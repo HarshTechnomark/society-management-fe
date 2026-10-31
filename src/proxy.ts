@@ -13,6 +13,17 @@ const AUDIENCES: Record<string, string> = {
   work: '/work',
 };
 const PREFIXES = Object.values(AUDIENCES);
+/** Public pages (module 02) are shared by every host and are never rewritten into an audience group. */
+const PUBLIC_PATHS = [
+  '/login',
+  '/forgot',
+  '/reset',
+  '/setup',
+  '/signup',
+  '/verify-email',
+  '/support',
+  '/_next',
+];
 
 export function proxy(req: NextRequest) {
   const host = (req.headers.get('host') ?? '').split(':')[0];
@@ -35,7 +46,7 @@ export function proxy(req: NextRequest) {
   }
   if (url.pathname.startsWith(prefix)) return NextResponse.next();
   // Public pages (login and so on) are shared by every host and are not rewritten.
-  if (url.pathname === '/' || url.pathname.startsWith('/login') || url.pathname.startsWith('/_next'))
+  if (url.pathname === '/' || PUBLIC_PATHS.some(p => url.pathname === p || url.pathname.startsWith(p + '/')))
     return NextResponse.next();
   url.pathname = `${prefix}${url.pathname}`;
   return NextResponse.rewrite(url);

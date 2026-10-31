@@ -50,3 +50,12 @@ export const APP_HOME: Record<ClientApp, string> = {
 export const allowsMobileLogin = (a: ClientApp) => a !== 'PLATFORM';
 export const allowsPasswordLogin = (a: ClientApp) => a === 'ADMIN' || a === 'PLATFORM';
 export const allowsPasskey = (a: ClientApp) => a !== 'GATE';
+
+/** False while rendering on the server and during hydration, true afterwards. */
+export function useHydrated(): boolean {
+  return useSyncExternalStore(
+    noop,
+    () => true,
+    () => false,
+  );
+}
