@@ -101,3 +101,35 @@ export const catalogue = {
     },
   ],
 };
+
+export const platformRoles = [
+  {
+    ...roleSummary({ id: 1, key: 'super_admin', name: 'Super Admin', scope: 'platform' }),
+    userCount: 2,
+    permissionKeys: [
+      'platform.societies.view',
+      'platform.billing.view',
+      'platform.audit_log.view',
+      'platform.health.view',
+      'platform.societies.create',
+      'platform.tickets.create',
+      'platform.support_access.create',
+      'platform.team.edit',
+      'platform.audit_log.export',
+      'platform.settings.edit',
+    ],
+  },
+  {
+    ...roleSummary({ id: 2, key: 'platform_support', name: 'Platform Support', scope: 'platform' }),
+    userCount: 1,
+    permissionKeys: [
+      'platform.societies.view',
+      'platform.billing.view',
+      'platform.audit_log.view',
+      'platform.health.view',
+      'platform.societies.create',
+      'platform.tickets.create',
+      'platform.support_access.create',
+    ],
+  },
+];
