@@ -182,4 +182,15 @@ describe('apiClient', () => {
     await expect(api('/x')).rejects.toMatchObject({ status: 423 });
     expect(suspended).toHaveBeenCalledWith('msg SOCIETY_CLOSED');
   });
+
+  it('sends one Idempotency-Key per call and reuses it when the step-up retry repeats the request', async () => {
+    configureApiClient({ stepUp: vi.fn().mockResolvedValue(true) });
+    const f = mockFetch([fail(401, 'REAUTH_REQUIRED'), ok(null), ok(null)]);
+    await api('/x', { method: 'POST', body: {}, idempotent: true });
+    const first = (call(f, 0).init.headers as Record<string, string>)['Idempotency-Key'];
+    expect(first).toBeTruthy();
+    expect((call(f, 1).init.headers as Record<string, string>)['Idempotency-Key']).toBe(first);
+    await api('/x', { method: 'POST', body: {}, idempotent: true });
+    expect((call(f, 2).init.headers as Record<string, string>)['Idempotency-Key']).not.toBe(first);
+  });
 });

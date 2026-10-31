@@ -115,3 +115,30 @@ body {
   overflow: hidden;
   clip: rect(0 0 0 0);
 }
+
+/* Drawer (module 03 shared UI). */
+@keyframes drawer-in {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+}
+.drawer-panel {
+  animation: drawer-in 0.2s ease-out;
+}
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+.skeleton {
+  background: rgba(20, 35, 44, 0.1);
+  border-radius: 8px;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawer-panel,
+  .skeleton {
+    animation: none;
+  }
+}

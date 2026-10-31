@@ -20,6 +20,7 @@ const PUBLIC_PATHS = [
   '/reset',
   '/setup',
   '/signup',
+  '/invite',
   '/verify-email',
   '/support',
   '/_next',
