@@ -38,6 +38,10 @@ export interface Options {
   activity?: boolean;
   /** Set false to skip refresh, redirect and step-up handling (probes such as "am I signed in?"). */
   recover?: boolean;
+  /** Sends an `Idempotency-Key` (one new key per call, kept across the silent refresh and step-up retries). */
+  idempotent?: boolean;
+  /** Set by `request()` from `idempotent`. */
+  idempotencyKey?: string;
 }
 
 export interface Pagination {
@@ -108,6 +112,7 @@ async function send(path: string, opts: Options): Promise<Envelope | null> {
     if (csrf) headers['X-CSRF-Token'] = csrf;
   }
   if (opts.activity === false) headers['X-User-Activity'] = '0';
+  if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
   let res: Response;
   try {
     res = await fetch(buildUrl(path, opts.query), {
@@ -182,7 +187,14 @@ function goToLogin(reason: string): never {
 
 const NO_REFRESH = ['/auth/refresh', '/auth/logout'];
 
-async function request(path: string, opts: Options): Promise<Envelope | null> {
+const newKey = () =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `k-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+async function request(path: string, options: Options): Promise<Envelope | null> {
+  const opts =
+    options.idempotent && !options.idempotencyKey ? { ...options, idempotencyKey: newKey() } : options;
   if (opts.recover === false) return send(path, opts);
   let refreshed = false;
   let steppedUp = false;
