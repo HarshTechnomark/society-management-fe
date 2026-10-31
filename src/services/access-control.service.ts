@@ -48,7 +48,7 @@ export const accessControlService = {
   member: (id: number) => api<MemberDetail>(`/members/${id}`),
   exportMembers: (query: MemberQuery = {}) => api<MembersExport>('/members/export', { query: { ...query } }),
   invite: (body: InviteInput) =>
-    api<Invitation>('/members/invite', { method: 'POST', body, idempotent: true }),
+    api<Invitation>('/members/invite', { method: 'POST', body, idempotent: true, plan: false }),
   changeRole: (
     id: number,
     body: { version: number; roleId?: number; locationLabel?: string | null; reason?: string },
@@ -85,7 +85,12 @@ export const accessControlService = {
       recover: false,
     }),
   acceptInvitation: (token: string) =>
-    post<AcceptResult>(`/invitations/${encodeURIComponent(token)}/accept`, {}, true),
+    api<AcceptResult>(`/invitations/${encodeURIComponent(token)}/accept`, {
+      method: 'POST',
+      body: {},
+      idempotent: true,
+      plan: false,
+    }),
 
   // household (resident app)
   household: (memberId: number) => api<HouseholdGrants>(`/me/household/${memberId}/grants`),

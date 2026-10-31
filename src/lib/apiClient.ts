@@ -3,17 +3,29 @@
  * 401 UNAUTHENTICATED, redirect to sign in, step-up on 401 REAUTH_REQUIRED and the 423 banner hook.
  * Module 12 adds idempotency keys, module 04 the 402 prompt.
  */
+/** One `errors[]` entry. Extra keys carry detail, for example `availableIn` or `limit` on a 402. */
+export interface ApiFieldError {
+  field: string;
+  message: string;
+  [detail: string]: unknown;
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
     public readonly code: string,
     message: string,
-    public readonly errors?: { field: string; message: string }[],
+    public readonly errors?: ApiFieldError[],
     public readonly requestId?: string,
     public readonly retryAfterSeconds?: number,
   ) {
     super(message);
     this.name = 'ApiError';
+  }
+
+  /** The first `errors[]` entry for a field, with its extra keys. */
+  entry(field: string): ApiFieldError | undefined {
+    return this.errors?.find(e => e.field === field);
   }
 
   /** Reads a numeric or text detail the API puts in `errors[]`, for example `attemptsLeft`. */
@@ -38,6 +50,8 @@ export interface Options {
   activity?: boolean;
   /** Set false to skip refresh, redirect and step-up handling (probes such as "am I signed in?"). */
   recover?: boolean;
+  /** Set false when the caller handles a 402 itself and the global upgrade prompt must stay quiet. */
+  plan?: boolean;
   /** Sends an `Idempotency-Key` (one new key per call, kept across the silent refresh and step-up retries). */
   idempotent?: boolean;
   /** Set by `request()` from `idempotent`. */
@@ -60,6 +74,8 @@ interface Hooks {
   suspended: ((message: string) => void) | null;
   /** Called when the session is gone, so in-memory session state is dropped. */
   sessionLost: (() => void) | null;
+  /** Called on 402 (feature not in plan, usage limit exceeded); module 04 shows the upgrade prompt. */
+  paymentRequired: ((error: ApiError) => void) | null;
 }
 
 const hooks: Hooks = {
@@ -67,6 +83,7 @@ const hooks: Hooks = {
   stepUp: null,
   suspended: null,
   sessionLost: null,
+  paymentRequired: null,
 };
 
 export function configureApiClient(next: Partial<Hooks>) {
@@ -99,7 +116,7 @@ interface Envelope {
   message?: string;
   pagination?: Pagination;
   code?: string;
-  errors?: { field: string; message: string }[];
+  errors?: ApiFieldError[];
   requestId?: string;
 }
 
@@ -220,6 +237,7 @@ async function request(path: string, options: Options): Promise<Envelope | null>
         if (await hooks.stepUp()) continue;
       }
       if (e.status === 423) hooks.suspended?.(e.message);
+      if (e.status === 402 && opts.plan !== false) hooks.paymentRequired?.(e);
       throw e;
     }
   }

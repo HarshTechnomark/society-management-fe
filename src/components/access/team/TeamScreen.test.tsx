@@ -83,11 +83,35 @@ describe('TeamScreen', () => {
     expect(within(row('Meera Iyer')).getByText('On')).toBeInTheDocument();
   });
 
-  it('shows the admin seat meter counting staff roles only', async () => {
+  it('shows the admin seat meter from the plan usage (limit.admin_seats), not a client count', async () => {
+    const usage = (used: number, limit: number | null) =>
+      ok({
+        items: [
+          {
+            limitKey: 'limit.admin_seats',
+            unit: 'members',
+            period: 'ABSOLUTE',
+            enforcement: 'HARD',
+            limit,
+            used,
+            percent: limit ? Math.floor((used * 100) / limit) : null,
+            addonIncrement: 0,
+            overrideApplied: false,
+            overageUnits: 0,
+          },
+        ],
+      });
+    mockApi(base({ 'GET /subscription/usage': usage(2, 5) }));
+    mount([...ALL, 'settings.subscription.view']);
+    await screen.findByText('Meera Iyer');
+    expect(await screen.findByText('Admin seats: 2 of 5 used')).toBeInTheDocument();
+  });
+
+  it('shows no seat meter for people who cannot view the subscription', async () => {
     mockApi(base());
     mount();
     await screen.findByText('Meera Iyer');
-    expect(within(screen.getByTestId('seat-meter')).getByText('Admin seats in use: 1')).toBeInTheDocument();
+    expect(screen.queryByTestId('seat-meter')).toBeNull();
   });
 
   it('hides Invite, Export and row actions without permissions', async () => {

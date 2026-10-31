@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import { configureApiClient } from '@/lib/apiClient';
 import { flow } from '@/lib/authFlow';
 import { setMe } from '@/lib/auth';
+import { entitlementsStore } from '@/lib/entitlements';
 import type { Me } from '@/types/auth';
 
 export const router = { push: vi.fn(), replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() };
@@ -93,7 +94,8 @@ export function resetAll() {
   search.current = new URLSearchParams();
   flow.clear();
   setMe(null);
-  configureApiClient({ redirect: vi.fn(), stepUp: null, suspended: null });
+  entitlementsStore.set(null);
+  configureApiClient({ redirect: vi.fn(), stepUp: null, suspended: null, paymentRequired: null });
   window.history.replaceState(null, '', '/');
   try {
     localStorage.clear();
