@@ -1,0 +1,78 @@
+@import 'tailwindcss';
+
+/* Design tokens from the V2 Liquid Glass prototypes (Mockups/). Components are added by the modules that need them. */
+:root {
+  --ink: #14232c;
+  --ink-2: #2b3f4b;
+  --muted: #55636b;
+  --faint: #7b8890;
+  --line: rgba(20, 35, 44, 0.1);
+  --navy: #143041;
+  --navy-2: #1d4358;
+  --gold: #b8954a;
+  --gold-2: #c9a961;
+  --gold-ink: #7e6230;
+  --ok: #1b7448;
+  --warn: #8f5600;
+  --bad: #b3261e;
+  --info: #0b5c7a;
+  --glass: rgba(255, 255, 255, 0.5);
+  --glass-2: rgba(255, 255, 255, 0.68);
+  --glass-solid: rgba(251, 247, 240, 0.96);
+  --glass-line: rgba(255, 255, 255, 0.78);
+  --radius-card: 30px;
+  --radius-input: 16px;
+  --font: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-navy: var(--navy);
+  --color-gold: var(--gold);
+  --color-gold-ink: var(--gold-ink);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-info: var(--info);
+  --font-sans: var(--font);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--ink);
+  font-size: 14.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  background:
+    radial-gradient(120% 60% at 0% 0%, #f6d9a8 0%, rgba(246, 217, 168, 0) 60%),
+    radial-gradient(90% 50% at 100% 20%, #ebc8b6 0%, rgba(235, 200, 182, 0) 60%),
+    radial-gradient(100% 60% at 50% 100%, #d9e4e0 0%, rgba(217, 228, 224, 0) 70%), #f5efe2;
+  background-attachment: fixed;
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--navy);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius-card);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--glass-solid);
+    backdrop-filter: none;
+  }
+}
