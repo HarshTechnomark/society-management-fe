@@ -68,16 +68,16 @@ describe('apiClient', () => {
 
   it('normalises errors into ApiError', async () => {
     mockFetch([fail(401, 'OTP_INVALID', { errors: [{ field: 'attemptsLeft', message: '3' }] })]);
-    const e = await api('/x', { method: 'POST', body: {} }).catch(x => x);
+    const e = await api('/x', { method: 'POST', body: {} }).catch((x: ApiError) => x);
     expect(e).toBeInstanceOf(ApiError);
     expect(e).toMatchObject({ status: 401, code: 'OTP_INVALID', requestId: 'req_1' });
-    expect(e.metaNumber('attemptsLeft')).toBe(3);
+    expect((e as ApiError).metaNumber('attemptsLeft')).toBe(3);
   });
 
   it('reads Retry-After from the header', async () => {
     mockFetch([fail(429, 'ACCOUNT_LOCKED', {}) as Reply]);
     mockFetch([{ ...fail(429, 'ACCOUNT_LOCKED'), headers: { 'Retry-After': '900' } }]);
-    const e = await api('/x', { method: 'POST', body: {} }).catch(x => x);
+    const e = (await api('/x', { method: 'POST', body: {} }).catch(x => x)) as ApiError;
     expect(e.retryAfterSeconds).toBe(900);
   });
 
@@ -115,7 +115,7 @@ describe('apiClient', () => {
     ]);
     const [a, b] = await Promise.all([api('/a'), api('/b')]);
     expect([a, b]).toEqual(['a', 'b']);
-    const refreshes = f.mock.calls.filter(c => String(c[0]).includes('/auth/refresh'));
+    const refreshes = (f.mock.calls as unknown[][]).filter(c => String(c[0]).includes('/auth/refresh'));
     expect(refreshes).toHaveLength(1);
   });
 
