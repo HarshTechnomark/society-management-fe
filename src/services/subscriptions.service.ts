@@ -183,9 +183,9 @@ export const subscriptionsService = {
   societyPlans: (billingCycle: BillingCycle = 'MONTHLY') =>
     api<PlansForSociety | PlansForSociety['plans']>('/subscription/plans', { query: { billingCycle } }),
   quote: (query: { planCode: string; billingCycle?: BillingCycle; addons?: string }) =>
-    api<Quote>('/subscription/quote', { query }),
+    api<Quote>('/subscription/quote', { query, plan: false }),
   downgradePreview: (planCode: string) =>
-    api<DowngradePreview>('/subscription/downgrade-preview', { query: { planCode } }),
+    api<DowngradePreview>('/subscription/downgrade-preview', { query: { planCode }, plan: false }),
   activate: (body: { planCode: string; billingCycle: BillingCycle; version: number }) =>
     post<{
       subscription: SubscriptionSummary;
