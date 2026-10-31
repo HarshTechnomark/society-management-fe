@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { sessionStore } from '@/lib/auth';
 import type { PermissionKey } from '@/constants/permissions';
 import type { Me } from '@/types/auth';
@@ -35,5 +35,5 @@ export function useAnyPermission(...keys: PermissionKey[]): boolean {
 /** The society keys the signed-in user holds; used to grey out what they cannot hand to someone else. */
 export function useHeldKeys(): ReadonlySet<string> {
   const me = useSyncExternalStore(subscribe, sessionStore.get, () => null);
-  return new Set([...(me?.permissions ?? []), ...(me?.platformPermissions ?? [])]);
+  return useMemo(() => new Set([...(me?.permissions ?? []), ...(me?.platformPermissions ?? [])]), [me]);
 }
