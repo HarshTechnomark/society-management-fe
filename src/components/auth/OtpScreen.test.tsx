@@ -12,13 +12,14 @@ import {
   router,
   sampleMe,
 } from '@/test/helpers';
+import type { OtpChallenge } from '@/types/auth';
 import { flow } from '@/lib/authFlow';
 import { OtpScreen } from './OtpScreen';
 
 vi.mock('next/navigation', () => navigationMock());
 
 const seed = (over: object = {}, purpose: 'LOGIN' | 'SIGNUP' = 'LOGIN') =>
-  flow.set({ otp: { ...(otpChallenge(over) as never), purpose, mobile: '9820022222' } });
+  flow.set({ otp: { ...(otpChallenge(over) as unknown as OtpChallenge), purpose, mobile: '9820022222' } });
 const type = async (code: string) => {
   await userEvent.click(await screen.findByLabelText('Digit 1 of 6'));
   await userEvent.keyboard(code);
