@@ -76,3 +76,42 @@ body {
     backdrop-filter: none;
   }
 }
+
+/* Shared component styles (module 02 shared UI). */
+@keyframes otp-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+.otp-shake {
+  animation: otp-shake 0.35s;
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+.modal-panel {
+  animation: sheet-up 0.18s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .otp-shake,
+  .modal-panel {
+    animation: none;
+  }
+}
+.sr-only-focusable:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
