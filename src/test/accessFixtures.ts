@@ -57,3 +57,47 @@ export const invitation = (over: Partial<Invitation> = {}): Invitation => ({
 });
 
 export const pagination = { page: 1, limit: 100, total: 1, totalPages: 1 };
+
+const entry = (key: string, label: string, held = true, priv = false) => ({
+  key,
+  action: key.split('.')[2],
+  label,
+  isPrivileged: priv,
+  heldByMe: held,
+});
+
+/** A small slice of `GET /permissions`. `finance.expenses.approve` is not held by the caller. */
+export const catalogue = {
+  scope: 'society',
+  masters: [
+    {
+      master: 'finance',
+      subMasters: [
+        {
+          subMaster: 'expenses',
+          label: 'Expenses and cash book',
+          moduleNo: 13,
+          permissions: [
+            entry('finance.expenses.view', 'View expenses and cash book'),
+            entry('finance.expenses.create', 'Create expenses and cash book', true, true),
+            entry('finance.expenses.approve', 'Approve expenses and cash book', false, true),
+          ],
+        },
+      ],
+    },
+    {
+      master: 'helpdesk',
+      subMasters: [
+        {
+          subMaster: 'tickets',
+          label: 'Complaints and building issues',
+          moduleNo: 15,
+          permissions: [
+            entry('helpdesk.tickets.view', 'View complaints and building issues'),
+            entry('helpdesk.tickets.edit', 'Edit complaints and building issues'),
+          ],
+        },
+      ],
+    },
+  ],
+};
