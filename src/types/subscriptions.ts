@@ -148,10 +148,52 @@ export interface SubscriptionSummary {
   autopay?: { status: string; method: string | null };
 }
 
+/** One row of `GET /platform/subscriptions` (8.4.1). */
+export interface PlatformSubscriptionListItem {
+  id: number;
+  society: { id: number; name: string; city?: string | null };
+  planCode: PlanCode;
+  planVersionNo: number;
+  status: string;
+  billingCycle: BillingCycle;
+  billableFlats: number;
+  chargedFlats: number;
+  monthlyEquivalentPaise: number;
+  currentPeriodEnd: string | null;
+  trialEndsAt: string | null;
+  pendingChange: Pending | null;
+  version: number;
+}
+
+export interface EntitlementOverride {
+  id: number;
+  targetType: 'KEY' | 'MODULE';
+  entitlementKey: string | null;
+  moduleNo: number | null;
+  isEnabled: boolean | null;
+  limitValue: number | null;
+  isUnlimited: boolean;
+  source: 'CONTRACT' | 'SUPPORT' | 'PROMOTION' | 'PREMIUM_TRIAL';
+  reason: string;
+  startsAt: string;
+  expiresAt: string | null;
+  isActive: boolean;
+  revokedAt: string | null;
+  createdBy?: { id: number; name: string } | null;
+  version: number;
+}
+
+/** `GET /platform/subscriptions/:id` (8.4.2): the society summary plus resolution, usage and overrides. */
 export interface PlatformSubscription extends SubscriptionSummary {
-  entitlements?: Record<string, { on?: boolean; source: string }>;
-  overrides?: unknown[];
-  history?: unknown[];
+  society?: { id: number; name: string };
+  customPricePerFlatPaise?: number | null;
+  customMinFlats?: number | null;
+  monthlyEquivalentPaise?: number;
+  entitlements?: { key: string; on?: boolean; isEnabled?: boolean; source: string }[];
+  usage?: { items: UsageItem[] } | UsageItem[];
+  addons?: OwnedAddon[];
+  overrides?: EntitlementOverride[];
+  history?: { action: string; createdAt: string; reason?: string | null }[];
 }
 
 export interface Entitlements {

@@ -7,6 +7,7 @@ import type {
   ChangePlanResult,
   DowngradePreview,
   Entitlements,
+  EntitlementOverride,
   EntitlementRow,
   FeatureFlag,
   FlagCreateInput,
@@ -19,6 +20,7 @@ import type {
   PlanSummary,
   PlanVersionDetail,
   PlatformSubscription,
+  PlatformSubscriptionListItem,
   PlansForSociety,
   Quote,
   StoreAddon,
@@ -84,11 +86,15 @@ export const subscriptionsService = {
 
   // platform: one society's subscription
   platformSubscriptions: (
-    query: { societyId?: number; status?: string; page?: number; limit?: number } = {},
-  ) =>
-    apiList<PlatformSubscription & { society: { id: number; name: string } }>('/platform/subscriptions', {
-      query,
-    }),
+    query: {
+      societyId?: number;
+      planCode?: string;
+      status?: string;
+      q?: string;
+      page?: number;
+      limit?: number;
+    } = {},
+  ) => apiList<PlatformSubscriptionListItem>('/platform/subscriptions', { query }),
   platformSubscription: (id: number) => api<PlatformSubscription>(`/platform/subscriptions/${id}`),
   platformChangePlan: (
     id: number,
@@ -105,6 +111,35 @@ export const subscriptionsService = {
     id: number,
     body: { pendingBillingCycle?: BillingCycle | null; reason: string; version: number },
   ) => api<unknown>(`/platform/subscriptions/${id}`, { method: 'PATCH', body }),
+
+  overrides: (subscriptionId: number, includeHistory = false) =>
+    api<EntitlementOverride[]>(`/platform/subscriptions/${subscriptionId}/overrides`, {
+      query: { includeHistory },
+    }),
+  addOverride: (
+    subscriptionId: number,
+    body: {
+      targetType: 'KEY' | 'MODULE';
+      entitlementKey?: string;
+      moduleNo?: number;
+      isEnabled?: boolean;
+      limitValue?: number;
+      isUnlimited?: boolean;
+      source: 'CONTRACT' | 'SUPPORT' | 'PROMOTION';
+      expiresAt?: string | null;
+      reason: string;
+    },
+  ) =>
+    post<EntitlementOverride & { warnings?: { limitKey: string; used: number; newLimit: number }[] }>(
+      `/platform/subscriptions/${subscriptionId}/overrides`,
+      body,
+      true,
+    ),
+  revokeOverride: (subscriptionId: number, overrideId: number, body: { reason: string; version: number }) =>
+    post<EntitlementOverride>(
+      `/platform/subscriptions/${subscriptionId}/overrides/${overrideId}/revoke`,
+      body,
+    ),
 
   // platform: feature flags
   flags: (
