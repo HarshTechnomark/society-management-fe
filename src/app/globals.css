@@ -28,6 +28,7 @@
 @theme inline {
   --color-ink: var(--ink);
   --color-muted: var(--muted);
+  --color-faint: var(--faint);
   --color-navy: var(--navy);
   --color-gold: var(--gold);
   --color-gold-ink: var(--gold-ink);

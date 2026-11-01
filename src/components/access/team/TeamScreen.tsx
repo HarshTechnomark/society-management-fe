@@ -14,11 +14,13 @@ import { useHeldKeys, usePermission } from '@/hooks/usePermission';
 import { useMe } from '@/lib/auth';
 import { ApiError } from '@/lib/apiClient';
 import { accessControlService } from '@/services/access-control.service';
+import { subscriptionsService } from '@/services/subscriptions.service';
+import { UsageWarnings } from '@/components/subscription/UsageBanners';
 import type { Invitation, MemberRow } from '@/types/accessControl';
 import { Avatar } from '../Avatar';
 import { RowActions, type RowAction } from '../RowActions';
 import { SeatMeter } from '../SeatMeter';
-import { SEAT_ROLE_KEYS, SOCIETY_CAPABILITIES, hasCapability } from '../capabilities';
+import { SOCIETY_CAPABILITIES, hasCapability } from '../capabilities';
 import { accessErrorText, lastSeen } from '../format';
 import { assignableRoles, useRoleDetails } from '../useRoleDetails';
 import { InviteModal } from './InviteModal';
@@ -51,25 +53,30 @@ export function TeamScreen() {
   const canEdit = usePermission(PERMISSIONS.settings.members.edit);
   const canDelete = usePermission(PERMISSIONS.settings.members.delete);
   const canExport = usePermission(PERMISSIONS.settings.members.export);
+  const canSeePlan = usePermission(PERMISSIONS.settings.subscription.view);
   const held = useHeldKeys();
   const toast = useToast();
 
   const members = useLoad(() => accessControlService.members({ limit: 100, sortBy: 'name' }));
   const invitations = useLoad(() => accessControlService.invitations({ status: 'PENDING' }));
   const roles = useLoad(() => accessControlService.roles({ limit: 100 }));
+  const usage = useLoad(
+    () => (canSeePlan ? subscriptionsService.usage() : Promise.resolve(null)),
+    canSeePlan,
+  );
   const details = useRoleDetails(roles.data?.data);
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [roleFor, setRoleFor] = useState<MemberRow | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
-  const [seatLimit, setSeatLimit] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
 
   const reload = () => {
     members.reload();
     invitations.reload();
     roles.reload();
+    usage.reload();
   };
 
   const rows = useMemo<TeamRow[]>(
@@ -84,9 +91,8 @@ export function TeamScreen() {
 
   const roleList = useMemo(() => roles.data?.data ?? [], [roles.data]);
   const offered = useMemo(() => assignableRoles(roleList, details, held), [roleList, details, held]);
-  const seatsUsed = (members.data?.data ?? []).filter(
-    m => (m.status === 'ACTIVE' || m.status === 'SUSPENDED') && SEAT_ROLE_KEYS.includes(m.role.key),
-  ).length;
+  // Seats come from the plan's usage counter (`limit.admin_seats`), so the numbers match what the API enforces.
+  const seatItem = usage.data?.items.find(u => u.limitKey === 'limit.admin_seats') ?? null;
 
   const fail = (e: unknown) => {
     if (e instanceof ApiError && e.code === 'LAST_CHAIRMAN') toast.show(accessErrorText(e), 'warning');
@@ -267,9 +273,10 @@ export function TeamScreen() {
           </>
         }
       />
+      {usage.data && <UsageWarnings items={usage.data.items} />}
       <Card>
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-          <SeatMeter used={seatsUsed} limit={seatLimit} />
+          {seatItem && <SeatMeter used={seatItem.used} limit={seatItem.limit} />}
         </div>
         {roles.error ? <Alert tone="warn">Roles could not be loaded. Some actions are limited.</Alert> : null}
         <DataTable
@@ -350,10 +357,7 @@ export function TeamScreen() {
         roles={offered}
         onClose={() => setInviteOpen(false)}
         onResend={resend}
-        onLimit={e => {
-          const limit = e.metaNumber('limit');
-          if (limit !== undefined) setSeatLimit(limit);
-        }}
+        onLimit={() => usage.reload()}
         onInvited={inv => {
           setInviteOpen(false);
           toast.show(`Invitation sent to ${inv.name}.`);
