@@ -196,7 +196,8 @@ const option = (code: PlanCode, name: string, price: number, current: string): P
 });
 
 export const societyPlans = (current = 'STARTER'): PlansForSociety => ({
-  plans: [
+  billingCycle: 'MONTHLY',
+  items: [
     option('STARTER', 'Starter', 900, current),
     option('STANDARD', 'Standard', 1500, current),
     option('PREMIUM', 'Premium', 2500, current),

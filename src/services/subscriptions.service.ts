@@ -181,7 +181,7 @@ export const subscriptionsService = {
   entitlements: (opts: { activity?: boolean } = {}) => api<Entitlements>('/subscription/entitlements', opts),
   usage: () => api<{ items: UsageItem[] }>('/subscription/usage'),
   societyPlans: (billingCycle: BillingCycle = 'MONTHLY') =>
-    api<PlansForSociety | PlansForSociety['plans']>('/subscription/plans', { query: { billingCycle } }),
+    api<PlansForSociety | PlansForSociety['items']>('/subscription/plans', { query: { billingCycle } }),
   quote: (query: { planCode: string; billingCycle?: BillingCycle; addons?: string }) =>
     api<Quote>('/subscription/quote', { query, plan: false }),
   downgradePreview: (planCode: string) =>

@@ -242,7 +242,8 @@ export interface PlanAdvisor {
 }
 
 export interface PlansForSociety {
-  plans: PlanOption[];
+  billingCycle: 'MONTHLY' | 'ANNUAL';
+  items: PlanOption[];
   recommendation?: PlanAdvisor;
 }
 

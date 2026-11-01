@@ -31,11 +31,11 @@ const REASONS: Record<string, string> = {
   ANNUAL_SAVES: 'Paying yearly saves money',
 };
 
-function normalise(r: PlansForSociety | PlansForSociety['plans']): {
-  plans: PlanOption[];
+function normalise(r: PlansForSociety | PlansForSociety['items']): {
+  items: PlanOption[];
   recommendation?: PlanAdvisor;
 } {
-  return Array.isArray(r) ? { plans: r } : r;
+  return Array.isArray(r) ? { items: r } : r;
 }
 
 type Action = { kind: 'UPGRADE' | 'DOWNGRADE' | 'CHOOSE'; plan: PlanOption } | null;
@@ -86,7 +86,7 @@ export function ComparePlans({
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {plans.data.plans.map(p => {
+          {plans.data.items.map(p => {
             const rank = PLAN_RANK[p.code] ?? 0;
             const recommended = rec?.planCode === p.code && !p.isCurrent;
             return (
