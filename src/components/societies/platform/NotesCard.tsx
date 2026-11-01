@@ -101,7 +101,7 @@ export function NotesCard({ societyId }: { societyId: number }) {
       )}
       {notes.error ? (
         <ErrorState error={notes.error} />
-      ) : notes.loading ? (
+      ) : notes.loading && !notes.data ? (
         <div className="skeleton h-16 w-full" />
       ) : list.length === 0 ? (
         <p className="text-[14px] text-muted">No notes yet.</p>

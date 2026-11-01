@@ -133,7 +133,7 @@ export function SupportAccessSettings() {
         <Card title="Requests">
           {grants.error ? (
             <ErrorState error={grants.error} />
-          ) : grants.loading ? (
+          ) : grants.loading && !grants.data ? (
             <div className="skeleton h-24 w-full" />
           ) : rows.length === 0 ? (
             <EmptyState title="No support requests yet." />

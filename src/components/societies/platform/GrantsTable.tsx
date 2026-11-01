@@ -145,7 +145,7 @@ export function GrantsTable({ societyId }: { societyId?: number }) {
         columns={columns}
         rows={grants.data?.data ?? []}
         rowKey={g => g.id}
-        loading={grants.loading}
+        loading={grants.loading && !grants.data}
         error={grants.error}
         onRetry={grants.reload}
         searchText={g => `${g.code} ${g.society.name} ${g.requester.name} ${g.reason} ${g.ticketRef ?? ''}`}
