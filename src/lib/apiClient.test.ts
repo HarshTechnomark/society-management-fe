@@ -180,7 +180,7 @@ describe('apiClient', () => {
     configureApiClient({ suspended });
     mockFetch([fail(423, 'SOCIETY_CLOSED')]);
     await expect(api('/x')).rejects.toMatchObject({ status: 423 });
-    expect(suspended).toHaveBeenCalledWith('msg SOCIETY_CLOSED');
+    expect(suspended).toHaveBeenCalledWith('msg SOCIETY_CLOSED', 'SOCIETY_CLOSED');
   });
 
   it('sends one Idempotency-Key per call and reuses it when the step-up retry repeats the request', async () => {

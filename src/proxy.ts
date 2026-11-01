@@ -23,6 +23,7 @@ const PUBLIC_PATHS = [
   '/invite',
   '/verify-email',
   '/support',
+  '/support-handoff',
   '/_next',
 ];
 

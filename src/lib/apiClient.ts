@@ -56,6 +56,8 @@ export interface Options {
   idempotent?: boolean;
   /** Set by `request()` from `idempotent`. */
   idempotencyKey?: string;
+  /** Return the body as a Blob (CSV and file downloads) instead of reading the JSON envelope. */
+  raw?: boolean;
 }
 
 export interface Pagination {
@@ -70,8 +72,8 @@ interface Hooks {
   redirect: (url: string) => void;
   /** Asks the user to confirm it is them; resolves true when the step-up succeeded. */
   stepUp: (() => Promise<boolean>) | null;
-  /** Called on 423 (society suspended). */
-  suspended: ((message: string) => void) | null;
+  /** Called on 423 (`SOCIETY_SUSPENDED` or `SOCIETY_CLOSED`, module 05). */
+  suspended: ((message: string, code: string) => void) | null;
   /** Called when the session is gone, so in-memory session state is dropped. */
   sessionLost: (() => void) | null;
   /** Called on 402 (feature not in plan, usage limit exceeded); module 04 shows the upgrade prompt. */
@@ -144,6 +146,7 @@ async function send(path: string, opts: Options): Promise<Envelope | null> {
     throw new ApiError(0, 'NETWORK_ERROR', 'Cannot reach the server. Check your connection and try again.');
   }
   if (res.status === 204) return { success: true, data: undefined };
+  if (opts.raw && res.ok) return { success: true, data: await res.blob() };
   const json = (await res.json().catch(() => null)) as Envelope | null;
   if (!res.ok || !json?.success) {
     const header = Number(res.headers?.get?.('Retry-After'));
@@ -236,7 +239,7 @@ async function request(path: string, options: Options): Promise<Envelope | null>
         steppedUp = true;
         if (await hooks.stepUp()) continue;
       }
-      if (e.status === 423) hooks.suspended?.(e.message);
+      if (e.status === 423) hooks.suspended?.(e.message, e.code);
       if (e.status === 402 && opts.plan !== false) hooks.paymentRequired?.(e);
       throw e;
     }
@@ -247,6 +250,12 @@ async function request(path: string, options: Options): Promise<Envelope | null>
 export async function api<T>(path: string, opts: Options = {}): Promise<T> {
   const json = await request(path, opts);
   return json?.data as T;
+}
+
+/** For file downloads (CSV exports): the body as a Blob, with the same refresh and error handling. */
+export async function apiBlob(path: string, opts: Options = {}): Promise<Blob> {
+  const json = await request(path, { ...opts, raw: true });
+  return json?.data as Blob;
 }
 
 /** For list endpoints that return `pagination` next to `data`. */

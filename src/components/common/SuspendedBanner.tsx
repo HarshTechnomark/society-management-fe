@@ -1,21 +1,29 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useToast } from '@/components/ui/Toast';
+import { emitStatusChanged } from '@/components/societies/events';
 import { configureApiClient } from '@/lib/apiClient';
 
-/** Shown when the API answers 423 (society suspended). */
+/**
+ * Answers a 423 from the API (module 05 A-04): `SOCIETY_SUSPENDED` shows the "action is paused" toast; both codes ask
+ * the admin shell to reload `/society-status`, which shows the suspended banner or the closed page. Write buttons stay
+ * visible; the API decides.
+ */
 export function SuspendedBanner() {
-  const [message, setMessage] = useState<string | null>(null);
+  const { show } = useToast();
   useEffect(() => {
-    configureApiClient({ suspended: m => setMessage(m || 'This society is suspended.') });
+    configureApiClient({
+      suspended: (_message, code) => {
+        show(
+          code === 'SOCIETY_CLOSED'
+            ? 'This society has closed its SocietyApp account.'
+            : 'Your society’s account is suspended. This action is paused.',
+          'warning',
+        );
+        emitStatusChanged();
+      },
+    });
     return () => configureApiClient({ suspended: null });
-  }, []);
-  if (!message) return null;
-  return (
-    <div
-      role="alert"
-      className="sticky top-0 z-40 bg-[#6f4200] px-4 py-2 text-center text-[13.5px] font-semibold text-white"
-    >
-      {message} Ask your society admin or SocietyApp support.
-    </div>
-  );
+  }, [show]);
+  return null;
 }

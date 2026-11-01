@@ -12,6 +12,8 @@ interface Props {
   /** A sticky modal ignores Esc and outside clicks (used while a one-time secret is on screen). */
   sticky?: boolean;
   description?: string;
+  /** A wider panel on desktop (wizards); still a full-width bottom sheet on phones. */
+  wide?: boolean;
 }
 
 const FOCUSABLE =
@@ -21,7 +23,7 @@ const FOCUSABLE =
  * Centred dialog on desktop, bottom sheet at 700 px or less (CSS). Traps focus, restores it on close,
  * closes on Esc unless `sticky`, locks page scroll.
  */
-export function Modal({ open, onClose, title, children, footer, sticky, description }: Props) {
+export function Modal({ open, onClose, title, children, footer, sticky, description, wide }: Props) {
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descId = useId();
@@ -95,7 +97,8 @@ export function Modal({ open, onClose, title, children, footer, sticky, descript
         tabIndex={-1}
         data-sheet="responsive"
         className={cx(
-          'modal-panel flex max-h-[90vh] w-full max-w-[480px] flex-col rounded-[28px] border border-white/80 bg-[rgba(251,247,240,0.98)] shadow-2xl',
+          'modal-panel flex max-h-[90vh] w-full flex-col rounded-[28px] border border-white/80 bg-[rgba(251,247,240,0.98)] shadow-2xl',
+          wide ? 'max-w-[640px]' : 'max-w-[480px]',
           'max-[700px]:max-w-none max-[700px]:rounded-b-none',
         )}
       >
