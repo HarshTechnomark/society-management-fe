@@ -24,6 +24,7 @@ const PUBLIC_PATHS = [
   '/verify-email',
   '/support',
   '/support-handoff',
+  '/status',
   '/_next',
 ];
 
@@ -35,6 +36,15 @@ export function proxy(req: NextRequest) {
   // Local development and preview deployments: no rewriting.
   if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.vercel.app'))
     return NextResponse.next();
+
+  // status.societyapp.in serves only the public status page (module 07, 11.4).
+  if (sub === 'status' && host !== (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'societyapp.in')) {
+    if (url.pathname === '/') {
+      url.pathname = '/status';
+      return NextResponse.rewrite(url);
+    }
+    return url.pathname === '/status' ? NextResponse.next() : new NextResponse(null, { status: 404 });
+  }
 
   const prefix = AUDIENCES[sub];
   if (!prefix) {

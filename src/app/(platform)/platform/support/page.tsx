@@ -1,12 +1,12 @@
 import { Suspense } from 'react';
-import { SupportScreen } from '@/components/societies/platform/SupportScreen';
+import { PlatformSupportScreen } from '@/components/platformOps/support/PlatformSupportScreen';
 
-export const metadata = { title: 'Support access' };
+export const metadata = { title: 'Support' };
 
 export default function Page() {
   return (
     <Suspense>
-      <SupportScreen />
+      <PlatformSupportScreen />
     </Suspense>
   );
 }
