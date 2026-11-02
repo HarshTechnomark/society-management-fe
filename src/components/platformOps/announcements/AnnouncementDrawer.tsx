@@ -14,6 +14,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Segment } from '@/components/societies/bits';
 import { PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
+import { ApiError } from '@/lib/apiClient';
 import { platformOpsService as svc } from '@/services/platform-ops.service';
 import type {
   Announcement,
@@ -220,7 +221,7 @@ export function AnnouncementDrawer({
     try {
       await fn();
     } catch (e) {
-      setProblem(e instanceof Error && !('code' in e) ? e.message : opsError(e));
+      setProblem(e instanceof Error && !(e instanceof ApiError) ? e.message : opsError(e));
     } finally {
       setBusy(false);
     }

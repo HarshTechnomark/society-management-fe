@@ -203,7 +203,7 @@ export function OrganizationDrawer({
                   )}
                   {canClose && (
                     <Button variant="danger-soft" size="sm" onClick={() => setStatusTo('CLOSED')}>
-                      Close
+                      Close organization
                     </Button>
                   )}
                 </div>

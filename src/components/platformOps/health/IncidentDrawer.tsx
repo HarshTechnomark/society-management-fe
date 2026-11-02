@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { useToast } from '@/components/ui/Toast';
 import { ErrorState } from '@/components/common/ErrorState';
 import { PERMISSIONS } from '@/constants/permissions';
+import { ApiError } from '@/lib/apiClient';
 import { usePermission } from '@/hooks/usePermission';
 import { platformOpsService as svc } from '@/services/platform-ops.service';
 import type { Incident, IncidentStatus, Provider, Severity } from '@/types/platformOps';
@@ -84,7 +85,7 @@ export function IncidentDrawer({
     try {
       await fn();
     } catch (e) {
-      setProblem(opsError(e));
+      setProblem(e instanceof Error && !(e instanceof ApiError) ? e.message : opsError(e));
     } finally {
       setBusy(false);
     }
