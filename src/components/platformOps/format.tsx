@@ -3,8 +3,10 @@ import { ApiError } from '@/lib/apiClient';
 import { billingError } from '@/components/billing/format';
 import type {
   AnnouncementStatus,
+  AuditRow,
   HealthStatus,
   IncidentStatus,
+  OrgStatus,
   Severity,
   TicketPriority,
   TicketStatus,
@@ -231,3 +233,24 @@ export function LivePill() {
 }
 
 export const roleLabel = (key: string) => words(key.replace(/_/g, ' '));
+
+export type AuditScope = 'platform' | 'society';
+
+/** "SocietyApp Support · Platform" for platform people seen from a society (spec 11.7). */
+export function actorLabel(row: AuditRow, scope: AuditScope): string {
+  const platformSide = row.source === 'Platform console' || row.source === 'Support access';
+  if (scope === 'society' && platformSide) return 'SocietyApp Support · Platform';
+  return row.actor.name;
+}
+
+const ORG_TONE: Record<OrgStatus, [string, Tone]> = {
+  ACTIVE: ['Active', 'ok'],
+  SUSPENDED: ['Suspended', 'bad'],
+  CLOSED: ['Closed', 'neutral'],
+};
+export const OrgStatusChip = ({ status }: { status: OrgStatus }) => (
+  <Chip tone={ORG_TONE[status][1]}>{ORG_TONE[status][0]}</Chip>
+);
+
+/** True while `iso` is still in the future. */
+export const isFuture = (iso: string | null | undefined) => !!iso && Date.parse(iso) > Date.now();
