@@ -12,6 +12,7 @@ import { useMe } from '@/lib/auth';
 import { shortDate } from '@/lib/money';
 import { societiesService } from '@/services/societies.service';
 import type { SocietyStatusInfo } from '@/types/societies';
+import { AnnouncementBanners } from '@/components/platformOps/announcements/AnnouncementBanners';
 import { Banner } from '../bits';
 import { clockTime, mmss, societyErrorText } from '../format';
 import { useSocietyStatus } from './useSocietyStatus';
@@ -53,6 +54,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           onEnded={() => setEnded(true)}
         />
       )}
+      {!isSupport && <AnnouncementBanners />}
       {children}
     </>
   );

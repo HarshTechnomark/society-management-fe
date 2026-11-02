@@ -7,27 +7,34 @@ import { usePermission } from '@/hooks/usePermission';
 import { useMe } from '@/lib/auth';
 import { GrantsTable } from './GrantsTable';
 
-/** P-06 Support › Access grants (prototype `Pages.support`, tab `access`). The red banner is the global one (P-07). */
-export function SupportScreen() {
+/** The grants card of P-06 (also the Access grants tab of module 07's Support screen). */
+export function AccessGrantsPanel() {
   const { ready } = useMe();
   const canView = usePermission(PERMISSIONS.platform.supportAccess.view);
   const params = useSearchParams();
   const societyId = Number(params.get('societyId')) || undefined;
+  return (
+    <Card>
+      {!ready ? (
+        <div className="skeleton h-24 w-full" />
+      ) : canView ? (
+        <GrantsTable societyId={societyId} />
+      ) : (
+        <EmptyState title="No access" text="You do not have permission to see support access grants." />
+      )}
+    </Card>
+  );
+}
+
+/** P-06 Support › Access grants (prototype `Pages.support`, tab `access`). The red banner is the global one (P-07). */
+export function SupportScreen() {
   return (
     <Page>
       <PageHead
         title="Support access"
         sub="Time-boxed, scoped and consented access to a society. Every grant is audited under both identities."
       />
-      <Card>
-        {!ready ? (
-          <div className="skeleton h-24 w-full" />
-        ) : canView ? (
-          <GrantsTable societyId={societyId} />
-        ) : (
-          <EmptyState title="No access" text="You do not have permission to see support access grants." />
-        )}
-      </Card>
+      <AccessGrantsPanel />
     </Page>
   );
 }

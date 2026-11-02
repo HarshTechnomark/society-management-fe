@@ -1,5 +1,5 @@
 'use client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
@@ -81,7 +81,9 @@ export function SocietiesScreen() {
   const [status, setStatus] = useState<StatusFilter>('ALL');
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'name', dir: 'asc' });
   const [page, setPage] = useState(1);
-  const [adding, setAdding] = useState(false);
+  const params = useSearchParams();
+  /** The dashboard's "Add society" button opens this screen with `?add=1`. */
+  const [adding, setAdding] = useState(() => params.get('add') === '1');
   const [exporting, setExporting] = useState(false);
 
   const base: SocietyListQuery = useMemo(
