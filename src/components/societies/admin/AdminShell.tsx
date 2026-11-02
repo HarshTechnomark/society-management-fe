@@ -13,6 +13,7 @@ import { shortDate } from '@/lib/money';
 import { societiesService } from '@/services/societies.service';
 import type { SocietyStatusInfo } from '@/types/societies';
 import { AnnouncementBanners } from '@/components/platformOps/announcements/AnnouncementBanners';
+import { AdminNav } from '@/components/setup/AdminNav';
 import { Banner } from '../bits';
 import { clockTime, mmss, societyErrorText } from '../format';
 import { useSocietyStatus } from './useSocietyStatus';
@@ -45,7 +46,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     return <ClosedScreen status={status} name={name} />;
 
   return (
-    <>
+    <AdminNav>
       {status && (
         <StatusBanners
           status={status}
@@ -56,7 +57,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       )}
       {!isSupport && <AnnouncementBanners />}
       {children}
-    </>
+    </AdminNav>
   );
 }
 
