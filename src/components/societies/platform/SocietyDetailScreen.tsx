@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Card, Page } from '@/components/common/PageHead';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
+import { SocietyBillingTab } from '@/components/billing/platform/SocietyBillingTab';
 import { SocietyPlanTab } from '@/components/subscription/platform/SocietyPlanTab';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
@@ -259,7 +260,12 @@ export function SocietyDetailScreen({ id }: { id: number }) {
             onEdit={() => setEditing(true)}
           />
         )}
-        {tab === 'subscription' && <SocietyPlanTab societyId={s.id} />}
+        {tab === 'subscription' && (
+          <>
+            <SocietyPlanTab societyId={s.id} />
+            <SocietyBillingTab societyId={s.id} />
+          </>
+        )}
         {tab === 'support' && (
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="flex flex-col gap-4">

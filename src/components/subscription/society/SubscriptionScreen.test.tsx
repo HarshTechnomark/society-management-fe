@@ -5,6 +5,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { configureApiClient } from '@/lib/apiClient';
 import { setMe } from '@/lib/auth';
 import { err, mockApi, ok, resetAll, sampleMe } from '@/test/helpers';
+import { summary as billingSummary } from '@/test/billingFixtures';
 import { societyPlans, subscription, upgradeQuote, usageItem } from '@/test/subscriptionFixtures';
 import type { StoreAddon } from '@/types/subscriptions';
 import { SubscriptionScreen, statusChip } from './SubscriptionScreen';
@@ -92,6 +93,8 @@ const routes = (extra: object = {}) => ({
       usageItem({ limitKey: 'limit.guard_devices', limit: 0, used: 0, percent: 0, enforcement: 'HARD' }),
     ],
   }),
+  'GET /subscription/billing-summary': ok(billingSummary()),
+  'GET /subscription/invoices': ok([], 'OK', { pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } }),
   'GET /subscription/plans': ok(societyPlans()),
   'GET /subscription/entitlements': ok(entitlements),
   'GET /subscription/addons': ok({ store, owned }),
@@ -109,6 +112,14 @@ const planCard = (name: string) => screen.getByRole('article', { name: `${name} 
 
 beforeEach(resetAll);
 
+it('shows the billing summary and invoices under the plan (module 06, spec 11.3)', async () => {
+  mockApi(routes());
+  mount();
+  expect(await screen.findByRole('heading', { name: 'Billing' })).toBeInTheDocument();
+  expect(await screen.findByText('Outstanding')).toBeInTheDocument();
+  expect(await screen.findByText('No invoices yet')).toBeInTheDocument();
+});
+
 describe('Current plan and usage (spec 11.4)', () => {
   it('shows plan, status, price, charged flats with the minimum note, cycle, period and renewal', async () => {
     mockApi(
@@ -124,7 +135,7 @@ describe('Current plan and usage (spec 11.4)', () => {
     expect(screen.getByText('₹9 / month')).toBeInTheDocument();
     expect(screen.getByText('30 (minimum 30; you have 20)')).toBeInTheDocument();
     expect(screen.getByText('Annual, 2 months free')).toBeInTheDocument();
-    expect(screen.getByText('1 Dec 2026')).toBeInTheDocument();
+    expect(screen.getAllByText('1 Dec 2026').length).toBeGreaterThan(0);
   });
 
   it('builds the status chip from the society status', () => {
