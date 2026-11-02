@@ -19,6 +19,10 @@ import { InvoicesTab } from './InvoicesTab';
  */
 export function SocietyBillingTab({ societyId }: { societyId: number }) {
   const canView = usePermission(PERMISSIONS.platform.billing.view);
+  return canView ? <Inner societyId={societyId} /> : null;
+}
+
+function Inner({ societyId }: { societyId: number }) {
   const canEdit = usePermission(PERMISSIONS.platform.billing.edit);
   const [dlg, setDlg] = useState<'credit' | 'refund' | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
@@ -27,7 +31,6 @@ export function SocietyBillingTab({ societyId }: { societyId: number }) {
     setBalance(r.balancePaise);
     return r;
   }, String(societyId));
-  if (!canView) return null;
   const columns: Column<CreditItem>[] = [
     { key: 'type', label: 'Entry', render: r => r.entryType.toLowerCase().replace(/_/g, ' ') },
     { key: 'amt', label: 'Amount', className: 'text-right tabular-nums', render: r => inr(r.amountPaise) },
