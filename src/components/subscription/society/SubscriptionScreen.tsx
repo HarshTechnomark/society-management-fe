@@ -24,6 +24,7 @@ import { UsageWarnings } from '../UsageBanners';
 import { UsageMeter } from '../UsageMeter';
 import { PLAN_TONE, cycleText, subscriptionErrorText } from '../format';
 import { planName } from '../planLock';
+import { BillingSection } from '@/components/billing/society/BillingSection';
 import { AddonStore } from './AddonStore';
 import { ComparePlans } from './ComparePlans';
 import { FeaturePicker, eligibleFeatures } from './FeaturePicker';
@@ -72,9 +73,7 @@ export function SubscriptionScreen() {
       </Page>
     );
 
-  const head = (
-    <PageHead title="Subscription" sub="Your plan, usage and add-ons. Billing history is under Billing." />
-  );
+  const head = <PageHead title="Subscription" sub="Your plan, usage, add-ons, invoices and payments." />;
   if (sub.error)
     return (
       <Page>
@@ -117,6 +116,7 @@ export function SubscriptionScreen() {
       {usage.data && <UsageWarnings items={usage.data.items} link={false} />}
       <div className="flex flex-col gap-4">
         <CurrentPlanCard sub={s} canEdit={canEdit} onChanged={changed} />
+        <BillingSection nextInvoiceDate={s.status === 'TRIALING' ? null : nextDay(s.currentPeriodEnd)} />
         <Card
           title="Usage"
           sub="Markers at 80 % and 100 % of your plan. Monthly limits reset each usage month."
