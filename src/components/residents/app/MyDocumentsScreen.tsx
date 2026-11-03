@@ -106,6 +106,8 @@ function UploadDialog({ onClose, onDone }: { onClose: () => void; onDone: () => 
   const [last4, setLast4] = useState('');
   const [title, setTitle] = useState('');
   const [file, setFile] = useState<number | null>(null);
+  // the API accepts the last 4 characters only on an ID document
+  const isIdType = type !== 'ADDRESS_PROOF' && type !== 'OTHER';
   return (
     <FormDialog
       title="Upload a document"
@@ -119,7 +121,7 @@ function UploadDialog({ onClose, onDone }: { onClose: () => void; onDone: () => 
         await residentsService.uploadMyDocument({
           fileId: file,
           docType: type,
-          ...(last4 ? { idLast4: last4.toUpperCase() } : {}),
+          ...(last4 && isIdType ? { idLast4: last4.toUpperCase() } : {}),
           ...(type === 'OTHER' ? { title: title.trim() } : {}),
         });
         return { message: 'Document uploaded' };
@@ -132,13 +134,15 @@ function UploadDialog({ onClose, onDone }: { onClose: () => void; onDone: () => 
         options={TYPES.map(t => ({ value: t, label: docLabel(t) }))}
       />
       {type === 'OTHER' && <Input label="Title" value={title} onChange={e => setTitle(e.target.value)} />}
-      <Input
-        label="Last 4 characters of the ID number (optional)"
-        maxLength={4}
-        value={last4}
-        onChange={e => setLast4(e.target.value)}
-        hint="Only these 4 characters are shown on screen, for example ····1234."
-      />
+      {isIdType && (
+        <Input
+          label="Last 4 characters of the ID number (optional)"
+          maxLength={4}
+          value={last4}
+          onChange={e => setLast4(e.target.value)}
+          hint="Only these 4 characters are shown on screen, for example ····1234."
+        />
+      )}
       <FileField label="Photo or PDF" camera purpose="KYC_DOCUMENT" onChange={setFile} />
     </FormDialog>
   );

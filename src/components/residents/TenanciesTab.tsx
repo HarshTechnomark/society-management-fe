@@ -443,7 +443,7 @@ export function PoliceDialog({
       onClose={onClose}
       onDone={onDone}
       onSubmit={async () => {
-        if (status === 'VERIFIED' && (!isoDate(on) || ref.trim().length < 2))
+        if (status === 'VERIFIED' && (!isoDate(on) || ref.trim().length < 3))
           return { error: 'Add the verification date and reference.' };
         const body = {
           status,

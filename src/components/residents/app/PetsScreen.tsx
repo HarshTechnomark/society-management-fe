@@ -71,6 +71,9 @@ function Inner() {
             <ul className="grid gap-3 sm:grid-cols-2">
               {list.map(p => {
                 const v = vaccination(p);
+                // `/me/pets` does not send the flat label; use the household list when there are several flats
+                const flatLabel =
+                  p.unitLabel ?? (units.length > 1 ? units.find(u => u.unitId === p.unitId)?.unitLabel : '');
                 return (
                   <li key={p.id}>
                     <Card>
@@ -78,7 +81,7 @@ function Inner() {
                       <p className="text-[13.5px] text-muted">
                         {SPECIES.find(s => s[0] === p.species)?.[1]}
                         {p.breed ? ` · ${p.breed}` : ''}
-                        {p.unitLabel ? ` · ${p.unitLabel}` : ''}
+                        {flatLabel ? ` · ${flatLabel}` : ''}
                       </p>
                       <div className="mt-2">
                         <Chip tone={v.tone}>{v.text}</Chip>

@@ -232,20 +232,23 @@ describe('My home', () => {
   it('shows the portfolio for an owner of several flats', async () => {
     show(<HomeScreen />, {
       'GET /me/household': ok({ units: [householdUnit(), householdUnit({ unitId: 102, unitLabel: 'B-7' })] }),
-      'GET /me/portfolio': ok([
-        {
-          unitId: 101,
-          unitLabel: 'A-1203',
-          occupancy: 'RENTED',
-          duesPaise: 150000,
-          tenancy: {
-            status: 'ACTIVE',
-            agreementEnd: '2027-09-30',
-            policeVerificationStatus: 'NOT_SUBMITTED',
+      // the real backend wraps the list: `{ units: [...] }`
+      'GET /me/portfolio': ok({
+        units: [
+          {
+            unitId: 101,
+            unitLabel: 'A-1203',
+            occupancy: 'RENTED',
+            duesPaise: 150000,
+            tenancy: {
+              status: 'ACTIVE',
+              agreementEnd: '2027-09-30',
+              policeVerificationStatus: 'NOT_SUBMITTED',
+            },
+            openRequests: [],
           },
-          openRequests: [],
-        },
-      ]),
+        ],
+      }),
     });
     expect(await screen.findByText('Dues ₹1,500')).toBeInTheDocument();
     expect(screen.getByText('Police verification not submitted')).toBeInTheDocument();
@@ -612,7 +615,14 @@ describe('Privacy', () => {
 });
 
 describe('Emergency profile', () => {
-  const empty = { exists: false, bloodGroup: null, medicalNotes: null, contacts: [] };
+  const empty = {
+    exists: false,
+    bloodGroup: null,
+    medicalNotes: null,
+    contacts: [],
+    consent: { given: false, givenAt: null, textVersion: null, withdrawnAt: null },
+    version: 0,
+  };
   it('needs consent for health details and then saves', async () => {
     const api = show(<EmergencyScreen />, {
       'GET /me/emergency-profile': ok(empty),
@@ -657,7 +667,7 @@ describe('Emergency profile', () => {
       'GET /me/emergency-profile': ok({
         ...empty,
         exists: true,
-        consent: true,
+        consent: { given: true, givenAt: '2026-10-01T10:00:00.000Z', textVersion: 'v1', withdrawnAt: null },
         bloodGroup: 'A_POS',
         version: 3,
       }),
