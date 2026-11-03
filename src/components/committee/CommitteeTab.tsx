@@ -6,6 +6,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { useToast } from '@/components/ui/Toast';
+import { useFeature } from '@/hooks/useFeature';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
@@ -13,7 +14,9 @@ import { shortDate } from '@/lib/money';
 import { committeeService } from '@/services/committee.service';
 import { Empty, Loading, Section } from '@/components/residents/common';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
-import type { CommitteeOverview, CurrentSummary, DraftSummary, Term } from '@/types/committee';
+import type { CommitteeOverview, CurrentSummary, Designation, DraftSummary, Term } from '@/types/committee';
+import { ActivationWizard } from './ActivationWizard';
+import { ChangesDialog } from './ChangesDialog';
 import { CommitteeHistory } from './CommitteeHistory';
 import { EditCurrentDialog } from './EditCurrentDialog';
 import { SeatCard } from './SeatCard';
@@ -30,7 +33,7 @@ import {
 import type { EditorMode } from './termForm';
 
 const M = PERMISSIONS.settings.members;
-const COMING = 'Coming in the next update';
+const NO_BEARERS = 'Office bearers are not part of your plan, so this is not available.';
 
 type View = { k: 'main' } | { k: 'editor'; mode: EditorMode; termId?: number } | { k: 'history' };
 
@@ -96,6 +99,8 @@ function Loaded({
   onChanged: () => void;
 }) {
   const canEdit = usePermission(M.edit);
+  const bearers = useFeature('governance.office_bearers');
+  const [activating, setActivating] = useState<{ startDate: string | null } | null>(null);
   const empty = !o.current && !o.draft;
   const banner = o.banner && o.banner.code !== 'NO_COMMITTEE' ? o.banner : null;
   return (
@@ -103,7 +108,7 @@ function Loaded({
       {banner && (
         <Alert tone={banner.code === 'TERM_ENDING' ? 'info' : 'warn'}>
           <span>
-            {bannerText(banner, shortDate)}
+            <span>{bannerText(banner, shortDate)}</span>
             {banner.code === 'DRAFT_FROM_ELECTION' && canEdit && (
               <>
                 {' '}
@@ -113,6 +118,16 @@ function Loaded({
                   onClick={() => setView({ k: 'editor', mode: 'edit', termId: banner.draftId })}
                 >
                   Review the draft
+                </button>
+                {' or '}
+                <button
+                  type="button"
+                  className="font-bold underline disabled:opacity-50"
+                  disabled={!bearers}
+                  title={bearers ? undefined : NO_BEARERS}
+                  onClick={() => setActivating({ startDate: null })}
+                >
+                  Preview and activate
                 </button>
               </>
             )}
@@ -142,13 +157,30 @@ function Loaded({
           />
         </Card>
       )}
-      {o.current && <CurrentCard current={o.current} canEdit={canEdit} onChanged={onChanged} />}
+      {o.current && (
+        <CurrentCard current={o.current} canEdit={canEdit} bearers={bearers} onChanged={onChanged} />
+      )}
       {o.draft && (
         <DraftCard
           draft={o.draft}
           canEdit={canEdit}
+          bearers={bearers}
           onEdit={() => setView({ k: 'editor', mode: 'edit', termId: o.draft!.id })}
+          onActivate={startDate => setActivating({ startDate })}
           onChanged={onChanged}
+        />
+      )}
+      {activating && o.draft && (
+        <ActivationWizard
+          termId={o.draft.id}
+          termName={o.draft.name}
+          startDate={activating.startDate}
+          draftVersion={o.draft.version}
+          onClose={() => setActivating(null)}
+          onDone={() => {
+            setActivating(null);
+            onChanged();
+          }}
         />
       )}
       {!empty && canCreate && (
@@ -184,14 +216,17 @@ function daysChip(c: CurrentSummary) {
 function CurrentCard({
   current,
   canEdit,
+  bearers,
   onChanged,
 }: {
   current: CurrentSummary;
   canEdit: boolean;
+  bearers: boolean;
   onChanged: () => void;
 }) {
   const detail = useLoad(() => committeeService.term(current.id), `${current.id}-${current.version}`);
   const [editing, setEditing] = useState(false);
+  const [changing, setChanging] = useState<{ fill: Designation | null } | null>(null);
   const t = detail.data;
   const seated = (t?.seats ?? []).filter(s => s.status === 'SEATED');
   const h = current.handover;
@@ -219,10 +254,17 @@ function CurrentCard({
               </Button>
             )}
             {canEdit && (
-              <Button size="sm" variant="glass" disabled title={COMING}>
+              <Button
+                size="sm"
+                variant="glass"
+                disabled={!t || !bearers}
+                title={bearers ? undefined : NO_BEARERS}
+                onClick={() => setChanging({ fill: null })}
+              >
                 Make changes
               </Button>
             )}
+            {canEdit && !bearers && <p className="basis-full text-[12.5px] text-muted">{NO_BEARERS}</p>}
           </div>
         </div>
         <dl className="mt-3 grid gap-x-6 gap-y-1 text-[14px] sm:grid-cols-2">
@@ -270,8 +312,26 @@ function CurrentCard({
         )}
       </Card>
       <Loading load={detail} rows={2}>
-        {term => <SeatsGrid term={term} current={current} />}
+        {term => (
+          <SeatsGrid
+            term={term}
+            current={current}
+            canFill={canEdit && bearers}
+            onFill={d => setChanging({ fill: d })}
+          />
+        )}
       </Loading>
+      {changing && t && (
+        <ChangesDialog
+          term={t}
+          fill={changing.fill}
+          onClose={() => setChanging(null)}
+          onDone={() => {
+            setChanging(null);
+            onChanged();
+          }}
+        />
+      )}
       {editing && t && (
         <EditCurrentDialog
           term={t}
@@ -287,7 +347,17 @@ function CurrentCard({
   );
 }
 
-function SeatsGrid({ term, current }: { term: Term; current: CurrentSummary }) {
+function SeatsGrid({
+  term,
+  current,
+  canFill,
+  onFill,
+}: {
+  term: Term;
+  current: CurrentSummary;
+  canFill: boolean;
+  onFill: (d: Designation) => void;
+}) {
   const seated = term.seats
     .filter(s => s.status === 'SEATED')
     .sort((a, b) => DESIGNATION_ORDER.indexOf(a.designation) - DESIGNATION_ORDER.indexOf(b.designation));
@@ -298,20 +368,23 @@ function SeatsGrid({ term, current }: { term: Term; current: CurrentSummary }) {
       {seated.map(s => (
         <SeatCard key={s.seatId} seat={s} />
       ))}
-      {[...vacantNamed.map(d => `Vacant: ${designationLabel(d)}`), ...Array(generic).fill('Vacant seat')].map(
-        (label: string, i) => (
-          <li
-            key={`v${i}`}
-            className="flex items-center justify-between gap-2 rounded-[18px] border-2 border-dashed border-[var(--line)] p-3.5"
-            data-testid="vacant-seat"
-          >
-            <span className="font-semibold text-muted">{label}</span>
-            <Button size="xs" variant="glass" disabled title={COMING}>
+      {[
+        ...vacantNamed.map(d => ({ label: `Vacant: ${designationLabel(d)}`, d })),
+        ...Array.from({ length: generic }, () => ({ label: 'Vacant seat', d: 'MEMBER' as Designation })),
+      ].map(({ label, d }, i) => (
+        <li
+          key={`v${i}`}
+          className="flex items-center justify-between gap-2 rounded-[18px] border-2 border-dashed border-[var(--line)] p-3.5"
+          data-testid="vacant-seat"
+        >
+          <span className="font-semibold text-muted">{label}</span>
+          {canFill && (
+            <Button size="xs" variant="glass" aria-label={`Fill ${label}`} onClick={() => onFill(d)}>
               Fill
             </Button>
-          </li>
-        ),
-      )}
+          )}
+        </li>
+      ))}
     </ul>
   );
 }
@@ -319,12 +392,16 @@ function SeatsGrid({ term, current }: { term: Term; current: CurrentSummary }) {
 function DraftCard({
   draft,
   canEdit,
+  bearers,
   onEdit,
+  onActivate,
   onChanged,
 }: {
   draft: DraftSummary;
   canEdit: boolean;
+  bearers: boolean;
   onEdit: () => void;
+  onActivate: (startDate: string | null) => void;
   onChanged: () => void;
 }) {
   const canDelete = usePermission(M.delete);
@@ -357,7 +434,12 @@ function DraftCard({
               </Button>
             )}
             {canEdit && (
-              <Button size="sm" disabled title={COMING}>
+              <Button
+                size="sm"
+                disabled={!bearers}
+                title={bearers ? undefined : NO_BEARERS}
+                onClick={() => onActivate(t?.startDate ?? null)}
+              >
                 Preview and activate
               </Button>
             )}
@@ -366,6 +448,7 @@ function DraftCard({
                 Delete draft
               </Button>
             )}
+            {canEdit && !bearers && <p className="basis-full text-[12.5px] text-muted">{NO_BEARERS}</p>}
           </div>
         </div>
         <Section title={`Seats (${t?.seats.length ?? draft.seatCount})`}>

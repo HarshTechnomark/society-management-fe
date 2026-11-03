@@ -1,7 +1,21 @@
 /** Module 10 network calls of the committee tab, term editor and history (spec 8.1 to 8.6). Screens import from here. */
 import { api, apiList } from '@/lib/apiClient';
-import { normaliseListItem, normaliseOverview, normaliseTerm } from './committeeMappers';
-import type { SeatPatch, TermInput, TermPatch, TermQuery } from '@/types/committee';
+import {
+  normaliseActivation,
+  normaliseListItem,
+  normaliseOverview,
+  normalisePlan,
+  normaliseSummary,
+  normaliseTerm,
+} from './committeeMappers';
+import type {
+  ActivationInput,
+  ChangesInput,
+  SeatPatch,
+  TermInput,
+  TermPatch,
+  TermQuery,
+} from '@/types/committee';
 
 type Query = Record<string, string | number | boolean | undefined>;
 const base = '/committee';
@@ -24,4 +38,18 @@ export const committeeService = {
     api<void>(`${base}/terms/${id}`, { method: 'DELETE', body }),
   updateSeat: (id: number, seatId: string, body: SeatPatch) =>
     api<unknown>(`${base}/terms/${id}/seats/${seatId}`, { method: 'PATCH', body }).then(normaliseTerm),
+
+  activationPreview: (id: number) =>
+    api<unknown>(`${base}/terms/${id}/activation-preview`).then(normalisePlan),
+  activate: (id: number, body: ActivationInput) =>
+    api<unknown>(`${base}/terms/${id}/activate`, { method: 'POST', body, idempotent: true }).then(r =>
+      normaliseActivation(r),
+    ),
+  changesPreview: (id: number, body: ChangesInput) =>
+    api<unknown>(`${base}/terms/${id}/changes/preview`, { method: 'POST', body }).then(normalisePlan),
+  applyChanges: (id: number, body: ChangesInput & { previewHash: string; reason: string }) =>
+    api<unknown>(`${base}/terms/${id}/changes`, { method: 'POST', body, idempotent: true }).then(r => ({
+      term: normaliseTerm(r),
+      summary: normaliseSummary(r),
+    })),
 };

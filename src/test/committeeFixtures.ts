@@ -165,3 +165,70 @@ export const listItemRaw = (over: Record<string, unknown> = {}) => ({
   version: 3,
   ...over,
 });
+
+/** Raw activation preview (spec 8.7) and changes preview (8.9). */
+export const planRaw = (over: Record<string, unknown> = {}) => ({
+  termId: 20,
+  termVersion: 2,
+  currentTermId: 12,
+  currentTermVersion: 4,
+  actions: [
+    {
+      kind: 'CHANGE_ROLE',
+      step: 'A',
+      userId: 22,
+      memberId: 1202,
+      name: 'Meera Iyer',
+      fromRoleKey: 'treasurer',
+      toRoleKey: 'owner',
+      seatDelta: 0,
+      reason: 'OUTGOING',
+    },
+    {
+      kind: 'CHANGE_ROLE',
+      step: 'B',
+      userId: 61,
+      memberId: 1361,
+      name: 'Farhan Qureshi',
+      fromRoleKey: 'owner',
+      toRoleKey: 'chairman',
+      seatDelta: 0,
+      reason: 'INCOMING',
+    },
+    {
+      kind: 'NONE',
+      userId: 33,
+      memberId: 1203,
+      name: 'Arjun Shah',
+      roleKey: 'secretary',
+      reason: 'CONTINUING',
+    },
+  ],
+  staffSeats: { limit: 8, used: 2, delta: 0 },
+  handoverDelegations: [
+    {
+      designation: 'TREASURER',
+      fromUserId: 22,
+      fromName: 'Meera Iyer',
+      toUserId: 64,
+      toName: 'Lata Menon',
+      days: 30,
+    },
+  ],
+  warnings: [],
+  blockers: [],
+  previewHash: 'a'.repeat(64),
+  ...over,
+});
+
+export const activationRaw = (over: Record<string, unknown> = {}) => ({
+  term: { id: 20, status: 'ACTIVE', tookChargeOn: '2029-04-02', version: 3 },
+  endedTerm: { id: 12, status: 'ENDED', actualEndDate: '2029-04-01' },
+  summary: {
+    roleChanges: 4,
+    membershipsEnded: 0,
+    handoverDelegationsCreated: 2,
+    handoverDelegationsSkipped: [],
+  },
+  ...over,
+});

@@ -23,7 +23,7 @@ interface Candidate {
 }
 
 /** Search the society's members by name or the last digits of the mobile and pick one holder. */
-function HolderPicker({
+export function HolderPicker({
   row,
   error,
   onPick,
@@ -108,7 +108,7 @@ function HolderPicker({
 }
 
 /** The flat that qualifies the holder: the current one stays in the list; search adds others. */
-function FlatSelect({
+export function FlatSelect({
   row,
   error,
   onPick,

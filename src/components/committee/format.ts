@@ -54,6 +54,7 @@ const TEXT: Record<string, string> = {
   SOCIETY_CLOSED: 'This society is closed.',
   RATE_LIMITED: 'Too many requests. Wait a little and try again.',
   INTERNAL_ERROR: 'Something went wrong on our side. Try again.',
+  SUPPORT_GRANT_READ_ONLY: 'Support access is read only. Committee changes are not possible.',
   NETWORK_ERROR: 'Cannot reach the server. Check your connection and try again.',
   // passed through from module 03
   INVITATION_ALREADY_PENDING: 'An invitation is already waiting for this person.',
@@ -66,6 +67,12 @@ const TEXT: Record<string, string> = {
 export function committeeError(e: unknown): string {
   if (!(e instanceof ApiError)) return e instanceof Error ? e.message : 'Something went wrong. Try again.';
   return TEXT[e.code] ?? e.message;
+}
+/** The same error with its message in plain words, for `ErrorState` (keeps the support reference). */
+export function plainError(e: unknown): unknown {
+  return e instanceof ApiError
+    ? new ApiError(e.status, e.code, committeeError(e), e.errors, e.requestId, e.retryAfterSeconds)
+    : e;
 }
 export const KNOWN_ERROR_CODES = Object.keys(TEXT);
 

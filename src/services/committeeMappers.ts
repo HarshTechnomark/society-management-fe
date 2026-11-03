@@ -4,10 +4,16 @@
  * Every normaliser tolerates missing optional fields and never throws.
  */
 import type {
+  ActivationResult,
   Banner,
+  ChangeSummary,
   CommitteeOverview,
   CurrentSummary,
+  Delegation,
   DraftSummary,
+  Plan,
+  PlanAction,
+  PlanIssue,
   Seat,
   Term,
   TermListItem,
@@ -170,5 +176,97 @@ export function normaliseOverview(raw: unknown): CommitteeOverview {
     current: normaliseCurrent(o.current),
     draft: normaliseDraft(o.draft),
     banner: normaliseBanner(o.banner),
+  };
+}
+
+const issue = (raw: unknown): PlanIssue => {
+  const i = obj(raw);
+  return {
+    code: str(i.code),
+    message: str(i.message),
+    seatIds: strs(i.seatIds),
+    userIds: Array.isArray(i.userIds) ? i.userIds.filter((x): x is number => typeof x === 'number') : [],
+  };
+};
+
+function action(raw: unknown): PlanAction {
+  const a = obj(raw);
+  const base = { userId: num(a.userId), memberId: num(a.memberId), name: str(a.name) };
+  if (a.kind === 'NONE')
+    return {
+      kind: 'NONE',
+      ...base,
+      roleKey: str(a.roleKey),
+      reason: str(a.reason, 'CONTINUING') as 'CONTINUING',
+    };
+  if (a.kind === 'END_MEMBERSHIP')
+    return {
+      kind: 'END_MEMBERSHIP',
+      ...base,
+      step: str(a.step),
+      fromRoleKey: str(a.fromRoleKey),
+      seatDelta: num(a.seatDelta),
+    };
+  return {
+    kind: 'CHANGE_ROLE',
+    ...base,
+    step: str(a.step),
+    fromRoleKey: str(a.fromRoleKey),
+    toRoleKey: str(a.toRoleKey),
+    seatDelta: num(a.seatDelta),
+    reason: str(a.reason, 'CONTINUING') as 'INCOMING',
+  };
+}
+
+/** The activation preview (8.7) and the changes preview (8.9) share one shape. */
+export function normalisePlan(raw: unknown): Plan {
+  const p = obj(raw);
+  const s = obj(p.staffSeats);
+  return {
+    termId: num(p.termId),
+    termVersion: num(p.termVersion, 1),
+    actions: list(p.actions).map(action),
+    staffSeats: { limit: numN(s.limit), used: num(s.used), delta: num(s.delta) },
+    handoverDelegations: list(p.handoverDelegations).map((d): Delegation => ({
+      designation: str(d.designation),
+      fromName: str(d.fromName),
+      toName: str(d.toName),
+      days: num(d.days, 30),
+    })),
+    warnings: list(p.warnings).map(issue),
+    blockers: list(p.blockers).map(issue),
+    previewHash: str(p.previewHash),
+  };
+}
+
+/** `data.summary` of an activation or a change set (8.8, 8.9). */
+export function normaliseSummary(raw: unknown): ChangeSummary {
+  const s = obj(obj(raw).summary);
+  return {
+    roleChanges: num(s.roleChanges),
+    membershipsEnded: num(s.membershipsEnded),
+    handoverDelegationsCreated: num(s.handoverDelegationsCreated),
+    handoverDelegationsSkipped: Array.isArray(s.handoverDelegationsSkipped)
+      ? s.handoverDelegationsSkipped.map(String)
+      : [],
+  };
+}
+
+/** The response of `POST .../activate` (8.8). */
+export function normaliseActivation(raw: unknown): ActivationResult {
+  const r = obj(raw);
+  const t = r.term && typeof r.term === 'object' ? obj(r.term) : null;
+  const e = r.endedTerm && typeof r.endedTerm === 'object' ? obj(r.endedTerm) : null;
+  return {
+    term: t
+      ? {
+          id: num(t.id),
+          status: str(t.status),
+          tookChargeOn: strN(t.tookChargeOn),
+          version: num(t.version, 1),
+        }
+      : null,
+    endedTerm: e ? { id: num(e.id), status: str(e.status), actualEndDate: strN(e.actualEndDate) } : null,
+    summary: normaliseSummary(r),
   };
 }

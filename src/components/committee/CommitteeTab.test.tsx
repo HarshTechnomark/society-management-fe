@@ -88,8 +88,8 @@ describe('Committee tab: states and gates', () => {
     expect(vacant[0]).toContain('Vacant: Treasurer');
     expect(vacant[1]).toContain('Vacant seat');
     expect(
-      within(screen.getAllByTestId('vacant-seat')[0]).getByRole('button', { name: 'Fill' }),
-    ).toBeDisabled();
+      within(screen.getAllByTestId('vacant-seat')[0]).getByRole('button', { name: /Fill/ }),
+    ).toBeEnabled();
   });
 
   it('shows the overdue chip and the caretaker banner', async () => {
@@ -178,7 +178,7 @@ describe('Committee tab: draft', () => {
     expect(screen.getByText('Draft')).toBeInTheDocument();
     expect(screen.getByText('Manual')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Edit draft' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Preview and activate' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Preview and activate' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Delete draft' })).toBeInTheDocument();
   });
 
