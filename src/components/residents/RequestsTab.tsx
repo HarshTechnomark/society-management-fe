@@ -16,7 +16,7 @@ import { useFeature } from '@/hooks/useFeature';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { inr, shortDate } from '@/lib/money';
-import { residentsService } from '@/services/residents.service';
+import { approvalsPageHref, residentsService } from '@/services/residents.service';
 import type { MoveRequest, Permit, Transfer, ViolationCategory } from '@/types/residents';
 import {
   FormDialog,
@@ -346,7 +346,7 @@ function MoveDrawer({
             </Button>
           )}
           {m.status === 'PENDING_APPROVAL' && (
-            <Link className="self-center text-[14px] font-semibold underline" href="/admin/approvals">
+            <Link className="self-center text-[14px] font-semibold underline" href={approvalsPageHref()}>
               Open in approvals
             </Link>
           )}
@@ -617,7 +617,7 @@ function PermitDrawer({
               </Button>
             )}
             {p.status === 'PENDING_APPROVAL' && (
-              <Link className="self-center text-[14px] font-semibold underline" href="/admin/approvals">
+              <Link className="self-center text-[14px] font-semibold underline" href={approvalsPageHref()}>
                 Open in approvals
               </Link>
             )}
@@ -957,7 +957,10 @@ function TransferDrawer({
                   </Button>
                 )}
                 {t.status === 'PENDING_APPROVAL' && (
-                  <Link className="self-center text-[14px] font-semibold underline" href="/admin/approvals">
+                  <Link
+                    className="self-center text-[14px] font-semibold underline"
+                    href={approvalsPageHref()}
+                  >
                     Open in approvals
                   </Link>
                 )}

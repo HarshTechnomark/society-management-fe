@@ -74,6 +74,10 @@ const arr =
 export const approvalsBase = (env: string | undefined = process.env.NODE_ENV): string =>
   env === 'production' ? '/approvals' : '/dev/approvals';
 
+/** Where the "Open in approvals" links go: module 14's inbox in production, the development page otherwise. */
+export const approvalsPageHref = (env: string | undefined = process.env.NODE_ENV): string =>
+  env === 'production' ? '/admin/approvals' : '/admin/dev-approvals';
+
 export const residentsService = {
   // admin: flats, stats, people
   stats: () => api<Stats>('/residents/stats'),
