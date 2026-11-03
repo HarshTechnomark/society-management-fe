@@ -14,6 +14,8 @@ import type {
   Plan,
   PlanAction,
   PlanIssue,
+  PlanSeat,
+  SkippedHandover,
   Seat,
   Term,
   TermListItem,
@@ -190,6 +192,7 @@ const issue = (raw: unknown): PlanIssue => {
     message: str(i.message),
     seatIds: strs(i.seatIds),
     userIds: Array.isArray(i.userIds) ? i.userIds.filter((x): x is number => typeof x === 'number') : [],
+    permissionKeys: strs(i.permissionKeys),
   };
 };
 
@@ -229,11 +232,23 @@ export function normalisePlan(raw: unknown): Plan {
   return {
     termId: num(p.termId),
     termVersion: num(p.termVersion, 1),
+    currentTermId: numN(p.currentTermId),
+    currentTermVersion: numN(p.currentTermVersion),
+    seats: list(p.seats).map((x): PlanSeat => ({
+      seatId: str(x.seatId),
+      name: str(x.name),
+      designation: str(x.designation, 'MEMBER') as PlanSeat['designation'],
+      status: str(x.status),
+      fromDate: strN(x.fromDate),
+      toDate: strN(x.toDate),
+    })),
     actions: list(p.actions).map(action),
     staffSeats: { limit: numN(s.limit), used: num(s.used), delta: num(s.delta) },
     handoverDelegations: list(p.handoverDelegations).map((d): Delegation => ({
       designation: str(d.designation),
+      fromUserId: num(d.fromUserId),
       fromName: str(d.fromName),
+      toUserId: num(d.toUserId),
       toName: str(d.toName),
       days: num(d.days, 30),
     })),
@@ -250,9 +265,12 @@ export function normaliseSummary(raw: unknown): ChangeSummary {
     roleChanges: num(s.roleChanges),
     membershipsEnded: num(s.membershipsEnded),
     handoverDelegationsCreated: num(s.handoverDelegationsCreated),
-    handoverDelegationsSkipped: Array.isArray(s.handoverDelegationsSkipped)
-      ? s.handoverDelegationsSkipped.map(String)
-      : [],
+    handoverDelegationsSkipped: list(s.handoverDelegationsSkipped).map((k): SkippedHandover => ({
+      designation: str(k.designation),
+      fromUserId: num(k.fromUserId),
+      toUserId: num(k.toUserId),
+      skippedBecause: str(k.skippedBecause),
+    })),
   };
 }
 

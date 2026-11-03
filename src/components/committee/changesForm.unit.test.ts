@@ -6,7 +6,7 @@ import {
   normaliseSeat,
   normaliseSummary,
 } from '@/services/committeeMappers';
-import { seatRaw } from '@/test/committeeFixtures';
+import { changesSummaryRaw, planRaw, seatRaw, termRaw } from '@/test/committeeFixtures';
 import {
   newAdd,
   newRedesignate,
@@ -15,7 +15,7 @@ import {
   toChanges,
   validateChanges,
 } from './changesForm';
-import { committeeError, plainError } from './format';
+import { committeeError, committeeErrorFull, plainError, skippedText } from './format';
 import { roleChange } from './PlanView';
 
 const seats = [
@@ -115,11 +115,19 @@ describe('plan mappers and wording', () => {
     const r = normaliseActivation({
       term: { id: 1, status: 'ACTIVE', tookChargeOn: '2029-04-02', version: 3 },
       endedTerm: { id: 2, status: 'ENDED', actualEndDate: '2029-04-01' },
-      summary: { roleChanges: 4, handoverDelegationsSkipped: ['X'] },
+      summary: {
+        roleChanges: 4,
+        handoverDelegationsSkipped: [
+          { designation: 'TREASURER', fromUserId: 1, toUserId: 2, skippedBecause: 'DELEGATION_OVERLAP' },
+        ],
+      },
     });
     expect(r.term?.version).toBe(3);
     expect(r.endedTerm?.actualEndDate).toBe('2029-04-01');
-    expect(r.summary).toMatchObject({ roleChanges: 4, handoverDelegationsSkipped: ['X'] });
+    expect(r.summary.roleChanges).toBe(4);
+    expect(r.summary.handoverDelegationsSkipped).toEqual([
+      { designation: 'TREASURER', fromUserId: 1, toUserId: 2, skippedBecause: 'DELEGATION_OVERLAP' },
+    ]);
     expect(normaliseActivation(undefined).term).toBeNull();
   });
   it('words SUPPORT_GRANT_READ_ONLY and keeps the reference through plainError', () => {
@@ -130,5 +138,53 @@ describe('plan mappers and wording', () => {
     expect(e.message).toContain('not allowed in the current state');
     expect(e.requestId).toBe('req_1');
     expect(plainError('x')).toBe('x');
+  });
+
+  it('reads the real preview shape: current term, seats, user ids and permission keys', () => {
+    const p = normalisePlan(
+      planRaw({ blockers: [{ code: 'UNHELD_PERMISSION', message: 'm', permissionKeys: ['a.b'] }] }),
+    );
+    expect(p).toMatchObject({ currentTermId: 12, currentTermVersion: 4 });
+    expect(p.seats[0]).toMatchObject({ seatId: 'S1', name: 'Farhan Qureshi', designation: 'CHAIRMAN' });
+    expect(p.handoverDelegations[0]).toMatchObject({ fromUserId: 22, toUserId: 64 });
+    expect(p.blockers[0].permissionKeys).toEqual(['a.b']);
+    expect(
+      normalisePlan(planRaw({ currentTermId: null, currentTermVersion: null })).currentTermId,
+    ).toBeNull();
+  });
+  it('reads the summary at the top level of the apply-changes response (term detail plus summary)', () => {
+    expect(
+      normaliseSummary({ ...termRaw(), summary: changesSummaryRaw({ roleChanges: 3 }) }).roleChanges,
+    ).toBe(3);
+  });
+  it('uses the exact backend message for dates and change sets, and names seats and permissions', () => {
+    const dates = new ApiError(422, 'COMMITTEE_TERM_DATES_INVALID', 'Between 2029-04-01 and today', [
+      { field: 'tookChargeOn', message: 'x' },
+    ]);
+    expect(committeeError(dates)).toBe('Between 2029-04-01 and today');
+    expect(committeeError(new ApiError(422, 'COMMITTEE_TERM_DATES_INVALID', 'raw'))).toContain('5 years');
+    const inv = new ApiError(422, 'COMMITTEE_CHANGE_INVALID', 'Pick a different designation', [
+      { field: 'changes', message: 'Pick a different designation', seatIds: ['S3'] },
+    ]);
+    expect(committeeError(inv)).toBe('Pick a different designation');
+    expect(committeeErrorFull(inv, id => `Meera (${id})`)).toBe(
+      'Pick a different designation Seats: Meera (S3).',
+    );
+    const chair = new ApiError(422, 'COMMITTEE_CHAIRMAN_REQUIRED', 'raw', [
+      { field: 'changes', message: 'raw' },
+    ]);
+    expect(committeeError(chair)).toBe('Pick the new chairman before the current one steps down.');
+    const perm = new ApiError(403, 'CANNOT_GRANT_UNHELD_PERMISSION', 'raw', [
+      { field: 'permissionKey', message: 'finance.edit' },
+    ]);
+    expect(committeeErrorFull(perm)).toContain('Access you do not have: finance.edit.');
+  });
+  it('words the skipped hand-over pairs', () => {
+    expect(
+      skippedText([
+        { designation: 'TREASURER', skippedBecause: 'DELEGATION_OVERLAP' },
+        { designation: 'SECRETARY', skippedBecause: 'OTHER' },
+      ]),
+    ).toBe('Treasurer (a hand-over already runs for this person), Secretary');
   });
 });

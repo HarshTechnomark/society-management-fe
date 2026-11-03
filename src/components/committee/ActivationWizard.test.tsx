@@ -221,6 +221,52 @@ describe('Activation wizard: step 2 and result', () => {
     expect(await within(d).findByText('Confirm it is you to continue.')).toBeInTheDocument();
   });
 
+  it('names the seat holder and the missing access in a blocker', async () => {
+    renderIt({
+      'GET /committee/terms/20/activation-preview': ok(
+        planRaw({
+          blockers: [
+            { code: 'HOLDER_INELIGIBLE', message: 'Not an owner.', seatIds: ['S1'], userIds: [33] },
+            { code: 'UNHELD_PERMISSION', message: 'Too much access.', permissionKeys: ['finance.edit'] },
+          ],
+        }),
+      ),
+    });
+    const d = await open();
+    const blockers = await within(d).findByTestId('plan-blockers');
+    expect(blockers).toHaveTextContent('For: Farhan Qureshi, Arjun Shah.');
+    expect(blockers).toHaveTextContent('Access you do not have: finance.edit.');
+  });
+
+  it('shows skipped hand-over pairs in words and the real error detail of a refused activation', async () => {
+    renderIt({
+      'POST /committee/terms/20/activate': ok(
+        activationRaw({
+          summary: {
+            roleChanges: 4,
+            membershipsEnded: 0,
+            handoverDelegationsCreated: 1,
+            handoverDelegationsSkipped: [
+              {
+                designation: 'TREASURER',
+                fromUserId: 22,
+                toUserId: 64,
+                skippedBecause: 'DELEGATION_OVERLAP',
+              },
+            ],
+          },
+        }),
+      ),
+    });
+    const d = await open();
+    await userEvent.click(await within(d).findByRole('button', { name: 'Continue' }));
+    await fillConfirm(d);
+    await userEvent.click(within(d).getByRole('button', { name: 'Activate committee' }));
+    expect(await within(d).findByTestId('activation-result')).toHaveTextContent(
+      'Hand-over was skipped for: Treasurer (a hand-over already runs for this person).',
+    );
+  });
+
   it('reloads step 1 with a notice when the plan went stale', async () => {
     const api = renderIt({
       'POST /committee/terms/20/activate': err(409, 'COMMITTEE_PREVIEW_STALE'),

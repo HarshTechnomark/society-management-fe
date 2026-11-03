@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { ApiError } from '@/lib/apiClient';
 import { shortDate } from '@/lib/money';
 import { committeeService } from '@/services/committee.service';
-import type { Designation, Plan, Term, VacateReason } from '@/types/committee';
+import type { ChangeSummary, Designation, Plan, Term, VacateReason } from '@/types/committee';
 import {
   MAX_CHANGES,
   leavesNoChairman,
@@ -29,9 +29,11 @@ import {
   EXIT_LABEL,
   JOIN_LABEL,
   committeeError,
+  committeeErrorFull,
   designationLabel,
   opts,
   roleLabel,
+  skippedText,
   today,
 } from './format';
 import { PlanView } from './PlanView';
@@ -78,6 +80,7 @@ export function ChangesDialog({
   const [reason, setReason] = useState('');
   const [reasonError, setReasonError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [summary, setSummary] = useState<ChangeSummary | null>(null);
 
   const noChairman = leavesNoChairman(rows, term.seats);
   const patch = (k: string, p: Partial<ChangeRow>) =>
@@ -111,7 +114,7 @@ export function ChangesDialog({
       setStale(false);
       setStep('preview');
     } catch (e) {
-      setProblem(committeeError(e));
+      setProblem(committeeErrorFull(e, seatLabel));
     } finally {
       setBusy(false);
     }
@@ -128,7 +131,12 @@ export function ChangesDialog({
     setProblem(null);
     setBusy(true);
     try {
-      await committeeService.applyChanges(term.id, { ...body(), previewHash: plan.previewHash, reason: why });
+      const r = await committeeService.applyChanges(term.id, {
+        ...body(),
+        previewHash: plan.previewHash,
+        reason: why,
+      });
+      setSummary(r.summary);
       toast.show('The committee is updated.');
       setStep('done');
     } catch (e) {
@@ -137,13 +145,13 @@ export function ChangesDialog({
         try {
           await runPreview();
         } catch (e2) {
-          setProblem(committeeError(e2));
+          setProblem(committeeErrorFull(e2, seatLabel));
         }
       } else if (e instanceof ApiError && e.code === 'COMMITTEE_CHAIRMAN_REQUIRED') {
         setStep('edit');
-        setProblem(committeeError(e));
+        setProblem(committeeErrorFull(e, seatLabel));
       } else {
-        setProblem(committeeError(e));
+        setProblem(committeeErrorFull(e, seatLabel));
       }
     } finally {
       setBusy(false);
@@ -435,6 +443,11 @@ export function ChangesDialog({
       {step === 'done' && (
         <div role="status" data-testid="changes-result">
           <p className="text-[15px] font-semibold">The committee is updated.</p>
+          {summary && summary.handoverDelegationsSkipped.length > 0 && (
+            <Alert tone="warn" className="mt-3">
+              Hand-over was skipped for: {skippedText(summary.handoverDelegationsSkipped)}.
+            </Alert>
+          )}
         </div>
       )}
     </Modal>

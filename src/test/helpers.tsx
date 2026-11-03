@@ -32,7 +32,7 @@ export const ok = (data: unknown = null, message = 'OK', extra: object = {}): Re
 export const err = (
   status: number,
   code: string,
-  errors?: { field: string; message: string }[],
+  errors?: { field: string; message: string; [detail: string]: unknown }[],
   message = `msg ${code}`,
 ): Reply => ({
   status,

@@ -64,10 +64,55 @@ const TEXT: Record<string, string> = {
   EMAIL_IN_USE: 'This email belongs to another person.',
 };
 
+/** Fields whose backend message is more exact than the generic text (dates of taking charge, mid-term change sets). */
+const MESSAGE_FIELDS = new Set(['tookChargeOn', 'effectiveDate', 'changes']);
+/** Codes whose own text is always the better wording, even on those fields. */
+const KEEP_TEXT = new Set(['COMMITTEE_CHAIRMAN_REQUIRED', 'COMMITTEE_COOPTION_NOT_ALLOWED']);
+
+/** Why module 14 refused a hand-over pair (`summary.handoverDelegationsSkipped[].skippedBecause`). */
+export const SKIP_TEXT: Record<string, string> = {
+  DELEGATION_OVERLAP: 'a hand-over already runs for this person',
+  DELEGATION_CHAIN_NOT_ALLOWED: 'a hand-over cannot be passed on again',
+  DELEGATE_NOT_ELIGIBLE: 'the new holder cannot receive approvals',
+  DELEGATION_WINDOW_INVALID: 'the hand-over dates are not valid',
+  DELEGATION_SELF: 'the same person holds both seats',
+};
+
+/** "Treasurer (a hand-over already runs for this person)" for each skipped hand-over pair. */
+export function skippedText(items: { designation: string; skippedBecause: string }[]): string {
+  return items
+    .map(k => {
+      const d = DESIGNATION_LABEL[k.designation as Designation] ?? k.designation;
+      const why = SKIP_TEXT[k.skippedBecause];
+      return why ? `${d} (${why})` : d;
+    })
+    .join(', ');
+}
+
+/** Extra detail from `errors[]`: the seats (`seatIds`) and the permissions (`permissionKey` entries) a refusal names. */
+export function errorDetail(e: unknown, seatName?: (seatId: string) => string): string {
+  if (!(e instanceof ApiError) || !e.errors?.length) return '';
+  const seatIds = e.errors.flatMap(x => (Array.isArray(x.seatIds) ? (x.seatIds as unknown[]) : []));
+  const keys = e.errors.filter(x => x.field === 'permissionKey').map(x => x.message);
+  const parts: string[] = [];
+  const seats = [...new Set(seatIds.filter((x): x is string => typeof x === 'string'))];
+  if (seats.length) parts.push(`Seats: ${seats.map(id => seatName?.(id) ?? id).join(', ')}.`);
+  if (keys.length) parts.push(`Access you do not have: ${keys.join(', ')}.`);
+  return parts.join(' ');
+}
+
 /** The message for an error, in plain words. */
 export function committeeError(e: unknown): string {
   if (!(e instanceof ApiError)) return e instanceof Error ? e.message : 'Something went wrong. Try again.';
-  return TEXT[e.code] ?? e.message;
+  const field = e.errors?.[0]?.field;
+  const own = e.message && field && MESSAGE_FIELDS.has(field) && !KEEP_TEXT.has(e.code);
+  return own ? e.message : (TEXT[e.code] ?? e.message);
+}
+
+/** `committeeError` plus the seats and permissions the refusal names (activation and mid-term changes). */
+export function committeeErrorFull(e: unknown, seatName?: (seatId: string) => string): string {
+  const detail = errorDetail(e, seatName);
+  return detail ? `${committeeError(e)} ${detail}` : committeeError(e);
 }
 /** The same error with its message in plain words, for `ErrorState` (keeps the support reference). */
 export function plainError(e: unknown): unknown {

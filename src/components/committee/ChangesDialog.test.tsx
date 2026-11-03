@@ -9,6 +9,7 @@ import { err, mockApi, ok, resetAll, sampleMe } from '@/test/helpers';
 import {
   COMMITTEE_FEATURES,
   COMMITTEE_PERMS,
+  changesSummaryRaw,
   overviewRaw,
   planRaw,
   seatRaw,
@@ -41,7 +42,7 @@ function renderIt(routes: Routes = {}, perms = COMMITTEE_PERMS, features = COMMI
     ),
     'GET /residents/units': ok([flat({ unitId: 601, unitLabel: 'C-601' })], 'OK', page(1)),
     [PREVIEW]: ok(planRaw({ termId: 12, termVersion: 4 })),
-    [APPLY]: ok(termRaw({ version: 5 }), 'OK', { summary: undefined }),
+    [APPLY]: ok({ ...termRaw({ version: 5 }), summary: changesSummaryRaw() }),
     ...routes,
   });
   render(
@@ -97,6 +98,44 @@ describe('Make changes: vacate and redesignate', () => {
     });
     await userEvent.click(within(d).getByRole('button', { name: 'Done' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('shows skipped hand-over pairs after applying', async () => {
+    renderIt({
+      [APPLY]: ok({
+        ...termRaw({ version: 5 }),
+        summary: changesSummaryRaw({
+          handoverDelegationsSkipped: [
+            { designation: 'TREASURER', fromUserId: 22, toUserId: 64, skippedBecause: 'DELEGATION_OVERLAP' },
+          ],
+        }),
+      }),
+    });
+    const d = await openDialog();
+    await userEvent.click(within(d).getByRole('button', { name: 'Vacate a seat' }));
+    await pickSeat(rowsOf(d)[0], /Meera Iyer/);
+    await userEvent.click(within(d).getByRole('button', { name: 'Preview' }));
+    await within(d).findByTestId('change-summary');
+    await userEvent.type(within(d).getByLabelText(/Reason/), 'Resignation letter received');
+    await userEvent.click(within(d).getByRole('button', { name: 'Apply changes' }));
+    expect(await within(d).findByTestId('changes-result')).toHaveTextContent(
+      'Hand-over was skipped for: Treasurer (a hand-over already runs for this person).',
+    );
+  });
+
+  it('shows the backend message and the seat of a refused change set', async () => {
+    renderIt({
+      [PREVIEW]: err(422, 'COMMITTEE_CHANGE_INVALID', [
+        { field: 'changes', message: 'Pick a different designation', seatIds: ['S3'] },
+      ]),
+    });
+    const d = await openDialog();
+    await userEvent.click(within(d).getByRole('button', { name: 'Vacate a seat' }));
+    await pickSeat(rowsOf(d)[0], /Meera Iyer/);
+    await userEvent.click(within(d).getByRole('button', { name: 'Preview' }));
+    expect(await within(d).findByText(/Meera Iyer \(Member\)\./)).toHaveTextContent(
+      'Seats: Meera Iyer (Member).',
+    );
   });
 
   it('changes a designation and refuses the same designation', async () => {

@@ -13,7 +13,7 @@ import { ApiError } from '@/lib/apiClient';
 import { shortDate } from '@/lib/money';
 import { committeeService } from '@/services/committee.service';
 import type { ActivationResult } from '@/types/committee';
-import { committeeError, plainError, today } from './format';
+import { committeeErrorFull, committeeError, plainError, skippedText, today } from './format';
 import { PlanView } from './PlanView';
 
 const iso = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -95,7 +95,7 @@ export function ActivationWizard({
         setStep('plan');
         setGen(g => g + 1);
       } else {
-        setProblem(committeeError(err));
+        setProblem(committeeErrorFull(err));
       }
     } finally {
       setBusy(false);
@@ -223,7 +223,7 @@ export function ActivationWizard({
           </ul>
           {result.summary.handoverDelegationsSkipped.length > 0 && (
             <Alert tone="warn" className="mt-3">
-              Hand-over was skipped for: {result.summary.handoverDelegationsSkipped.join(', ')}.
+              Hand-over was skipped for: {skippedText(result.summary.handoverDelegationsSkipped)}.
             </Alert>
           )}
         </div>

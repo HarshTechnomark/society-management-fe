@@ -222,9 +222,28 @@ export const planRaw = (over: Record<string, unknown> = {}) => ({
       days: 30,
     },
   ],
+  seats: [
+    {
+      seatId: 'S1',
+      name: 'Farhan Qureshi',
+      designation: 'CHAIRMAN',
+      status: 'SEATED',
+      fromDate: '2029-04-02',
+      toDate: null,
+    },
+  ],
   warnings: [],
   blockers: [],
   previewHash: 'a'.repeat(64),
+  ...over,
+});
+
+/** `summary` of `POST .../changes` (8.9): the term detail plus this key at the same level. */
+export const changesSummaryRaw = (over: Record<string, unknown> = {}) => ({
+  roleChanges: 1,
+  membershipsEnded: 0,
+  handoverDelegationsCreated: 1,
+  handoverDelegationsSkipped: [],
   ...over,
 });
 

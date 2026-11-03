@@ -242,18 +242,35 @@ export interface PlanIssue {
   message: string;
   seatIds: string[];
   userIds: number[];
+  /** `UNHELD_PERMISSION` blockers list the permission keys the caller lacks. */
+  permissionKeys: string[];
 }
 
 export interface Delegation {
   designation: string;
+  fromUserId: number;
   fromName: string;
+  toUserId: number;
   toName: string;
   days: number;
+}
+
+export interface PlanSeat {
+  seatId: string;
+  name: string;
+  designation: Designation;
+  status: string;
+  fromDate: string | null;
+  toDate: string | null;
 }
 
 export interface Plan {
   termId: number;
   termVersion: number;
+  currentTermId: number | null;
+  currentTermVersion: number | null;
+  /** The seats as they will be after the activation or change set (names for `seatIds` in blockers). */
+  seats: PlanSeat[];
   actions: PlanAction[];
   staffSeats: { limit: number | null; used: number; delta: number };
   handoverDelegations: Delegation[];
@@ -275,7 +292,15 @@ export interface ChangeSummary {
   roleChanges: number;
   membershipsEnded: number;
   handoverDelegationsCreated: number;
-  handoverDelegationsSkipped: string[];
+  handoverDelegationsSkipped: SkippedHandover[];
+}
+
+/** A hand-over pair module 14 refused (`skippedBecause` is its error code, for example `DELEGATION_OVERLAP`). */
+export interface SkippedHandover {
+  designation: string;
+  fromUserId: number;
+  toUserId: number;
+  skippedBecause: string;
 }
 
 export type VacateReason = 'RESIGNED' | 'REMOVED' | 'DECEASED' | 'DISQUALIFIED';

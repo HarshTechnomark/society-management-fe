@@ -36,11 +36,24 @@ export function roleChange(a: PlanAction): { from: string; to: string; same: boo
 
 const seatEffect = (a: PlanAction) => (a.kind === 'NONE' ? 0 : a.seatDelta);
 
+/** Who and what a blocker or warning is about: seat holders, people and the access that is missing. */
+function issueDetail(plan: Plan, b: PlanIssue): string {
+  const seat = (id: string) => plan.seats.find(s => s.seatId === id)?.name ?? id;
+  const user = (id: number) => plan.actions.find(a => a.userId === id)?.name;
+  const names = [...b.seatIds.map(seat), ...b.userIds.map(user).filter((x): x is string => !!x)];
+  const parts: string[] = [];
+  if (names.length) parts.push(`For: ${[...new Set(names)].join(', ')}.`);
+  if (b.permissionKeys.length) parts.push(`Access you do not have: ${b.permissionKeys.join(', ')}.`);
+  return parts.join(' ');
+}
+
 function Issues({
+  plan,
   items,
   kind,
   verb = 'activate',
 }: {
+  plan: Plan;
   items: PlanIssue[];
   kind: 'blocker' | 'warning';
   verb?: 'activate' | 'apply';
@@ -53,6 +66,7 @@ function Issues({
           <span>
             <strong>{kind === 'blocker' ? `Cannot ${verb} yet: ` : 'Note: '}</strong>
             {b.message}
+            {issueDetail(plan, b) && <span className="block">{issueDetail(plan, b)}</span>}
             {kind === 'blocker' && BLOCKER_FIX[b.code] && (
               <span className="block font-semibold">How to fix: {BLOCKER_FIX[b.code]}</span>
             )}
@@ -76,8 +90,8 @@ export function PlanView({ plan, verb = 'activate' }: { plan: Plan; verb?: 'acti
   const { limit, used, delta } = plan.staffSeats;
   return (
     <div>
-      <Issues items={plan.blockers} kind="blocker" verb={verb} />
-      <Issues items={plan.warnings} kind="warning" />
+      <Issues plan={plan} items={plan.blockers} kind="blocker" verb={verb} />
+      <Issues plan={plan} items={plan.warnings} kind="warning" />
       {groups.length === 0 && <p className="text-[14px] text-muted">No role changes are needed.</p>}
       {groups.map(({ g, items }) => (
         <section key={g} aria-label={GROUP_TITLE[g]} className="mb-4">
