@@ -24,6 +24,7 @@ import {
   VERIFY_LABEL,
   VERIFY_TONE,
   docLabel,
+  docPurpose,
   today,
 } from './format';
 
@@ -442,7 +443,10 @@ function UploadDialog({
       <Select
         label="Document type"
         value={type}
-        onChange={e => setType(e.target.value as DocType)}
+        onChange={e => {
+          setType(e.target.value as DocType);
+          setFile(null);
+        }}
         options={UPLOAD_TYPES.map(t => ({ value: t, label: docLabel(t) }))}
       />
       {type === 'OTHER' && <Input label="Title" value={title} onChange={e => setTitle(e.target.value)} />}
@@ -455,7 +459,7 @@ function UploadDialog({
           hint="Only the last 4 characters are kept on screen."
         />
       )}
-      <FileField label="File" purpose="KYC_DOCUMENT" onChange={setFile} />
+      <FileField key={docPurpose(type)} label="File" purpose={docPurpose(type)} onChange={setFile} />
     </FormDialog>
   );
 }

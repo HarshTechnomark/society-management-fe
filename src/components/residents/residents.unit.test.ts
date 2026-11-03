@@ -6,6 +6,7 @@ import { visibleResidentNav } from './app/ResidentNav';
 import {
   agreementEndInfo,
   daysTo,
+  docPurpose,
   existingResidentId,
   missingDocuments,
   residentsError,
@@ -118,6 +119,17 @@ RESIDENT_HAS_ACTIVE_LINKS RESIDENT_MOBILE_EXISTS RESIDENT_NOT_FOUND SOCIETY_CODE
 STALE_VERSION TENANCY_ALREADY_ACTIVE TENANCY_DATES_INVALID TENANCY_NOT_FOUND TENANCY_STATE_INVALID TRANSFER_DATE_INVALID
 TRANSFER_DUES_PENDING TRANSFER_EXISTS TRANSFER_NOT_FOUND TRANSFER_PARTIES_INVALID TRANSFER_SELLER_MISMATCH UNIT_NOT_FOUND
 UNIT_NOT_RESIDENTIAL USE_TENANCY_FLOW VALIDATION_FAILED VERIFICATION_DETAILS_REQUIRED`.split(/\s+/);
+
+describe('docPurpose', () => {
+  it.each(['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENCE', 'VOTER_ID', 'OTHER_ID', 'ADDRESS_PROOF'])(
+    '%s is a KYC document',
+    t => expect(docPurpose(t)).toBe('KYC_DOCUMENT'),
+  );
+  it.each(['RENT_AGREEMENT', 'POLICE_VERIFICATION', 'NOC', 'SALE_DEED', 'OTHER'])(
+    '%s is a resident record',
+    t => expect(docPurpose(t)).toBe('RESIDENT_RECORD'),
+  );
+});
 
 describe('residentsError (spec section 12)', () => {
   it.each(BACKEND_CODES)('backend code %s has its own plain-words message', code => {

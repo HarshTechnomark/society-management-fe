@@ -365,6 +365,11 @@ export const DOC_LABEL: Partial<Record<DocType, string>> = {
   VACCINATION_CERTIFICATE: 'Vaccination certificate',
   OTHER: 'Other',
 };
+/** The upload purpose of a document type, as the API maps it: IDs and address proof are KYC, the rest are records. */
+const KYC_TYPES = ['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENCE', 'VOTER_ID', 'OTHER_ID', 'ADDRESS_PROOF'];
+export const docPurpose = (t: string): 'KYC_DOCUMENT' | 'RESIDENT_RECORD' =>
+  KYC_TYPES.includes(t) ? 'KYC_DOCUMENT' : 'RESIDENT_RECORD';
+
 export const docLabel = (t: string) => DOC_LABEL[t as DocType] ?? t;
 
 export const opts = <T extends string>(map: Record<T, string>) =>

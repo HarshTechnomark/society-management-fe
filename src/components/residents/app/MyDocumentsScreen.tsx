@@ -11,7 +11,7 @@ import { shortDate } from '@/lib/money';
 import { residentsService } from '@/services/residents.service';
 import type { DocType } from '@/types/residents';
 import { Empty, FileField, FormDialog, Loading, StatusChip, useRun } from '../common';
-import { VERIFY_LABEL, VERIFY_TONE, docLabel } from '../format';
+import { VERIFY_LABEL, VERIFY_TONE, docLabel, docPurpose } from '../format';
 
 const TYPES: DocType[] = [
   'AADHAAR',
@@ -130,7 +130,10 @@ function UploadDialog({ onClose, onDone }: { onClose: () => void; onDone: () => 
       <Select
         label="Document type"
         value={type}
-        onChange={e => setType(e.target.value as DocType)}
+        onChange={e => {
+          setType(e.target.value as DocType);
+          setFile(null);
+        }}
         options={TYPES.map(t => ({ value: t, label: docLabel(t) }))}
       />
       {type === 'OTHER' && <Input label="Title" value={title} onChange={e => setTitle(e.target.value)} />}
@@ -143,7 +146,13 @@ function UploadDialog({ onClose, onDone }: { onClose: () => void; onDone: () => 
           hint="Only these 4 characters are shown on screen, for example ····1234."
         />
       )}
-      <FileField label="Photo or PDF" camera purpose="KYC_DOCUMENT" onChange={setFile} />
+      <FileField
+        key={docPurpose(type)}
+        label="Photo or PDF"
+        camera
+        purpose={docPurpose(type)}
+        onChange={setFile}
+      />
     </FormDialog>
   );
 }

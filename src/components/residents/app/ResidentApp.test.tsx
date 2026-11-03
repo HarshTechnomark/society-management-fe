@@ -187,7 +187,7 @@ describe('Join your society: new person', () => {
     await screen.findByText(`Attached: ${name}`);
   };
 
-  it('uploads with the joining society id', async () => {
+  it('uploads with the joining society id and the purpose of the document type', async () => {
     const upload = vi.fn(async () => ({ fileId: 77 }));
     configureFileUploader({ upload });
     showNew(societyRoutes, 'Asha Rao');
@@ -196,6 +196,9 @@ describe('Join your society: new person', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     await pick('id.jpg');
     expect(upload).toHaveBeenLastCalledWith(expect.any(File), 'KYC_DOCUMENT', { societyId: 12 });
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Document 1' }), 'RENT_AGREEMENT');
+    await pick('rent.pdf');
+    expect(upload).toHaveBeenLastCalledWith(expect.any(File), 'RESIDENT_RECORD', { societyId: 12 });
   });
 
   it('asks for a name when the user has none, saves it, then sends the request', async () => {

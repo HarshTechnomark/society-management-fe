@@ -27,6 +27,7 @@ import {
   RELATION_LABEL,
   docLabel,
   opts,
+  docPurpose,
   residentsError,
 } from '../format';
 import { isValidEmail } from '@/lib/validation';
@@ -369,15 +370,18 @@ function Wizard({ onDone }: { onDone: () => void }) {
                 label={`Document ${i + 1}`}
                 value={d.type}
                 onChange={e =>
-                  setDocs(x => x.map((y, j) => (j === i ? { ...y, type: e.target.value as DocType } : y)))
+                  setDocs(x =>
+                    x.map((y, j) => (j === i ? { type: e.target.value as DocType, file: null } : y)),
+                  )
                 }
                 options={ID_DOCS.map(t => ({ value: t, label: docLabel(t) }))}
               />
               <FileField
+                key={docPurpose(d.type)}
                 label="Photo or PDF"
                 camera
                 societyId={society?.societyId}
-                purpose="KYC_DOCUMENT"
+                purpose={docPurpose(d.type)}
                 onChange={f => setDocs(x => x.map((y, j) => (j === i ? { ...y, file: f } : y)))}
               />
             </div>
