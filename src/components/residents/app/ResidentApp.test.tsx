@@ -438,14 +438,22 @@ describe('My tenant', () => {
     );
   });
   it('shows TENANCY_DATES_INVALID from the API', async () => {
-    show(<TenantScreen />, { ...routes, 'POST /me/tenancies': err(422, 'TENANCY_DATES_INVALID') });
+    show(<TenantScreen />, {
+      ...routes,
+      'POST /me/tenancies': err(
+        422,
+        'TENANCY_DATES_INVALID',
+        undefined,
+        'The agreement dates are not valid for this tenancy',
+      ),
+    });
     await userEvent.click(await screen.findByRole('button', { name: 'Add tenant' }));
     const dlg = await screen.findByRole('dialog');
     await userEvent.type(within(dlg).getByRole('textbox', { name: /Tenant name/ }), 'Neha Verma');
     await userEvent.type(within(dlg).getByRole('textbox', { name: /Tenant mobile/ }), '9923456789');
     await userEvent.type(within(dlg).getByLabelText(/Agreement end/), '2099-09-30');
     await userEvent.click(within(dlg).getByRole('button', { name: 'Save tenancy' }));
-    expect(await within(dlg).findByText(/agreement dates are not valid/)).toBeInTheDocument();
+    expect(await within(dlg).findByText(/dates are not valid for this tenancy/)).toBeInTheDocument();
   });
   it('rejects an end date before the start before sending', async () => {
     const api = show(<TenantScreen />, { ...routes, 'POST /me/tenancies': ok({}) });
@@ -925,7 +933,12 @@ describe('My documents', () => {
   it('shows DOCUMENT_TYPE_NOT_ALLOWED and the error state', async () => {
     show(<MyDocumentsScreen />, {
       'GET /me/documents': ok([]),
-      'POST /me/documents': err(422, 'DOCUMENT_TYPE_NOT_ALLOWED'),
+      'POST /me/documents': err(
+        422,
+        'DOCUMENT_TYPE_NOT_ALLOWED',
+        undefined,
+        'This document type is not allowed here',
+      ),
     });
     await userEvent.click(await screen.findByRole('button', { name: 'Upload ID' }));
     const dlg = await screen.findByRole('dialog');
@@ -935,7 +948,7 @@ describe('My documents', () => {
     );
     await within(dlg).findByText('Attached: id.jpg');
     await userEvent.click(within(dlg).getByRole('button', { name: 'Upload' }));
-    expect(await within(dlg).findByText(/cannot be uploaded here/)).toBeInTheDocument();
+    expect(await within(dlg).findByText(/document type is not allowed here/)).toBeInTheDocument();
   });
   it('shows the error state', async () => {
     show(<MyDocumentsScreen />, { 'GET /me/documents': err(500, 'INTERNAL_ERROR') });

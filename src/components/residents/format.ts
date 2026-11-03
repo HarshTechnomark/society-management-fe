@@ -118,10 +118,27 @@ const TEXT: Record<string, string> = {
   NETWORK_ERROR: 'Cannot reach the server. Check your connection and try again.',
 };
 
+/**
+ * Codes the API raises with a different, specific message for each cause (for example which date is wrong).
+ * For these the API's own message is shown, and the words in `TEXT` are the fallback when it sends none.
+ */
+const SERVER_MESSAGE_FIRST = new Set([
+  'TENANCY_DATES_INVALID',
+  'GATE_PASS_INVALID',
+  'LINK_DATES_INVALID',
+  'PERMIT_DATES_INVALID',
+  'OWNER_REQUIRED',
+  'OWNERSHIP_SHARE_INVALID',
+  'MINOR_NOT_ALLOWED',
+  'DOCUMENT_TYPE_NOT_ALLOWED',
+  'INVITE_NOT_POSSIBLE',
+  'UNIT_NOT_RESIDENTIAL',
+]);
+
 /** The message for an error, in plain words. */
 export function residentsError(e: unknown): string {
   if (!(e instanceof ApiError)) return e instanceof Error ? e.message : 'Something went wrong. Try again.';
-  const base = TEXT[e.code] ?? e.message;
+  const base = (SERVER_MESSAGE_FIRST.has(e.code) && e.message.trim() ? e.message : TEXT[e.code]) ?? e.message;
   const missing = e.code === 'DOCUMENTS_REQUIRED' ? missingDocuments(e) : [];
   if (missing.length) return `${base} Still needed: ${missing.map(docLabel).join(', ')}.`;
   const slots = e.code === 'MOVE_SLOT_CONFLICT' ? slotConflicts(e) : [];

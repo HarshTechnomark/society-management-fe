@@ -385,7 +385,15 @@ describe('People tab', () => {
     );
   });
   it('ends a link and shows the API error in the dialog', async () => {
-    const api = renderIt({ ...routes, 'POST /residents/links/8801/end': err(422, 'OWNER_REQUIRED') });
+    const api = renderIt({
+      ...routes,
+      'POST /residents/links/8801/end': err(
+        422,
+        'OWNER_REQUIRED',
+        undefined,
+        'The flat has a tenant and needs an owner',
+      ),
+    });
     await tab('People');
     await userEvent.click(await screen.findByRole('button', { name: 'Open Ravi Shah' }));
     const dlg = await screen.findByRole('dialog');

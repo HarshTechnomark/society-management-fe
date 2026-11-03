@@ -120,6 +120,20 @@ STALE_VERSION TENANCY_ALREADY_ACTIVE TENANCY_DATES_INVALID TENANCY_NOT_FOUND TEN
 TRANSFER_DUES_PENDING TRANSFER_EXISTS TRANSFER_NOT_FOUND TRANSFER_PARTIES_INVALID TRANSFER_SELLER_MISMATCH UNIT_NOT_FOUND
 UNIT_NOT_RESIDENTIAL USE_TENANCY_FLOW VALIDATION_FAILED VERIFICATION_DETAILS_REQUIRED`.split(/\s+/);
 
+/** Codes the backend raises with a different message per cause: its message is shown first. */
+const SERVER_FIRST = [
+  'TENANCY_DATES_INVALID',
+  'GATE_PASS_INVALID',
+  'LINK_DATES_INVALID',
+  'PERMIT_DATES_INVALID',
+  'OWNER_REQUIRED',
+  'OWNERSHIP_SHARE_INVALID',
+  'MINOR_NOT_ALLOWED',
+  'DOCUMENT_TYPE_NOT_ALLOWED',
+  'INVITE_NOT_POSSIBLE',
+  'UNIT_NOT_RESIDENTIAL',
+];
+
 describe('docPurpose', () => {
   it.each(['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENCE', 'VOTER_ID', 'OTHER_ID', 'ADDRESS_PROOF'])(
     '%s is a KYC document',
@@ -132,8 +146,28 @@ describe('docPurpose', () => {
 });
 
 describe('residentsError (spec section 12)', () => {
-  it.each(BACKEND_CODES)('backend code %s has its own plain-words message', code => {
-    expect(residentsError(new ApiError(409, code, 'raw server message'))).not.toBe('raw server message');
+  it.each(BACKEND_CODES.filter(c => !SERVER_FIRST.includes(c)))(
+    'backend code %s has its own plain-words message',
+    code => {
+      expect(residentsError(new ApiError(409, code, 'raw server message'))).not.toBe('raw server message');
+    },
+  );
+
+  it.each(SERVER_FIRST)('%s shows the specific backend message and falls back to plain words', code => {
+    expect(
+      residentsError(new ApiError(422, code, 'The move-in date is between 15 days before and today')),
+    ).toBe('The move-in date is between 15 days before and today');
+    const fallback = residentsError(new ApiError(422, code, ''));
+    expect(fallback.length).toBeGreaterThan(10);
+  });
+
+  it('keeps the move-day and end-date wording the backend sends', () => {
+    expect(residentsError(new ApiError(422, 'GATE_PASS_INVALID', 'A move can start only on its date'))).toBe(
+      'A move can start only on its date',
+    );
+    expect(
+      residentsError(new ApiError(422, 'TENANCY_DATES_INVALID', 'The agreement must end after it starts')),
+    ).toBe('The agreement must end after it starts');
   });
 
   it('lists the missing documents of DOCUMENTS_REQUIRED by name', () => {
@@ -153,7 +187,7 @@ describe('residentsError (spec section 12)', () => {
     expect(residentsError(e)).toContain('Booked: 10:00 to 12:00.');
   });
 
-  it.each(SECTION_12)('%s has its own plain-words message', code => {
+  it.each(SECTION_12.filter(c => !SERVER_FIRST.includes(c)))('%s has its own plain-words message', code => {
     const text = residentsError(new ApiError(409, code, 'raw server message'));
     expect(text).not.toBe('raw server message');
     expect(text.length).toBeGreaterThan(10);
