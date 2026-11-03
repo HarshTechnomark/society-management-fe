@@ -61,6 +61,8 @@ const TIMES = Array.from({ length: 48 }, (_, i) => {
   const h = String(Math.floor(i / 2)).padStart(2, '0');
   return `${h}:${i % 2 ? '30' : '00'}`;
 });
+/** Moving hours default to 09:00 to 18:00 (the `residents.moveHours` setting); the server rejects other slots. */
+const MOVE_TIMES = TIMES.filter(t => t >= '09:00' && t <= '18:00');
 const PRESETS = [
   ['Morning', '09:00', '12:00'],
   ['Afternoon', '12:00', '15:00'],
@@ -193,14 +195,14 @@ export function MoveForm({
           label="Slot starts"
           value={start}
           onChange={e => setStart(e.target.value)}
-          options={TIMES.map(t => ({ value: t, label: t }))}
+          options={MOVE_TIMES.map(t => ({ value: t, label: t }))}
         />
         <Select
           label="Slot ends"
           value={end}
           onChange={e => setEnd(e.target.value)}
           error={errs.slotEnd}
-          options={TIMES.map(t => ({ value: t, label: t }))}
+          options={MOVE_TIMES.map(t => ({ value: t, label: t }))}
         />
       </div>
       {liftOn && (

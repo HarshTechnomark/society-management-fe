@@ -566,6 +566,19 @@ describe('Requests', () => {
       moveDate: future,
     });
   });
+  it('offers moving hours 09:00 to 18:00 only in the slot dropdowns', async () => {
+    show(<MyRequestsScreen />, routes);
+    await userEvent.click(await screen.findByRole('button', { name: 'Request a move' }));
+    const dlg = await screen.findByRole('dialog');
+    for (const label of ['Slot starts', 'Slot ends']) {
+      const values = within(within(dlg).getByRole('combobox', { name: label }))
+        .getAllByRole('option')
+        .map(o => (o as HTMLOptionElement).value);
+      expect(values[0]).toBe('09:00');
+      expect(values.at(-1)).toBe('18:00');
+      expect(values).toHaveLength(19);
+    }
+  });
   it('hides the lift field without the Premium feature', async () => {
     show(
       <MyRequestsScreen />,
