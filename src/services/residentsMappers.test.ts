@@ -96,3 +96,12 @@ describe('normalisePortfolio and normaliseEmergency', () => {
     expect(normaliseEmergency({ ...base, consent: { given: false } }).consent).toBe(false);
   });
 });
+
+describe('approvalsBase', () => {
+  it('uses the development stand-in outside production and module 14 in production', async () => {
+    const { approvalsBase } = await import('@/services/residents.service');
+    expect(approvalsBase('development')).toBe('/dev/approvals');
+    expect(approvalsBase('test')).toBe('/dev/approvals');
+    expect(approvalsBase('production')).toBe('/approvals');
+  });
+});

@@ -71,6 +71,9 @@ const arr =
   (raw: unknown): T[] =>
     Array.isArray(raw) ? (map ? (raw as R[]).map(map) : (raw as T[])) : [];
 
+export const approvalsBase = (env: string | undefined = process.env.NODE_ENV): string =>
+  env === 'production' ? '/approvals' : '/dev/approvals';
+
 export const residentsService = {
   // admin: flats, stats, people
   stats: () => api<Stats>('/residents/stats'),
@@ -146,10 +149,11 @@ export const residentsService = {
     paged<JoinRequest, RawJoinRequest>('/join-requests', q, normaliseJoinRequest),
   joinRequest: (id: number) => api<RawJoinRequest>(`/join-requests/${id}`).then(normaliseJoinRequest),
   /** Module 14 inbox actions for the card's `approvalRequestId`. */
+  // Module 14 does not exist yet: outside production these go to the backend's development stand-in (`/dev/approvals`).
   approvalApprove: (approvalRequestId: number) =>
-    post<unknown>(`/approvals/${approvalRequestId}/approve`, {}),
+    post<unknown>(`${approvalsBase()}/${approvalRequestId}/approve`, {}),
   approvalReject: (approvalRequestId: number, reason: string) =>
-    post<unknown>(`/approvals/${approvalRequestId}/reject`, { reason }),
+    post<unknown>(`${approvalsBase()}/${approvalRequestId}/reject`, { reason }),
 
   // moves
   moves: (q: MoveQuery = {}) => paged<MoveRequest>('/move-requests', q),
