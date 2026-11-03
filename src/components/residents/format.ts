@@ -65,6 +65,7 @@ const TEXT: Record<string, string> = {
   MEMBER_HAS_LOGIN: 'This member manages their own profile, so you cannot edit it.',
   DOCUMENT_TYPE_NOT_ALLOWED: 'This kind of document cannot be uploaded here.',
   DOCUMENTS_REQUIRED: 'Some required documents are missing. Attach them and try again.',
+  APPROVAL_NOT_FOUND: 'This approval request was not found. Reload the page.',
   SOCIETY_NOT_JOINABLE: 'This society is not accepting join requests right now.',
   PROFILE_INCOMPLETE: 'Add your name in your profile before you ask to join.',
   TENANCY_DATES_INVALID:
@@ -120,7 +121,31 @@ const TEXT: Record<string, string> = {
 /** The message for an error, in plain words. */
 export function residentsError(e: unknown): string {
   if (!(e instanceof ApiError)) return e instanceof Error ? e.message : 'Something went wrong. Try again.';
-  return TEXT[e.code] ?? e.message;
+  const base = TEXT[e.code] ?? e.message;
+  const missing = e.code === 'DOCUMENTS_REQUIRED' ? missingDocuments(e) : [];
+  if (missing.length) return `${base} Still needed: ${missing.map(docLabel).join(', ')}.`;
+  const slots = e.code === 'MOVE_SLOT_CONFLICT' ? slotConflicts(e) : [];
+  if (slots.length) return `${base} Booked: ${slots.join(', ')}.`;
+  return base;
+}
+
+/** `errors[0].missing` of a `422 DOCUMENTS_REQUIRED`: the document types still to attach. */
+export function missingDocuments(e: unknown): string[] {
+  if (!(e instanceof ApiError)) return [];
+  const m = e.errors?.find(x => Array.isArray(x.missing))?.missing;
+  return Array.isArray(m) ? m.filter((x): x is string => typeof x === 'string') : [];
+}
+
+/** `errors[0].conflicts` of a `409 MOVE_SLOT_CONFLICT`, as "10:00 to 12:00". */
+export function slotConflicts(e: unknown): string[] {
+  if (!(e instanceof ApiError)) return [];
+  const c = e.errors?.find(x => Array.isArray(x.conflicts))?.conflicts;
+  if (!Array.isArray(c)) return [];
+  return c
+    .filter(
+      (x): x is { slotStart: string; slotEnd: string } => !!x && typeof x === 'object' && 'slotStart' in x,
+    )
+    .map(x => `${x.slotStart} to ${x.slotEnd}`);
 }
 
 export const KNOWN_ERROR_CODES = Object.keys(TEXT);

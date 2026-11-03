@@ -3,7 +3,14 @@ import { ApiError } from '@/lib/apiClient';
 import { sampleMe } from '@/test/helpers';
 import { visibleAdminNav } from '@/components/setup/AdminNav';
 import { visibleResidentNav } from './app/ResidentNav';
-import { agreementEndInfo, daysTo, existingResidentId, residentsError } from './format';
+import {
+  agreementEndInfo,
+  daysTo,
+  existingResidentId,
+  missingDocuments,
+  residentsError,
+  slotConflicts,
+} from './format';
 import { vaccination } from './app/PetsScreen';
 
 /** Every code of spec section 12 (and the codes it passes through). */
@@ -97,7 +104,43 @@ const SECTION_12 = [
   'MAKER_CHECKER_VIOLATION',
 ];
 
+/** Every code the real module 09 backend throws on its routes (read from the backend source). */
+const BACKEND_CODES =
+  `ALREADY_LINKED APPROVAL_NOT_FOUND CONSENT_REQUIRED DEDUCTION_TOO_HIGH DIRECTORY_DISABLED DOCUMENTS_REQUIRED
+DOCUMENT_IN_USE DOCUMENT_NOT_FOUND DOCUMENT_TYPE_NOT_ALLOWED EMERGENCY_PROFILE_LOCKED EXPORT_TOO_LARGE EXTENSION_LIMIT_REACHED
+FEE_ABOVE_CAP FILE_NOT_LINKABLE FILTER_TOO_BROAD GATE_PASS_INVALID HOUSEHOLD_CONTROL_REQUIRED IMPORT_FORMAT_INVALID
+IMPORT_JOB_NOT_FOUND IMPORT_RUNNING IMPORT_TOO_LARGE INVALID_STATE INVITE_NOT_POSSIBLE JOIN_REQUEST_EXISTS JOIN_REQUEST_NOT_FOUND
+LINK_ALREADY_ACTIVE LINK_DATES_INVALID LINK_NOT_FOUND MEMBER_HAS_LOGIN MINOR_NOT_ALLOWED MOBILE_MANAGED_BY_USER
+MOVE_REQUEST_EXISTS MOVE_REQUEST_NOT_FOUND MOVE_SLOT_CONFLICT MOVE_SLOT_NOT_ALLOWED NO_LIVE_TENANCY OWNERSHIP_SHARE_INVALID
+OWNER_ACTION_ONLY OWNER_ALREADY_EXISTS OWNER_REQUIRED PERMISSION_DENIED PERMIT_DATES_INVALID PERMIT_EXISTS PERMIT_EXPIRED
+PERMIT_HOURS_NOT_ALLOWED PERMIT_NOT_FOUND PET_NOT_FOUND PET_VACCINATION_REQUIRED PRIMARY_MUST_BE_OWNER PROFILE_INCOMPLETE
+RESIDENT_HAS_ACTIVE_LINKS RESIDENT_MOBILE_EXISTS RESIDENT_NOT_FOUND SOCIETY_CODE_NOT_FOUND SOCIETY_NOT_JOINABLE SOS_NOT_FOUND
+STALE_VERSION TENANCY_ALREADY_ACTIVE TENANCY_DATES_INVALID TENANCY_NOT_FOUND TENANCY_STATE_INVALID TRANSFER_DATE_INVALID
+TRANSFER_DUES_PENDING TRANSFER_EXISTS TRANSFER_NOT_FOUND TRANSFER_PARTIES_INVALID TRANSFER_SELLER_MISMATCH UNIT_NOT_FOUND
+UNIT_NOT_RESIDENTIAL USE_TENANCY_FLOW VALIDATION_FAILED VERIFICATION_DETAILS_REQUIRED`.split(/\s+/);
+
 describe('residentsError (spec section 12)', () => {
+  it.each(BACKEND_CODES)('backend code %s has its own plain-words message', code => {
+    expect(residentsError(new ApiError(409, code, 'raw server message'))).not.toBe('raw server message');
+  });
+
+  it('lists the missing documents of DOCUMENTS_REQUIRED by name', () => {
+    const e = new ApiError(422, 'DOCUMENTS_REQUIRED', 'Attach', [
+      { field: 'fileIds', message: 'Missing: SALE_DEED, INDEX_II', missing: ['SALE_DEED', 'INDEX_II'] },
+    ]);
+    expect(missingDocuments(e)).toEqual(['SALE_DEED', 'INDEX_II']);
+    expect(residentsError(e)).toMatch(/Still needed: .*Sale deed/);
+    expect(missingDocuments(new Error('x'))).toEqual([]);
+  });
+
+  it('lists the booked slots of MOVE_SLOT_CONFLICT', () => {
+    const e = new ApiError(409, 'MOVE_SLOT_CONFLICT', 'busy', [
+      { field: 'slotStart', message: 'busy', conflicts: [{ slotStart: '10:00', slotEnd: '12:00' }] },
+    ]);
+    expect(slotConflicts(e)).toEqual(['10:00 to 12:00']);
+    expect(residentsError(e)).toContain('Booked: 10:00 to 12:00.');
+  });
+
   it.each(SECTION_12)('%s has its own plain-words message', code => {
     const text = residentsError(new ApiError(409, code, 'raw server message'));
     expect(text).not.toBe('raw server message');
