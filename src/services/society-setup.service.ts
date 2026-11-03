@@ -111,8 +111,11 @@ export const societySetupService = {
   // holidays
   holidays: (year: number) =>
     api<{ items: Holiday[]; weeklyOffDays: number[] }>('/holidays', { query: { year } }),
+  // The API names the date `date`; the screens use `holidayDate` like the create form.
   holidaySuggestions: async (year: number) =>
-    items<HolidaySuggestion>(await api<unknown>('/holidays/suggestions', { query: { year } })),
+    items<HolidaySuggestion & { date?: string }>(
+      await api<unknown>('/holidays/suggestions', { query: { year } }),
+    ).map(s => ({ ...s, holidayDate: s.holidayDate ?? s.date ?? '' })),
   createHoliday: (body: HolidayInput) => post<Holiday>('/holidays', body, true),
   bulkHolidays: (list: HolidayInput[]) =>
     post<{ created: number; skipped: string[] }>('/holidays/bulk', { items: list }, true),

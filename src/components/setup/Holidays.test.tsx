@@ -115,6 +115,33 @@ describe('Holidays (11.9)', () => {
     });
   });
 
+  it('reads suggestions the way the API sends them (date, not holidayDate)', async () => {
+    const api = renderIt({
+      'GET /holidays/suggestions': ok({
+        items: [
+          {
+            date: `${year}-01-26`,
+            name: 'Republic Day',
+            holidayType: 'NATIONAL',
+            isOfficeClosed: true,
+            alreadyAdded: false,
+          },
+        ],
+      }),
+      'POST /holidays/bulk': ok({ created: 1, skipped: [] }),
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'Add suggested holidays' }));
+    const dlg = await screen.findByRole('dialog');
+    await userEvent.click(await within(dlg).findByRole('checkbox', { name: /Republic Day/ }));
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Add selected (1)' }));
+    await waitFor(() => expect(api.last('POST', '/holidays/bulk')).toBeTruthy());
+    expect(api.last('POST', '/holidays/bulk')!.body).toEqual({
+      items: [
+        { holidayDate: `${year}-01-26`, name: 'Republic Day', holidayType: 'NATIONAL', isOfficeClosed: true },
+      ],
+    });
+  });
+
   it('deletes a holiday after confirmation', async () => {
     const api = renderIt({ 'DELETE /holidays/1': { status: 204 } });
     await userEvent.click(await screen.findByRole('button', { name: 'Delete Diwali (Lakshmi Puja)' }));
