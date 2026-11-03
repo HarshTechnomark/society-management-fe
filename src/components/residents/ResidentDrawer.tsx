@@ -39,6 +39,8 @@ const UPLOAD_TYPES: DocType[] = [
   'NOC',
   'OTHER',
 ];
+/** Only these carry the last 4 characters of an ID number; the API refuses it on other types. */
+const ID_TYPES: DocType[] = ['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENCE', 'VOTER_ID', 'OTHER_ID'];
 const END_REASONS = [
   ['MOVED_OUT', 'Moved out'],
   ['SOLD', 'Sold'],
@@ -424,7 +426,7 @@ function UploadDialog({
     await residentsService.addDocument(residentId, {
       fileId: file,
       docType: type,
-      ...(last4 ? { idLast4: last4.toUpperCase() } : {}),
+      ...(last4 && ID_TYPES.includes(type) ? { idLast4: last4.toUpperCase() } : {}),
       ...(type === 'OTHER' ? { title: title.trim() } : {}),
     });
     return { message: 'Document uploaded' };
@@ -444,13 +446,15 @@ function UploadDialog({
         options={UPLOAD_TYPES.map(t => ({ value: t, label: docLabel(t) }))}
       />
       {type === 'OTHER' && <Input label="Title" value={title} onChange={e => setTitle(e.target.value)} />}
-      <Input
-        label="Last 4 characters of the ID number (optional)"
-        maxLength={4}
-        value={last4}
-        onChange={e => setLast4(e.target.value)}
-        hint="Only the last 4 characters are kept on screen."
-      />
+      {ID_TYPES.includes(type) && (
+        <Input
+          label="Last 4 characters of the ID number (optional)"
+          maxLength={4}
+          value={last4}
+          onChange={e => setLast4(e.target.value)}
+          hint="Only the last 4 characters are kept on screen."
+        />
+      )}
       <FileField label="File" purpose="KYC_DOCUMENT" onChange={setFile} />
     </FormDialog>
   );

@@ -1,14 +1,25 @@
 /** Every module 09 network call (spec section 8). Screens import from here and never call `fetch` themselves. */
 import { api, apiList } from '@/lib/apiClient';
+import {
+  normaliseEmergency,
+  normaliseHousehold,
+  normaliseJoinRequest,
+  normalisePortfolio,
+  normaliseTenancy,
+  normaliseUnitPanel,
+  type RawEmergency,
+  type RawHouseholdUnit,
+  type RawJoinRequest,
+  type RawPanel,
+  type RawTenancy,
+} from './residentsMappers';
 import type {
   CreatedResident,
   DirectoryEntry,
   DocType,
-  EmergencyProfile,
   EndLinkInput,
   FlatQuery,
   FlatRow,
-  Household,
   JoinInput,
   JoinRequest,
   JoinSociety,
@@ -37,7 +48,6 @@ import type {
   TimelineEvent,
   Transfer,
   TransferInput,
-  UnitPanel,
 } from '@/types/residents';
 
 type Query = Record<string, string | number | boolean | undefined>;
@@ -49,17 +59,26 @@ const put = <T>(path: string, body: unknown) => api<T>(path, { method: 'PUT', bo
 const del = (path: string, body?: unknown) => api<void>(path, { method: 'DELETE', body });
 
 /** Lists answer `data: []` with a top-level `pagination`. */
-async function paged<T>(path: string, query: object = {}): Promise<Paged<T>> {
-  const r = await apiList<T>(path, { query: query as Query });
-  return { items: Array.isArray(r.data) ? r.data : [], pagination: r.pagination ?? null };
+async function paged<T, R = T>(path: string, query: object = {}, map?: (raw: R) => T): Promise<Paged<T>> {
+  const r = await apiList<R>(path, { query: query as Query });
+  const rows = Array.isArray(r.data) ? r.data : [];
+  return { items: map ? rows.map(map) : (rows as unknown as T[]), pagination: r.pagination ?? null };
 }
+
+/** Lists the screens read as plain arrays (`/me/*`); a non-array answer becomes an empty list. */
+const arr =
+  <T, R = T>(map?: (raw: R) => T) =>
+  (raw: unknown): T[] =>
+    Array.isArray(raw) ? (map ? (raw as R[]).map(map) : (raw as T[])) : [];
 
 export const residentsService = {
   // admin: flats, stats, people
   stats: () => api<Stats>('/residents/stats'),
   flats: (q: FlatQuery = {}) => paged<FlatRow>('/residents/units', q),
   unit: (unitId: number, reveal = false) =>
-    api<UnitPanel>(`/residents/units/${unitId}`, { query: { reveal: reveal ? 'contacts' : undefined } }),
+    api<RawPanel>(`/residents/units/${unitId}`, { query: { reveal: reveal ? 'contacts' : undefined } }).then(
+      normaliseUnitPanel,
+    ),
   timeline: (unitId: number) => api<TimelineEvent[]>(`/residents/units/${unitId}/timeline`),
   vacate: (unitId: number, reason: string) =>
     post<{ occupancy: string; endedLinks: number; endedTenancyId: number | null }>(
@@ -111,21 +130,21 @@ export const residentsService = {
     }),
 
   // tenancies
-  tenancies: (q: TenancyQuery = {}) => paged<Tenancy>('/tenancies', q),
-  tenancy: (id: number) => api<Tenancy>(`/tenancies/${id}`),
-  createTenancy: (body: TenancyInput) => post<Tenancy>('/tenancies', body, true),
+  tenancies: (q: TenancyQuery = {}) => paged<Tenancy, RawTenancy>('/tenancies', q, normaliseTenancy),
+  tenancy: (id: number) => api<RawTenancy>(`/tenancies/${id}`).then(normaliseTenancy),
+  createTenancy: (body: TenancyInput) => post<RawTenancy>('/tenancies', body, true).then(normaliseTenancy),
   tenancyAction: (
     id: number,
     action: 'submit' | 'approve' | 'reject' | 'activate' | 'renew' | 'end' | 'cancel',
     body: object,
-  ) => post<Tenancy>(`/tenancies/${id}/${action}`, body),
+  ) => post<RawTenancy>(`/tenancies/${id}/${action}`, body).then(normaliseTenancy),
   policeVerification: (id: number, body: PoliceVerificationInput) =>
-    patch<Tenancy>(`/tenancies/${id}/police-verification`, body),
+    patch<RawTenancy>(`/tenancies/${id}/police-verification`, body).then(normaliseTenancy),
 
   // join requests (admin)
   joinRequests: (q: { status?: string; page?: number; limit?: number } = {}) =>
-    paged<JoinRequest>('/join-requests', q),
-  joinRequest: (id: number) => api<JoinRequest>(`/join-requests/${id}`),
+    paged<JoinRequest, RawJoinRequest>('/join-requests', q, normaliseJoinRequest),
+  joinRequest: (id: number) => api<RawJoinRequest>(`/join-requests/${id}`).then(normaliseJoinRequest),
   /** Module 14 inbox actions for the card's `approvalRequestId`. */
   approvalApprove: (approvalRequestId: number) =>
     post<unknown>(`/approvals/${approvalRequestId}/approve`, {}),
@@ -174,29 +193,34 @@ export const residentsService = {
       query: { q },
     }),
   submitJoin: (body: JoinInput) => post<JoinRequest>('/me/join-requests', body, true),
-  myJoinRequests: () => api<JoinRequest[]>('/me/join-requests'),
+  myJoinRequests: () =>
+    api<unknown>('/me/join-requests').then(arr<JoinRequest, RawJoinRequest>(normaliseJoinRequest)),
   withdrawJoin: (id: number, version: number) =>
-    post<JoinRequest>(`/me/join-requests/${id}/withdraw`, { version }),
+    post<{ id: number; status: string; version: number }>(`/me/join-requests/${id}/withdraw`, { version }),
 
   // resident app: household
-  household: () => api<Household>('/me/household'),
-  portfolio: () => api<PortfolioUnit[]>('/me/portfolio'),
+  household: () => api<{ units?: RawHouseholdUnit[] }>('/me/household').then(normaliseHousehold),
+  portfolio: () =>
+    api<{ units?: PortfolioUnit[] } | PortfolioUnit[]>('/me/portfolio').then(normalisePortfolio),
   addMember: (body: MemberInput) => post<unknown>('/me/household/members', body, true),
   removeMember: (linkId: number, reason?: string) =>
     del(`/me/household/members/${linkId}`, reason ? { reason } : undefined),
   inviteMember: (linkId: number) => post<unknown>(`/me/household/members/${linkId}/invite`, {}, true),
-  confirmations: () => api<JoinRequest[]>('/me/household/join-requests'),
+  confirmations: () =>
+    api<unknown>('/me/household/join-requests').then(arr<JoinRequest, RawJoinRequest>(normaliseJoinRequest)),
   confirmJoin: (id: number, version: number, note?: string) =>
     post<unknown>(`/me/household/join-requests/${id}/confirm`, { version, ...(note ? { note } : {}) }),
   declineJoin: (id: number, version: number, reason: string) =>
     post<unknown>(`/me/household/join-requests/${id}/decline`, { version, reason }),
 
   // resident app: tenants
-  myTenancies: () => api<Tenancy[]>('/me/tenancies'),
-  addTenancy: (body: TenancyInput) => post<Tenancy>('/me/tenancies', body, true),
-  submitTenancy: (id: number, version: number) => post<Tenancy>(`/me/tenancies/${id}/submit`, { version }),
-  addTenancyDocument: (id: number, body: { fileId: number; docType: DocType }) =>
-    post<unknown>(`/me/tenancies/${id}/documents`, body, true),
+  myTenancies: () => api<unknown>('/me/tenancies').then(arr<Tenancy, RawTenancy>(normaliseTenancy)),
+  addTenancy: (body: TenancyInput) => post<RawTenancy>('/me/tenancies', body, true).then(normaliseTenancy),
+  submitTenancy: (id: number, version: number) =>
+    post<RawTenancy>(`/me/tenancies/${id}/submit`, { version }).then(normaliseTenancy),
+  /** The backend takes a `fileIds` list, even for one file. */
+  addTenancyDocument: (id: number, body: { fileId: number; docType: DocType; title?: string }) =>
+    post<unknown>(`/me/tenancies/${id}/documents`, { fileIds: [body] }, true),
 
   // resident app: requests
   myMoves: () => api<MoveRequest[]>('/me/move-requests'),
@@ -220,8 +244,9 @@ export const residentsService = {
   addPet: (body: PetInput) => post<Pet>('/me/pets', body, true),
   updatePet: (id: number, body: PetInput) => patch<Pet>(`/me/pets/${id}`, body),
   deletePet: (id: number) => del(`/me/pets/${id}`),
-  emergency: () => api<EmergencyProfile>('/me/emergency-profile'),
-  saveEmergency: (body: Record<string, unknown>) => put<EmergencyProfile>('/me/emergency-profile', body),
+  emergency: () => api<RawEmergency>('/me/emergency-profile').then(normaliseEmergency),
+  saveEmergency: (body: Record<string, unknown>) =>
+    put<RawEmergency>('/me/emergency-profile', body).then(normaliseEmergency),
   privacy: () => api<Privacy>('/me/privacy'),
   savePrivacy: (body: Partial<Privacy> & { version: number }) => patch<Privacy>('/me/privacy', body),
   directory: (q: { q?: string; page?: number; limit?: number } = {}) =>

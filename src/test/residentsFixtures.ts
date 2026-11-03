@@ -1,16 +1,13 @@
 import type {
   FlatRow,
-  HouseholdUnit,
-  JoinRequest,
   MoveRequest,
   Permit,
   Resident,
   ResidentDetail,
   Stats,
-  Tenancy,
   Transfer,
-  UnitPanel,
 } from '@/types/residents';
+import type { RawHouseholdUnit, RawJoinRequest, RawPanel, RawTenancy } from '@/services/residentsMappers';
 
 export const ADMIN_PERMS = [
   'residents.people.view',
@@ -111,27 +108,46 @@ export const vacantFlat = (): FlatRow =>
     duesPaise: 0,
   });
 
-export const panel = (over: Partial<UnitPanel> = {}): UnitPanel => ({
-  unit: { id: 101, label: 'A-1203', type: 'FLAT', areaSqft: 1150 },
+/** The unit panel as the backend sends it (flat person on owners and household, `from`, `unitType`). */
+export const panel = (over: Partial<RawPanel> = {}): RawPanel => ({
+  unit: {
+    id: 101,
+    label: 'A-1203',
+    unitType: 'FLAT',
+    areaSqft: 1150,
+    buildingId: 11,
+    buildingCode: 'A',
+    status: 'ACTIVE',
+  },
   occupancy: 'RENTED',
   owners: [
     {
       linkId: 8801,
-      version: 2,
-      resident: { id: 5101, name: 'Ravi Shah', mobile: '98XXXXX121' },
+      residentId: 5101,
+      name: 'Ravi Shah',
+      mobile: '98XXXXX121',
+      hasLogin: true,
+      isMinor: false,
+      relation: 'CO_OWNER',
       sharePercent: '50.00',
       isPrimary: true,
       isResiding: false,
-      fromDate: '2019-04-01',
+      from: '2019-04-01',
+      version: 2,
     },
     {
       linkId: 8802,
-      version: 1,
-      resident: { id: 5102, name: 'Meera Shah', mobile: '98XXXXX122' },
+      residentId: 5102,
+      name: 'Meera Shah',
+      mobile: '98XXXXX122',
+      hasLogin: false,
+      isMinor: false,
+      relation: 'CO_OWNER',
       sharePercent: '50.00',
       isPrimary: false,
       isResiding: false,
-      fromDate: '2019-04-01',
+      from: '2019-04-01',
+      version: 1,
     },
   ],
   tenancy: {
@@ -141,20 +157,29 @@ export const panel = (over: Partial<UnitPanel> = {}): UnitPanel => ({
     agreementEnd: '2027-09-30',
     maintenancePayer: 'TENANT',
     policeVerificationStatus: 'NOT_SUBMITTED',
-    tenant: { residentId: 5150, name: 'Neha Verma' },
+    tenant: { residentId: 5150, name: 'Neha Verma', mobile: '99XXXXX845', hasLogin: true, isMinor: false },
   },
   household: [
     {
       linkId: 8840,
-      resident: { id: 5120, name: 'Kabir Verma' },
+      residentId: 5120,
+      name: 'Kabir Verma',
+      mobile: null,
+      hasLogin: false,
+      isMinor: true,
       relation: 'FAMILY',
       familyRelation: 'CHILD',
       householdOf: 'TENANT',
+      canLogin: false,
+      isResiding: true,
+      from: '2026-11-01',
+      version: 1,
     },
   ],
+  pets: [],
   openRequests: [{ kind: 'MOVE_OUT', id: 3101, status: 'BLOCKED_DUES' }],
   duesPaise: 482500,
-  billTo: { name: 'Neha Verma', relation: 'TENANT' },
+  billTo: { residentId: 5150, name: 'Neha Verma', relation: 'TENANT', tenancyId: 701 },
   ...over,
 });
 
@@ -204,7 +229,8 @@ export const residentDetail = (over: Partial<ResidentDetail> = {}): ResidentDeta
   ...over,
 });
 
-export const tenancy = (over: Partial<Tenancy> = {}): Tenancy => ({
+/** A tenancy as the backend sends it: `policeVerificationRef` and `decisionReason` are the real names. */
+export const tenancy = (over: Partial<RawTenancy> = {}): RawTenancy => ({
   id: 701,
   status: 'PENDING_APPROVAL',
   unit: { id: 101, label: 'A-1203' },
@@ -215,11 +241,14 @@ export const tenancy = (over: Partial<Tenancy> = {}): Tenancy => ({
   maintenancePayer: 'TENANT',
   monthlyRentPaise: 3500000,
   policeVerificationStatus: 'NOT_SUBMITTED',
+  policeVerificationRef: null,
+  decisionReason: null,
   version: 4,
   ...over,
 });
 
-export const joinRequest = (over: Partial<JoinRequest> = {}): JoinRequest => ({
+/** A join request as the backend sends it: `documentsReceived` is a count, the reason is `decisionReason`. */
+export const joinRequest = (over: Partial<RawJoinRequest> = {}): RawJoinRequest => ({
   id: 913,
   requesterName: 'Asha Rao',
   mobile: '97XXXXX310',
@@ -228,7 +257,8 @@ export const joinRequest = (over: Partial<JoinRequest> = {}): JoinRequest => ({
   societyName: 'Sky Heights CHS',
   status: 'PENDING_ADMIN',
   createdAt: new Date(Date.now() - 5 * 3600_000).toISOString(),
-  documentsReceived: true,
+  documentsReceived: 1,
+  decisionReason: null,
   approvalRequestId: 555,
   version: 1,
   ...over,
@@ -293,7 +323,8 @@ export const transfer = (over: Partial<Transfer> = {}): Transfer => ({
   ...over,
 });
 
-export const householdUnit = (over: Partial<HouseholdUnit> = {}): HouseholdUnit => ({
+/** One unit of `GET /me/household`; its tenancy has no tenant (the tenant is in `people`). */
+export const householdUnit = (over: Partial<RawHouseholdUnit> = {}): RawHouseholdUnit => ({
   unitId: 101,
   unitLabel: 'A-1203',
   myRelation: 'OWNER',

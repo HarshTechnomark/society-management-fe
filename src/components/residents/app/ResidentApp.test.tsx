@@ -380,8 +380,7 @@ describe('My tenant', () => {
     await userEvent.click(within(dlg).getByRole('button', { name: 'Save' }));
     await waitFor(() =>
       expect(api.last('POST', '/me/tenancies/701/documents')?.body).toEqual({
-        fileId: 55,
-        docType: 'POLICE_VERIFICATION',
+        fileIds: [{ fileId: 55, docType: 'POLICE_VERIFICATION' }],
       }),
     );
   });
