@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { ApiError } from '@/lib/apiClient';
 import {
   emptyForm,
+  expectedSeatIds,
+  formErrorsFromApi,
   hasErrors,
   needsReplaceChoice,
   newSeatRow,
@@ -113,5 +116,79 @@ describe('helpers', () => {
     expect(seatKeyOf('seats.0', seats)).toBe(seats[0].key);
     expect(seatKeyOf('S2', seats)).toBe(seats[1].key);
     expect(seatKeyOf('name', seats)).toBeNull();
+  });
+});
+
+describe('publicEmail of an edited draft', () => {
+  it('sends null for a stored seat whose email was cleared, and nothing for a new seat or a create', () => {
+    const f = good();
+    f.seats[0] = { ...f.seats[0], seatId: 'S1', publicEmail: '' };
+    const p = toPatch(f, 3);
+    expect(p.seats![0]).toHaveProperty('publicEmail', null);
+    expect(p.seats![1]).not.toHaveProperty('publicEmail');
+    expect(toCreate(f, 'new').seats[0]).not.toHaveProperty('publicEmail');
+  });
+});
+
+describe('server errors next to the fields', () => {
+  const rows = () => [newSeatRow({ seatId: 'S1' }), newSeatRow({ seatId: 'S4' }), newSeatRow(), newSeatRow()];
+  it('gives new rows the next seat ids after the highest stored one', () => {
+    expect(expectedSeatIds(rows(), ['S1', 'S4', 'S5'])).toEqual(['S1', 'S4', 'S6', 'S7']);
+    expect(expectedSeatIds([newSeatRow(), newSeatRow()], [])).toEqual(['S1', 'S2']);
+  });
+  it('maps errors[0].seatIds of a holder error to the seat cards', () => {
+    const r = rows();
+    const e = new ApiError(422, 'COMMITTEE_HOLDER_NOT_MEMBER', 'x', [
+      { field: 'seats', message: 'x', seatIds: ['S4', 'S6'] },
+    ]);
+    const out = formErrorsFromApi(e, r, ['S1', 'S4', 'S5'], 'Not on the app yet.');
+    expect(out.seats[r[1].key]).toEqual({ holder: 'Not on the app yet.' });
+    expect(out.seats[r[2].key]).toEqual({ holder: 'Not on the app yet.' });
+    expect(out.seats[r[0].key]).toBeUndefined();
+  });
+  it('maps the flat error and the duplicate designation', () => {
+    const r = rows();
+    const flat = new ApiError(422, 'COMMITTEE_HOLDER_INELIGIBLE', 'x', [
+      { field: 'unitId', message: 'The flat must be one the person is linked to', seatIds: ['S1'] },
+    ]);
+    expect(formErrorsFromApi(flat, r, [], 'no')).toMatchObject({
+      seats: { [r[0].key]: { flat: 'The flat must be one the person is linked to' } },
+    });
+    const dup = new ApiError(422, 'COMMITTEE_DESIGNATION_DUPLICATE', 'x', [
+      { field: 'seats', message: 'x', seatIds: ['S1', 'S4'] },
+    ]);
+    const out = formErrorsFromApi(dup, r, [], 'dup');
+    expect(out.seats[r[0].key]).toEqual({ designation: 'dup' });
+    expect(out.seats[r[1].key]).toEqual({ designation: 'dup' });
+  });
+  it('maps 400 field paths in both spellings and top-level fields', () => {
+    const r = rows();
+    const e = new ApiError(400, 'VALIDATION_FAILED', 'Validation failed', [
+      { field: 'name', message: 'Too short' },
+      { field: 'seats.1.userId', message: 'The seat holder is required' },
+      { field: 'seats[0].unitId', message: 'The qualifying flat is required' },
+      { field: 'seats.2.extra', message: 'Unknown field' },
+    ]);
+    const out = formErrorsFromApi(e, r, [], 'x');
+    expect(out.form.name).toBe('Too short');
+    expect(out.seats[r[1].key]).toEqual({ holder: 'The seat holder is required' });
+    expect(out.seats[r[0].key]).toEqual({ flat: 'The qualifying flat is required' });
+  });
+  it('maps dates and strength rules by their field, and falls back to end date and strength', () => {
+    const r = rows();
+    const start = new ApiError(422, 'COMMITTEE_TERM_DATES_INVALID', 'm', [
+      { field: 'startDate', message: 'The new committee must start after the current committee started' },
+    ]);
+    expect(formErrorsFromApi(start, r, [], 't').form).toEqual({
+      startDate: 'The new committee must start after the current committee started',
+    });
+    const bare = new ApiError(422, 'COMMITTEE_TERM_DATES_INVALID', 'm');
+    expect(formErrorsFromApi(bare, r, [], 'dates text').form).toEqual({ endDate: 'dates text' });
+    const seatsOver = new ApiError(422, 'COMMITTEE_STRENGTH_INVALID', 'm', [
+      { field: 'seats', message: 'The committee has 3 seats; 4 are planned' },
+    ]);
+    expect(formErrorsFromApi(seatsOver, r, [], 't').form).toEqual({
+      seats: 'The committee has 3 seats; 4 are planned',
+    });
   });
 });

@@ -1,3 +1,4 @@
+import type { ApiError } from '@/lib/apiClient';
 import { isValidEmail } from '@/lib/validation';
 import type {
   Designation,
@@ -192,7 +193,12 @@ const seatInput = (s: SeatRow, mode: EditorMode): SeatInput => ({
   joinMode: s.joinMode,
   ...(mode !== 'past' && s.unitId ? { unitId: s.unitId } : {}),
   portfolios: s.portfolios,
-  ...(s.publicEmail.trim() ? { publicEmail: s.publicEmail.trim().toLowerCase() } : {}),
+  // an edited draft keeps the stored email unless it is sent: null clears it
+  ...(s.publicEmail.trim()
+    ? { publicEmail: s.publicEmail.trim().toLowerCase() }
+    : mode === 'edit' && s.seatId
+      ? { publicEmail: null }
+      : {}),
   showOnResidentPage: s.designation === 'MEMBER' ? s.show : true,
   ...(mode !== 'past' ? { replaceExistingRole: s.replace } : {}),
 });
@@ -234,4 +240,67 @@ export function seatKeyOf(field: string | undefined, seats: SeatRow[]): string |
   if (m) return seats[Number(m[1])]?.key ?? null;
   const byId = seats.find(s => s.seatId && s.seatId === field);
   return byId?.key ?? null;
+}
+
+/** Codes whose `errors[0].seatIds` point at seat cards, and the field of the card they belong next to. */
+const SEAT_ID_CODES: Record<string, 'designation' | 'holder' | 'flat'> = {
+  COMMITTEE_DESIGNATION_DUPLICATE: 'designation',
+  COMMITTEE_HOLDER_DUPLICATE: 'holder',
+  COMMITTEE_HOLDER_NOT_MEMBER: 'holder',
+  COMMITTEE_HOLDER_NOT_ACTIVE: 'holder',
+  COMMITTEE_HOLDER_INELIGIBLE: 'flat',
+};
+const SEAT_SUBFIELD: Record<string, string> = {
+  userId: 'holder',
+  name: 'holder',
+  unitId: 'flat',
+  designation: 'designation',
+  publicEmail: 'publicEmail',
+};
+const FORM_FIELDS = ['name', 'startDate', 'endDate', 'strength', 'notes', 'resolutionRef', 'seats'];
+
+/**
+ * The seat id the server gives each row: a stored seat keeps its id, a new row gets `max + 1` over every id the term
+ * ever held, in input order (BR-10-32). A create starts from nothing, so row 1 is `S1`.
+ */
+export function expectedSeatIds(rows: SeatRow[], storedIds: string[]): string[] {
+  let max = storedIds.reduce((m, id) => Math.max(m, Number(id.slice(1)) || 0), 0);
+  return rows.map(r => r.seatId ?? `S${++max}`);
+}
+
+/**
+ * Puts a 400 or 422 of the term routes next to the right field: `errors[].field` is `name`, `endDate`, `seats` (with
+ * `seatIds`) or `seats[2].userId` / `seats.2.userId` (400). `text` is the plain-words message for seat cards.
+ */
+export function formErrorsFromApi(
+  e: ApiError,
+  rows: SeatRow[],
+  storedIds: string[],
+  text: string,
+): FormErrors {
+  const form: Record<string, string> = {};
+  const seats: Record<string, Record<string, string>> = {};
+  const ids = expectedSeatIds(rows, storedIds);
+  const put = (key: string | undefined, field: string, msg: string) => {
+    if (key) seats[key] = { ...seats[key], [field]: seats[key]?.[field] ?? msg };
+  };
+  for (const x of e.errors ?? []) {
+    const seatIds = Array.isArray(x.seatIds) ? (x.seatIds as unknown[]).map(String) : [];
+    const sub = SEAT_ID_CODES[e.code];
+    if (seatIds.length) {
+      // the flat rule reads the owners-only setting, so the server's own sentence is the exact one
+      const msg = e.code === 'COMMITTEE_HOLDER_INELIGIBLE' && x.message ? x.message : text;
+      if (sub) for (const id of seatIds) put(rows[ids.indexOf(id)]?.key, sub, msg);
+      continue;
+    }
+    const m = /^seats(?:\[(\d+)\]|\.(\d+))\.(\w+)$/.exec(x.field ?? '');
+    if (m) {
+      put(rows[Number(m[1] ?? m[2])]?.key, SEAT_SUBFIELD[m[3]] ?? 'holder', x.message);
+      continue;
+    }
+    if (FORM_FIELDS.includes(x.field)) form[x.field] ??= x.message;
+  }
+  if (e.code === 'COMMITTEE_TERM_DATES_INVALID' && !form.startDate) form.endDate ??= text;
+  if (e.code === 'COMMITTEE_STRENGTH_INVALID' && !form.seats) form.strength ??= text;
+  return { form, seats };
 }

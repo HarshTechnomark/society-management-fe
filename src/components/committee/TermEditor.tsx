@@ -13,13 +13,13 @@ import { committeeService } from '@/services/committee.service';
 import type { Term, TermKind } from '@/types/committee';
 import { Loading } from '@/components/residents/common';
 import { SeatFields } from './SeatFields';
-import { KIND_LABEL, SEAT_FIELD_CODES, committeeError, existingDraftId, opts, today } from './format';
+import { KIND_LABEL, committeeError, existingDraftId, opts, today } from './format';
 import {
   emptyForm,
+  formErrorsFromApi,
   formFromTerm,
   hasErrors,
   newSeatRow,
-  seatKeyOf,
   toCreate,
   toPatch,
   validateForm,
@@ -67,19 +67,7 @@ function EditorForm({ mode, term, onClose, onSaved, onOpenDraft }: Props & { ter
     setProblem(committeeError(e));
     setClash(existingDraftId(e));
     if (!(e instanceof ApiError)) return;
-    const field = SEAT_FIELD_CODES[e.code];
-    const seats: FormErrors['seats'] = {};
-    const text = committeeError(e);
-    if (field && e.errors?.length) {
-      for (const x of e.errors) {
-        const key = seatKeyOf(x.field, form.seats);
-        if (key) seats[key] = { ...seats[key], [field]: text };
-      }
-    }
-    const formErrors: Record<string, string> = {};
-    if (e.code === 'COMMITTEE_TERM_DATES_INVALID') formErrors.endDate = text;
-    if (e.code === 'COMMITTEE_STRENGTH_INVALID') formErrors.strength = text;
-    setErrs({ form: formErrors, seats });
+    setErrs(formErrorsFromApi(e, form.seats, term?.seats.map(x => x.seatId) ?? [], committeeError(e)));
   };
 
   const save = async () => {
@@ -184,7 +172,7 @@ function EditorForm({ mode, term, onClose, onSaved, onOpenDraft }: Props & { ter
               onChange={e => set({ strength: Number(e.target.value) })}
             />
           </div>
-          {past || form.resolutionRef || mode === 'new' ? (
+          {past || mode === 'new' ? (
             <Input
               label={past ? 'Resolution reference' : 'Resolution reference (optional now)'}
               value={form.resolutionRef}
