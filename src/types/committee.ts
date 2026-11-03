@@ -128,7 +128,11 @@ export interface CurrentSummary {
 export interface DraftSummary {
   id: number;
   name: string;
+  kind: TermKind;
   source: TermSource;
+  startDate: string;
+  endDate: string;
+  strength: number;
   seatCount: number;
   electionId: number | null;
   version: number;
@@ -155,7 +159,8 @@ export interface SeatInput {
   joinMode?: Exclude<JoinMode, 'CO_OPTED'>;
   unitId?: number;
   portfolios?: Portfolio[];
-  publicEmail?: string;
+  /** `null` clears the email of a stored seat (draft edit). */
+  publicEmail?: string | null;
   showOnResidentPage?: boolean;
   replaceExistingRole?: boolean;
 }

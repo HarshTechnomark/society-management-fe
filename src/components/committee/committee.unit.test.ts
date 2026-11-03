@@ -51,12 +51,15 @@ describe('committeeError', () => {
     expect(text.length).toBeGreaterThan(10);
     expect(KNOWN_ERROR_CODES).toContain(code);
   });
+  it('has words for the 401 of an ended session', () => {
+    expect(committeeError(new ApiError(401, 'UNAUTHENTICATED', 'Sign in to continue'))).toContain('Sign in');
+  });
   it('uses the exact texts of spec 11.3 and 11.4', () => {
-    expect(committeeError(new ApiError(422, 'COMMITTEE_HOLDER_NOT_MEMBER', 'x'))).toBe(
-      'Not on the app yet. Invite them as a resident first.',
-    );
     expect(committeeError(new ApiError(422, 'COMMITTEE_HOLDER_INELIGIBLE', 'x'))).toBe(
       'Only flat owners can be on the committee.',
+    );
+    expect(committeeError(new ApiError(422, 'COMMITTEE_HOLDER_NOT_MEMBER', 'x'))).toBe(
+      'Not on the app yet. Invite them as a resident first.',
     );
     expect(committeeError(new ApiError(409, 'COMMITTEE_PREVIEW_STALE', 'x'))).toBe(
       'Something changed since you opened this. Review the updated plan.',
@@ -114,6 +117,34 @@ describe('mappers', () => {
     expect(t.handover.total).toBe(0);
     expect(() => normaliseTerm(null)).not.toThrow();
     expect(normaliseOverview(undefined)).toEqual({ current: null, draft: null, banner: null });
+  });
+  it('reads the real draft summary of GET /committee', () => {
+    const o = normaliseOverview({
+      draft: {
+        id: 20,
+        name: 'Managing Committee 2029-2034',
+        kind: 'ELECTED',
+        source: 'ELECTION',
+        startDate: '2029-04-01',
+        endDate: '2034-03-31',
+        strength: 7,
+        seatCount: 4,
+        electionId: 9,
+        version: 2,
+      },
+    });
+    expect(o.draft).toEqual({
+      id: 20,
+      name: 'Managing Committee 2029-2034',
+      kind: 'ELECTED',
+      source: 'ELECTION',
+      startDate: '2029-04-01',
+      endDate: '2034-03-31',
+      strength: 7,
+      seatCount: 4,
+      electionId: 9,
+      version: 2,
+    });
   });
   it('maps banners and ignores an unknown one', () => {
     expect(normaliseOverview({ banner: { code: 'TERM_ENDING', daysLeft: 9 } }).banner).toEqual({

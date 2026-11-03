@@ -14,6 +14,7 @@ import type {
 /** Words for every module 10 error code (spec section 12). Section 11.3 and 11.4 give some of the texts. */
 const TEXT: Record<string, string> = {
   VALIDATION_FAILED: 'Some details are not valid. Check the fields and try again.',
+  UNAUTHENTICATED: 'Your session has ended. Sign in again to continue.',
   REAUTH_REQUIRED: 'Confirm it is you to continue.',
   FEATURE_NOT_IN_PLAN: 'This feature is not part of your plan.',
   USAGE_LIMIT_EXCEEDED: 'All staff seats are used. Free one staff seat or upgrade your plan.',

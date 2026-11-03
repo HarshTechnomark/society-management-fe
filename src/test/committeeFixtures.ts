@@ -28,6 +28,7 @@ export const seatRaw = (over: Record<string, unknown> = {}) => ({
   roleKey: 'chairman',
   expectedRoleKey: 'chairman',
   roleBeforeKey: null,
+  replaceExistingRole: false,
   exitReason: null,
   exitNote: null,
   resolutionRef: null,
@@ -78,6 +79,8 @@ export const termRaw = (over: Record<string, unknown> = {}) => ({
   ],
   handover: { total: 10, done: 9, notApplicable: 0, completedAt: null },
   version: 4,
+  createdAt: '2024-03-20T09:30:00.000Z',
+  updatedAt: '2026-10-01T10:00:00.000Z',
   ...over,
 });
 
@@ -138,7 +141,11 @@ export const draftTermRaw = (over: Record<string, unknown> = {}) =>
 export const draftRaw = (over: Record<string, unknown> = {}) => ({
   id: 20,
   name: 'Managing Committee 2029-2034',
+  kind: 'ELECTED',
   source: 'MANUAL',
+  startDate: '2029-04-01',
+  endDate: '2034-03-31',
+  strength: 5,
   seatCount: 1,
   electionId: null,
   version: 2,

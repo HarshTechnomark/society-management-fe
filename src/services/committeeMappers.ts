@@ -146,7 +146,11 @@ function normaliseDraft(raw: unknown): DraftSummary | null {
   return {
     id: num(d.id),
     name: str(d.name),
+    kind: str(d.kind, 'ELECTED') as DraftSummary['kind'],
     source: str(d.source, 'MANUAL') as DraftSummary['source'],
+    startDate: str(d.startDate),
+    endDate: str(d.endDate),
+    strength: num(d.strength),
     seatCount: num(d.seatCount ?? d.seatedCount ?? (Array.isArray(d.seats) ? d.seats.length : 0)),
     electionId: numN(d.electionId),
     version: num(d.version, 1),
