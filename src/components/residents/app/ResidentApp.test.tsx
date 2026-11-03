@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@/components/ui/Toast';
-import { err, mockApi, navigationMock, ok, resetAll } from '@/test/helpers';
+import { err, mockApi, navigationMock, ok, resetAll, sampleMe } from '@/test/helpers';
+import { setMe } from '@/lib/auth';
+import { configureFileUploader } from '@/lib/fileUpload';
 import { page } from '@/test/societyFixtures';
 import {
   RES_FEATURES,
@@ -146,6 +148,56 @@ describe('Join your society', () => {
     show(<JoinScreen />, { 'GET /me/join-requests': err(500, 'INTERNAL_ERROR') });
     expect(await screen.findByText('req_test')).toBeInTheDocument();
   });
+});
+
+describe('Join your society: new person', () => {
+  const societyRoutes = {
+    'GET /me/join-requests': ok([]),
+    'GET /me/join/societies/sky-heights': ok({
+      societyId: 12,
+      name: 'Sky Heights CHS',
+      city: 'Pune',
+      joinable: true,
+    }),
+    'GET /me/join/societies/sky-heights/units': ok([{ unitId: 101, label: 'A-1203' }]),
+  };
+  const showNew = (routes: Routes, name: string | null = null) => {
+    const api = mockApi(routes);
+    setMe(sampleMe({ permissions: [], activeSocietyId: null }, { name, version: 2 }));
+    render(
+      <ToastProvider>
+        <JoinScreen />
+      </ToastProvider>,
+    );
+    return api;
+  };
+  const toDetails = async () => {
+    await userEvent.type(await screen.findByRole('textbox', { name: 'Society code' }), 'sky-heights');
+    await userEvent.click(screen.getByRole('button', { name: 'Find society' }));
+    await userEvent.type(await screen.findByRole('searchbox', { name: 'Search your flat' }), 'A-12');
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Flat' }), '101');
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+  };
+  const pick = async (name: string) => {
+    await userEvent.upload(
+      screen.getByLabelText('Photo or PDF'),
+      new File(['x'], name, { type: name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg' }),
+    );
+    await screen.findByText(`Attached: ${name}`);
+  };
+
+  it('uploads with the joining society id', async () => {
+    const upload = vi.fn(async () => ({ fileId: 77 }));
+    configureFileUploader({ upload });
+    showNew(societyRoutes, 'Asha Rao');
+    await toDetails();
+    expect(screen.queryByRole('textbox', { name: /Your name/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await pick('id.jpg');
+    expect(upload).toHaveBeenLastCalledWith(expect.any(File), 'KYC_DOCUMENT', { societyId: 12 });
+  });
+
 });
 
 describe('My home', () => {

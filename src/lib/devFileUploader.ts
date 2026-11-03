@@ -7,9 +7,9 @@ import { configureFileUploader, type FileUploader } from '@/lib/fileUpload';
  * in production, and `registerDevFileUploader` does nothing there, so the screens keep saying "not available yet".
  */
 export const devFileUploader: FileUploader = {
-  async upload(file, purpose) {
+  async upload(file, purpose, opts) {
     const me = getMe();
-    const societyId = me?.activeSocietyId;
+    const societyId = opts?.societyId ?? me?.activeSocietyId;
     if (!me || !societyId) throw new Error('Sign in to a society before uploading a file.');
     const query = new URLSearchParams({
       societyId: String(societyId),

@@ -39,6 +39,22 @@ describe('devFileUploader', () => {
     expect(init.method).toBe('POST');
   });
 
+  it('uses the society passed in the options when the person has none yet', async () => {
+    setMe({ user: { id: 7 }, activeSocietyId: null } as unknown as Me);
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { fileId: 9 } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await devFileUploader.upload(new File(['x'], 'id.pdf'), 'KYC_DOCUMENT', { societyId: 12 });
+    expect(String(fetchMock.mock.calls[0]![0])).toContain('societyId=12');
+  });
+
+  it('prefers the society in the options over the active one', async () => {
+    setMe({ user: { id: 7 }, activeSocietyId: 3 } as unknown as Me);
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { fileId: 9 } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await devFileUploader.upload(new File(['x'], 'id.pdf'), 'KYC_DOCUMENT', { societyId: 12 });
+    expect(String(fetchMock.mock.calls[0]![0])).toContain('societyId=12');
+  });
+
   it('refuses to upload without a society', async () => {
     setMe({ user: { id: 7 }, activeSocietyId: null } as unknown as Me);
     await expect(devFileUploader.upload(new File(['x'], 'a.csv'), 'IMPORT_FILE')).rejects.toThrow(/society/i);

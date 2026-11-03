@@ -264,6 +264,7 @@ export function FileField({
   onChange,
   hint,
   camera,
+  societyId,
 }: {
   label: string;
   purpose?: FilePurpose;
@@ -271,6 +272,8 @@ export function FileField({
   hint?: string;
   /** On phones, open the camera for a photo of the document. */
   camera?: boolean;
+  /** The society to store the file under, for a person who has not joined one yet. */
+  societyId?: number;
 }) {
   const id = useId();
   const [state, setState] = useState<{ name: string; busy: boolean; error: string | null } | null>(null);
@@ -295,7 +298,7 @@ export function FileField({
           }
           setState({ name: f.name, busy: true, error: null });
           try {
-            const r = await uploadFile(f, purpose);
+            const r = await uploadFile(f, purpose, societyId ? { societyId } : undefined);
             onChange(r.fileId);
             setState({ name: f.name, busy: false, error: null });
           } catch {

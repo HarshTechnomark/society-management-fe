@@ -342,6 +342,7 @@ function Wizard({ onDone }: { onDone: () => void }) {
               <FileField
                 label="Photo or PDF"
                 camera
+                societyId={society?.societyId}
                 purpose="KYC_DOCUMENT"
                 onChange={f => setDocs(x => x.map((y, j) => (j === i ? { ...y, file: f } : y)))}
               />

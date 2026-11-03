@@ -13,7 +13,12 @@ export type FilePurpose =
   | 'USER_PHOTO';
 
 export interface FileUploader {
-  upload(file: File, purpose: FilePurpose): Promise<{ fileId: number }>;
+  upload(file: File, purpose: FilePurpose, opts?: UploadOptions): Promise<{ fileId: number }>;
+}
+
+/** `societyId`: the society the file belongs to when the person has no active society yet (joining one). */
+export interface UploadOptions {
+  societyId?: number;
 }
 
 let uploader: FileUploader | null = null;
@@ -23,7 +28,11 @@ export function configureFileUploader(next: FileUploader | null) {
 }
 export const fileUploadAvailable = () => uploader !== null;
 
-export async function uploadFile(file: File, purpose: FilePurpose): Promise<{ fileId: number }> {
+export async function uploadFile(
+  file: File,
+  purpose: FilePurpose,
+  opts?: UploadOptions,
+): Promise<{ fileId: number }> {
   if (!uploader) throw new Error('File upload is not available yet.');
-  return uploader.upload(file, purpose);
+  return opts ? uploader.upload(file, purpose, opts) : uploader.upload(file, purpose);
 }
