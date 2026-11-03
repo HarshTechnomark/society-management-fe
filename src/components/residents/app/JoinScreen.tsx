@@ -19,7 +19,7 @@ import type {
   Relation,
 } from '@/types/residents';
 import { ConfirmDialog } from '@/components/setup/ConfirmDialog';
-import { FileField, Loading, StatusChip, isoDate, useRun } from '../common';
+import { FileField, Loading, StatusChip, fieldErrors, isoDate, useRun } from '../common';
 import {
   FAMILY_LABEL,
   JOIN_LABEL,
@@ -30,6 +30,8 @@ import {
   residentsError,
 } from '../format';
 import { isValidEmail } from '@/lib/validation';
+import { setMe, useMe } from '@/lib/auth';
+import { authService } from '@/services/auth.service';
 
 const STEPS = ['Society code', 'Flat', 'I am the', 'Details', 'Documents'];
 const ID_DOCS: DocType[] = [
@@ -148,6 +150,10 @@ function Wizard({ onDone }: { onDone: () => void }) {
   const [householdOf, setHouseholdOf] = useState<'OWNER' | 'TENANT'>('OWNER');
   const [aStart, setAStart] = useState('');
   const [aEnd, setAEnd] = useState('');
+  const { me } = useMe();
+  const needsName = !!me && !me.user.name?.trim();
+  const [yourName, setYourName] = useState('');
+  const [nameError, setNameError] = useState<string | undefined>();
   const [email, setEmail] = useState('');
   const [dob, setDob] = useState('');
   const [message, setMessage] = useState('');
@@ -194,6 +200,10 @@ function Wizard({ onDone }: { onDone: () => void }) {
       if (!isoDate(aStart) || !isoDate(aEnd) || aEnd <= aStart)
         return setError('Add the agreement start and an end date after it.');
     }
+    if (step === 3 && needsName && yourName.trim().length < 2) {
+      setNameError('Enter your name, at least 2 characters.');
+      return setError('Add your name so the owner and committee know who is asking.');
+    }
     if (step === 3 && email && !isValidEmail(email)) return setError('Enter a valid email address.');
     setStep(step + 1);
   };
@@ -202,6 +212,16 @@ function Wizard({ onDone }: { onDone: () => void }) {
       const fileIds: FileRef[] = docs.filter(d => d.file).map(d => ({ fileId: d.file!, docType: d.type }));
       if (fileIds.length === 0)
         throw new Error('Attach at least one document: an ID, and the agreement for tenants.');
+      if (needsName && me) {
+        try {
+          const user = await authService.updateProfile({ version: me.user.version, name: yourName.trim() });
+          setMe({ ...me, user: { ...me.user, ...user } });
+        } catch (e) {
+          setNameError(fieldErrors(e).name);
+          setStep(3);
+          throw e;
+        }
+      }
       const body: JoinInput = {
         societyCode: code.trim().toLowerCase(),
         unitId: unit!,
@@ -311,6 +331,20 @@ function Wizard({ onDone }: { onDone: () => void }) {
       )}
       {step === 3 && (
         <>
+          {needsName && (
+            <Input
+              label="Your name"
+              value={yourName}
+              onChange={e => {
+                setYourName(e.target.value);
+                setNameError(undefined);
+              }}
+              error={nameError}
+              autoComplete="name"
+              hint="As it should appear to the owner and the committee."
+              required
+            />
+          )}
           <Input
             label="Email (optional)"
             type="email"

@@ -4,7 +4,7 @@ import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@/components/ui/Toast';
 import { err, mockApi, navigationMock, ok, resetAll, sampleMe } from '@/test/helpers';
-import { setMe } from '@/lib/auth';
+import { getMe, setMe } from '@/lib/auth';
 import { configureFileUploader } from '@/lib/fileUpload';
 import { page } from '@/test/societyFixtures';
 import {
@@ -198,6 +198,42 @@ describe('Join your society: new person', () => {
     expect(upload).toHaveBeenLastCalledWith(expect.any(File), 'KYC_DOCUMENT', { societyId: 12 });
   });
 
+  it('asks for a name when the user has none, saves it, then sends the request', async () => {
+    const api = showNew({
+      ...societyRoutes,
+      'PATCH /auth/me': ok({ ...sampleMe().user, name: 'Asha Rao', version: 3 }),
+      'POST /me/join-requests': ok({}),
+    });
+    fakeUploader();
+    await toDetails();
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(await screen.findByText(/Add your name so the owner/)).toBeInTheDocument();
+    await userEvent.type(screen.getByRole('textbox', { name: /Your name/ }), ' Asha Rao ');
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await pick('id.jpg');
+    await userEvent.click(screen.getByRole('button', { name: 'Send request' }));
+    await waitFor(() => expect(api.last('POST', '/me/join-requests')).toBeTruthy());
+    expect(api.last('PATCH', '/auth/me')?.body).toEqual({ version: 2, name: 'Asha Rao' });
+    expect(getMe()?.user.name).toBe('Asha Rao');
+  });
+
+  it('shows the backend name error beside the field and does not send the request', async () => {
+    const api = showNew({
+      ...societyRoutes,
+      'PATCH /auth/me': err(422, 'VALIDATION_FAILED', [
+        { field: 'name', message: 'Name has characters that are not allowed' },
+      ]),
+      'POST /me/join-requests': ok({}),
+    });
+    fakeUploader();
+    await toDetails();
+    await userEvent.type(screen.getByRole('textbox', { name: /Your name/ }), 'Asha 99');
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await pick('id.jpg');
+    await userEvent.click(screen.getByRole('button', { name: 'Send request' }));
+    expect(await screen.findByText('Name has characters that are not allowed')).toBeInTheDocument();
+    expect(api.last('POST', '/me/join-requests')).toBeUndefined();
+  });
 });
 
 describe('My home', () => {
