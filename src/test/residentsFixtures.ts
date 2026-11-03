@@ -1,0 +1,327 @@
+import type {
+  FlatRow,
+  HouseholdUnit,
+  JoinRequest,
+  MoveRequest,
+  Permit,
+  Resident,
+  ResidentDetail,
+  Stats,
+  Tenancy,
+  Transfer,
+  UnitPanel,
+} from '@/types/residents';
+
+export const ADMIN_PERMS = [
+  'residents.people.view',
+  'residents.people.create',
+  'residents.people.edit',
+  'residents.people.delete',
+  'residents.people.approve',
+  'residents.people.export',
+  'residents.contacts.view',
+  'residents.requests.view',
+  'residents.requests.create',
+  'residents.requests.edit',
+  'residents.requests.approve',
+  'residents.units.view',
+];
+
+export const RESIDENT_PERMS = [
+  'resident.home.view',
+  'resident.household.view',
+  'resident.household.create',
+  'resident.household.edit',
+  'resident.household.delete',
+  'resident.requests.view',
+  'resident.requests.create',
+  'resident.community.view',
+];
+
+export const RES_FEATURES = [
+  'residents.person_registry',
+  'residents.ownership_records',
+  'residents.joint_ownership',
+  'residents.tenancies',
+  'residents.occupancy_records',
+  'residents.family_members',
+  'residents.invitation_and_self_registration',
+  'residents.move_in_workflow',
+  'residents.move_out_workflow',
+  'residents.ownership_transfer',
+  'residents.police_verification_tracking',
+  'residents.kyc_vault',
+  'residents.resident_timeline',
+  'residents.occupancy_analytics',
+  'residents.renovation_permits',
+  'residents.owner_portfolio_view',
+  'residents.resident_directory',
+  'residents.emergency_profile',
+  'residents.pets_registry',
+  'residents.care_flags',
+  'residents.moving_slot_and_lift_booking',
+];
+
+export const stats = (over: Partial<Stats> = {}): Stats => ({
+  units: 72,
+  ownerOccupied: 41,
+  rented: 22,
+  vacant: 9,
+  tenanciesExpiringIn30: 3,
+  tenanciesExpiringIn60: 5,
+  tenanciesExpiringIn90: 8,
+  overstaying: 1,
+  policeVerification: { active: 22, verified: 17, pending: 5 },
+  openRequests: { join: 3, moveIn: 1, moveOut: 2, renovation: 2, transfer: 1 },
+  residentsWithLogin: 133,
+  residents: 214,
+  petsVaccinationExpired: 2,
+  ...over,
+});
+
+export const flat = (over: Partial<FlatRow> = {}): FlatRow => ({
+  unitId: 101,
+  unitLabel: 'A-1203',
+  buildingId: 11,
+  unitType: 'FLAT',
+  areaSqft: 1150,
+  bhk: '3',
+  occupancy: 'RENTED',
+  primaryOwner: { residentId: 5101, name: 'Ravi Shah', mobile: '98XXXXX121' },
+  tenant: {
+    residentId: 5150,
+    name: 'Neha Verma',
+    mobile: '99XXXXX845',
+    tenancyId: 701,
+    agreementEnd: '2027-09-30',
+  },
+  residentCount: 3,
+  duesPaise: 482500,
+  ...over,
+});
+
+export const vacantFlat = (): FlatRow =>
+  flat({
+    unitId: 102,
+    unitLabel: 'A-1204',
+    occupancy: 'VACANT',
+    primaryOwner: null,
+    tenant: null,
+    residentCount: 0,
+    duesPaise: 0,
+  });
+
+export const panel = (over: Partial<UnitPanel> = {}): UnitPanel => ({
+  unit: { id: 101, label: 'A-1203', type: 'FLAT', areaSqft: 1150 },
+  occupancy: 'RENTED',
+  owners: [
+    {
+      linkId: 8801,
+      version: 2,
+      resident: { id: 5101, name: 'Ravi Shah', mobile: '98XXXXX121' },
+      sharePercent: '50.00',
+      isPrimary: true,
+      isResiding: false,
+      fromDate: '2019-04-01',
+    },
+    {
+      linkId: 8802,
+      version: 1,
+      resident: { id: 5102, name: 'Meera Shah', mobile: '98XXXXX122' },
+      sharePercent: '50.00',
+      isPrimary: false,
+      isResiding: false,
+      fromDate: '2019-04-01',
+    },
+  ],
+  tenancy: {
+    id: 701,
+    status: 'ACTIVE',
+    agreementStart: '2026-11-01',
+    agreementEnd: '2027-09-30',
+    maintenancePayer: 'TENANT',
+    policeVerificationStatus: 'NOT_SUBMITTED',
+    tenant: { residentId: 5150, name: 'Neha Verma' },
+  },
+  household: [
+    {
+      linkId: 8840,
+      resident: { id: 5120, name: 'Kabir Verma' },
+      relation: 'FAMILY',
+      familyRelation: 'CHILD',
+      householdOf: 'TENANT',
+    },
+  ],
+  openRequests: [{ kind: 'MOVE_OUT', id: 3101, status: 'BLOCKED_DUES' }],
+  duesPaise: 482500,
+  billTo: { name: 'Neha Verma', relation: 'TENANT' },
+  ...over,
+});
+
+export const resident = (over: Partial<Resident> = {}): Resident => ({
+  id: 5101,
+  name: 'Ravi Shah',
+  mobile: '98XXXXX121',
+  email: 'r****@mail.in',
+  status: 'ACTIVE',
+  hasLogin: true,
+  isMinor: false,
+  photoFileId: null,
+  links: [
+    {
+      linkId: 8801,
+      unitId: 101,
+      unitLabel: 'A-1203',
+      relation: 'OWNER',
+      sharePercent: '100.00',
+      isPrimary: true,
+      isResiding: true,
+      fromDate: '2019-04-01',
+      toDate: null,
+      version: 2,
+    },
+  ],
+  kycStatus: 'PENDING',
+  ...over,
+});
+
+export const residentDetail = (over: Partial<ResidentDetail> = {}): ResidentDetail => ({
+  ...resident(),
+  documents: [
+    {
+      id: 61,
+      docType: 'AADHAAR',
+      title: null,
+      idLast4: '1234',
+      expiresOn: null,
+      verificationStatus: 'PENDING',
+      uploadedAt: '2026-10-01T10:00:00Z',
+      version: 1,
+    },
+  ],
+  emergencyProfile: { exists: true, hasCareFlags: true },
+  version: 3,
+  ...over,
+});
+
+export const tenancy = (over: Partial<Tenancy> = {}): Tenancy => ({
+  id: 701,
+  status: 'PENDING_APPROVAL',
+  unit: { id: 101, label: 'A-1203' },
+  tenant: { residentId: 5150, name: 'Neha Verma', mobile: '99XXXXX845' },
+  landlord: { residentId: 5101, name: 'Ravi Shah' },
+  agreementStart: '2026-11-01',
+  agreementEnd: '2027-09-30',
+  maintenancePayer: 'TENANT',
+  monthlyRentPaise: 3500000,
+  policeVerificationStatus: 'NOT_SUBMITTED',
+  version: 4,
+  ...over,
+});
+
+export const joinRequest = (over: Partial<JoinRequest> = {}): JoinRequest => ({
+  id: 913,
+  requesterName: 'Asha Rao',
+  mobile: '97XXXXX310',
+  relation: 'TENANT',
+  unitLabel: 'A-1203',
+  societyName: 'Sky Heights CHS',
+  status: 'PENDING_ADMIN',
+  createdAt: new Date(Date.now() - 5 * 3600_000).toISOString(),
+  documentsReceived: true,
+  approvalRequestId: 555,
+  version: 1,
+  ...over,
+});
+
+export const move = (over: Partial<MoveRequest> = {}): MoveRequest => ({
+  id: 3101,
+  type: 'MOVE_OUT',
+  status: 'BLOCKED_DUES',
+  unitId: 101,
+  unitLabel: 'A-1203',
+  moveDate: '2027-09-30',
+  slotStart: '10:00',
+  slotEnd: '14:00',
+  liftLabel: 'Tower A service lift',
+  duesBalancePaise: 482500,
+  depositPaise: 0,
+  gatePassCode: null,
+  version: 1,
+  next: { action: 'PAY_DUES', payUrl: '/pay?unitId=101' },
+  ...over,
+});
+
+export const permit = (over: Partial<Permit> = {}): Permit => ({
+  id: 2201,
+  unitLabel: 'A-1203',
+  status: 'IN_PROGRESS',
+  workCategory: 'KITCHEN',
+  contractorName: 'Sunil Patil',
+  contractorMobile: '98XXXXX555',
+  workerCount: 6,
+  startDate: '2026-11-10',
+  endDate: '2026-11-30',
+  dailyStartTime: '10:00',
+  dailyEndTime: '18:00',
+  depositPaise: 1000000,
+  feePaise: 200000,
+  version: 5,
+  ...over,
+});
+
+export const transfer = (over: Partial<Transfer> = {}): Transfer => ({
+  id: 41,
+  status: 'DRAFT',
+  unitLabel: 'A-1203',
+  transferType: 'SALE',
+  effectiveDate: '2026-12-15',
+  buyers: [
+    { residentId: 5201, name: 'Kiran Desai', sharePercent: '100.00', isPrimary: true, isResiding: true },
+  ],
+  sellers: [{ name: 'Ravi Shah' }],
+  fees: {
+    transferPremiumPaise: 2500000,
+    shareTransferFeePaise: 50000,
+    entranceFeePaise: 10000,
+    newBuyerCount: 1,
+    totalFeesPaise: 2560000,
+  },
+  duesPolicy: 'MUST_CLEAR',
+  missingDocuments: ['SALE_DEED', 'INDEX_II'],
+  version: 1,
+  ...over,
+});
+
+export const householdUnit = (over: Partial<HouseholdUnit> = {}): HouseholdUnit => ({
+  unitId: 101,
+  unitLabel: 'A-1203',
+  myRelation: 'OWNER',
+  occupancy: 'OWNER_OCCUPIED',
+  canManage: true,
+  people: [
+    {
+      linkId: 8801,
+      residentId: 5101,
+      name: 'Ravi Shah',
+      relation: 'OWNER',
+      isPrimary: true,
+      hasLogin: true,
+      mobile: '9820011121',
+    },
+    {
+      linkId: 8840,
+      residentId: 5120,
+      name: 'Kabir Shah',
+      relation: 'FAMILY',
+      familyRelation: 'CHILD',
+      isMinor: true,
+      canLogin: false,
+      hasLogin: false,
+      memberId: null,
+      mobile: '9820011199',
+    },
+  ],
+  tenancy: null,
+  ...over,
+});
