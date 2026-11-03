@@ -3,7 +3,14 @@
  * built yet, so no uploader is registered and the screens say so and let the person go on without a file.
  * When module 01 lands, call `configureFileUploader` once at start-up with the real implementation.
  */
-export type FilePurpose = 'TDS_CERTIFICATE' | 'PLATFORM_ATTACHMENT' | 'IMPORT_FILE' | 'SOCIETY_LOGO';
+export type FilePurpose =
+  | 'TDS_CERTIFICATE'
+  | 'PLATFORM_ATTACHMENT'
+  | 'IMPORT_FILE'
+  | 'SOCIETY_LOGO'
+  | 'KYC_DOCUMENT'
+  | 'RESIDENT_RECORD'
+  | 'USER_PHOTO';
 
 export interface FileUploader {
   upload(file: File, purpose: FilePurpose): Promise<{ fileId: number }>;
