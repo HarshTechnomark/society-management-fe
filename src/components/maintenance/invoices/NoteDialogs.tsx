@@ -19,7 +19,6 @@ import type {
 } from '@/types/billingInvoices';
 import { LinesEditor, newLine, parseLines, type LineDraft } from './LinesEditor';
 import {
-  AUTO_APPROVE_LIMIT_PAISE,
   CREDIT_REASONS,
   DEBIT_REASONS,
   billingInvoiceError,
@@ -206,9 +205,7 @@ export function CreditNoteDialog({
         <dd className="text-right font-bold tabular-nums">{inr(total)}</dd>
       </dl>
       <p className="text-[13px] text-muted">
-        {total > AUTO_APPROVE_LIMIT_PAISE
-          ? 'This note needs approval from another committee member before it takes effect.'
-          : `Needs approval above ${inr(AUTO_APPROVE_LIMIT_PAISE)}. Smaller notes are approved at once by the default rule.`}{' '}
+        Credit notes are sent for approval. Another committee member approves them before they take effect.
         The final GST is worked out when the note is created.
       </p>
     </Modal>

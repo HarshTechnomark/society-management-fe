@@ -224,7 +224,10 @@ describe('Invoice drawer: credit note', () => {
     expect(dlg).toHaveTextContent('Credit₹1,000');
     expect(dlg).toHaveTextContent('GST (estimate)₹180');
     expect(dlg).toHaveTextContent('Total credit₹1,180');
-    expect(dlg).toHaveTextContent('Needs approval above ₹10,000');
+    expect(dlg).toHaveTextContent(
+      'Credit notes are sent for approval. Another committee member approves them before they take effect.',
+    );
+    expect(dlg).not.toHaveTextContent('default rule');
   });
 
   it('leaves out fully credited lines and lines of other kinds', async () => {
@@ -267,10 +270,10 @@ describe('Invoice drawer: credit note', () => {
     ]);
   });
 
-  it('says a big note needs approval', async () => {
+  it('says a big note also goes for approval (every credit note does in this build)', async () => {
     const { dlg } = await open({}, detailRaw({ lines: [lineRaw({ amountPaise: 2000000 })] }));
     await userEvent.type(within(dlg).getByLabelText(/Credit for Maintenance/), '11000');
-    expect(dlg).toHaveTextContent('needs approval from another committee member');
+    expect(dlg).toHaveTextContent('Credit notes are sent for approval.');
   });
 
   it('checks the form before sending', async () => {

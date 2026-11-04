@@ -226,9 +226,6 @@ export const REASON_LABEL: Record<string, string> = {
   OTHER: 'Other',
 };
 
-/** Credit notes above this need approval by the default rule of module 14 (spec 11.4, BR-11-43). */
-export const AUTO_APPROVE_LIMIT_PAISE = 1_000_000;
-
 /** The statuses in which notes can be added (BR-11-41, BR-11-46). */
 export const canAddNote = (d: Pick<InvoiceDetail, 'status'>) => d.status !== 'CANCELLED';
 export const canCancel = (d: Pick<InvoiceDetail, 'status'>) => d.status === 'ISSUED';
