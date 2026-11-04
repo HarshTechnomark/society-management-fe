@@ -6,6 +6,7 @@ import { DataTable, type Column } from '@/components/common/DataTable';
 import { Chip } from '@/components/ui/Chip';
 import { Select } from '@/components/ui/Select';
 import { useLoad } from '@/hooks/useLoad';
+import { duesView } from '@/components/maintenance/ledger/format';
 import { inr } from '@/lib/money';
 import { residentsService } from '@/services/residents.service';
 import { societySetupService } from '@/services/society-setup.service';
@@ -99,6 +100,8 @@ export function FlatsTab({
         render: f =>
           f.duesPaise > 0 ? (
             <strong className="text-[#6f4200]">{inr(f.duesPaise)}</strong>
+          ) : f.duesPaise < 0 ? (
+            <span className="font-semibold text-[#0a4a63]">{duesView(f.duesPaise).label}</span>
           ) : (
             <span className="text-muted">Paid up</span>
           ),

@@ -26,7 +26,11 @@ const PUBLIC_PATHS = [
   '/support-handoff',
   '/status',
   '/_next',
+  // files of `public/` (CSV templates of the imports, modules 08 and 11)
+  '/templates',
 ];
+/** A path whose last segment has a file extension (`/robots.txt`, `/templates/x.csv`) is a file of `public/`. */
+const STATIC_FILE = /\/[^/]+\.[A-Za-z0-9]{1,8}$/;
 
 export function proxy(req: NextRequest) {
   const host = (req.headers.get('host') ?? '').split(':')[0];
@@ -57,6 +61,8 @@ export function proxy(req: NextRequest) {
     return new NextResponse(null, { status: 404 });
   }
   if (url.pathname.startsWith(prefix)) return NextResponse.next();
+  // Files of `public/` are served as they are on every host; app routes never end in a file extension.
+  if (STATIC_FILE.test(url.pathname)) return NextResponse.next();
   // Public pages (login and so on) are shared by every host and are not rewritten.
   if (url.pathname === '/' || PUBLIC_PATHS.some(p => url.pathname === p || url.pathname.startsWith(p + '/')))
     return NextResponse.next();
@@ -64,4 +70,7 @@ export function proxy(req: NextRequest) {
   return NextResponse.rewrite(url);
 }
 
-export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'] };
+// Static files (`public/`, any path ending in a file extension) never reach the proxy.
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api|templates/|.*\\.[A-Za-z0-9]{1,8}$).*)'],
+};

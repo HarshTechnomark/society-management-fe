@@ -13,6 +13,7 @@ interface Pending {
   entityId: number;
   societyId: number;
   status: string;
+  source?: string;
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -21,6 +22,12 @@ const TYPE_LABEL: Record<string, string> = {
   JOIN_REQUEST: 'Join request',
   MOVE_IN: 'Move in',
   MOVE_OUT: 'Move out',
+  BILLING_RULE_CHANGE: 'Billing rule change',
+  LATE_FEE_POLICY_CHANGE: 'Late fee policy change',
+  CREDIT_NOTE: 'Credit note',
+  WRITE_OFF: 'Write-off',
+  INVOICE_CANCEL: 'Invoice cancellation',
+  BILLING_RUN_PUBLISH: 'Billing run publish',
 };
 
 /**
@@ -32,12 +39,12 @@ export function DevApprovals() {
   const [busy, setBusy] = useState<number | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
-  async function decide(id: number, approve: boolean) {
+  async function decide(id: number, approve: boolean, source?: string) {
     setBusy(id);
     setFailed(null);
     try {
-      if (approve) await residentsService.approvalApprove(id);
-      else await residentsService.approvalReject(id, 'Rejected in development');
+      if (approve) await residentsService.approvalApprove(id, source);
+      else await residentsService.approvalReject(id, 'Rejected in development', source);
       reload();
     } catch (e) {
       setFailed(e instanceof Error ? e.message : 'The decision could not be saved.');
@@ -61,19 +68,22 @@ export function DevApprovals() {
         )}
         <ul className="grid gap-3">
           {(data ?? []).map(r => (
-            <li key={r.id} className="flex flex-wrap items-center justify-between gap-3">
+            <li
+              key={`${r.source ?? 'residents'}-${r.id}`}
+              className="flex flex-wrap items-center justify-between gap-3"
+            >
               <span className="text-[14.5px]">
                 <strong>{TYPE_LABEL[r.type] ?? r.type}</strong> · request {r.id} · record {r.entityId}
               </span>
               <span className="flex gap-2">
-                <Button size="sm" disabled={busy === r.id} onClick={() => decide(r.id, true)}>
+                <Button size="sm" disabled={busy === r.id} onClick={() => decide(r.id, true, r.source)}>
                   Approve request {r.id}
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   disabled={busy === r.id}
-                  onClick={() => decide(r.id, false)}
+                  onClick={() => decide(r.id, false, r.source)}
                 >
                   Reject request {r.id}
                 </Button>

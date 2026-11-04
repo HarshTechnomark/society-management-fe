@@ -24,6 +24,7 @@ interface NavGroup {
 const S = PERMISSIONS.settings;
 const U = PERMISSIONS.residents.units;
 const R = PERMISSIONS.residents;
+const F = PERMISSIONS.finance;
 
 /** Links to the admin pages that exist today (modules 02, 03, 05, 07, 08). */
 export const ADMIN_NAV: NavGroup[] = [
@@ -37,6 +38,12 @@ export const ADMIN_NAV: NavGroup[] = [
       { href: '/admin/locations', label: 'Locations', keys: [U.view] },
       { href: '/admin/holidays', label: 'Holidays', keys: [S.society.view] },
       { href: '/admin/settings', label: 'Settings', keys: [S.society.view] },
+      { href: '/admin/settings/billing', label: 'Billing rules', keys: [S.billingRules.view] },
+      {
+        href: '/admin/settings/billing/opening-balances',
+        label: 'Opening balances',
+        keys: [PERMISSIONS.finance.billing.view],
+      },
     ],
   },
   {
@@ -45,6 +52,14 @@ export const ADMIN_NAV: NavGroup[] = [
       { href: '/admin/residents', label: 'Residents', keys: [R.people.view] },
       { href: '/admin/team', label: 'Team', keys: [S.members.view] },
       { href: '/admin/roles', label: 'Roles', keys: [S.roles.view] },
+    ],
+  },
+  {
+    title: 'Billing',
+    items: [
+      { href: '/admin/billing/runs', label: 'Billing runs', keys: [F.billing.view] },
+      { href: '/admin/billing/invoices', label: 'Invoices', keys: [F.billing.view] },
+      { href: '/admin/billing/dues', label: 'Dues', keys: [F.billing.view] },
     ],
   },
   {
