@@ -195,15 +195,15 @@ describe('Bill detail', () => {
     expect(screen.getByText('roundHalfUp(2150000 × 320 × 1, 1000)')).toBeInTheDocument();
     expect(screen.getByText('Area sqft')).toBeInTheDocument();
     expect(screen.getByText('CARPET')).toBeInTheDocument();
-    expect(screen.getByText('Rate rule version 28')).toBeInTheDocument();
+    expect(screen.getByText('Rate rule version 3, in force from 1 Apr 2026')).toBeInTheDocument();
   });
 
   it('Explain this bill opens every explainable line and toggles back', async () => {
     show(<ResidentBillDetail id={5123} />, detail());
     await userEvent.click(await screen.findByRole('button', { name: 'Explain this bill' }));
-    expect(screen.getByText('Rate rule version 28')).toBeInTheDocument();
+    expect(screen.getByText('Rate rule version 3, in force from 1 Apr 2026')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Hide explanation' }));
-    expect(screen.queryByText('Rate rule version 28')).toBeNull();
+    expect(screen.queryByText('Rate rule version 3, in force from 1 Apr 2026')).toBeNull();
   });
 
   it('hides the explanation when the plan lacks explain-my-bill', async () => {

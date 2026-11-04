@@ -23,6 +23,15 @@ export const DUES_TEXT: Record<string, string> = {
   NETWORK_ERROR: 'Cannot reach the server. Check your connection and try again.',
 };
 
+const FIELD_LABEL: Record<string, string> = {
+  from: 'From',
+  to: 'To',
+  month: 'Month',
+  minDaysOverdue: 'Days overdue',
+  minAmountPaise: 'Amount',
+  buildingId: 'Building',
+};
+
 function waitText(seconds: number): string {
   if (seconds < 90) return `${Math.max(1, Math.round(seconds))} seconds`;
   if (seconds < 5400) return `${Math.round(seconds / 60)} minutes`;
@@ -33,9 +42,16 @@ function waitText(seconds: number): string {
 export function billingDuesError(e: unknown): string {
   if (!(e instanceof ApiError)) return e instanceof Error ? e.message : 'Something went wrong. Try again.';
   const base = DUES_TEXT[e.code] ?? e.message;
-  return e.code === 'RATE_LIMITED' && e.retryAfterSeconds
-    ? `${base} You can try again in about ${waitText(e.retryAfterSeconds)}.`
-    : base;
+  if (e.code === 'RATE_LIMITED' && e.retryAfterSeconds)
+    return `${base} You can try again in about ${waitText(e.retryAfterSeconds)}.`;
+  if (e.code === 'VALIDATION_FAILED') {
+    const parts = (e.errors ?? [])
+      .filter(f => f.field && f.message)
+      .slice(0, 3)
+      .map(f => `${FIELD_LABEL[f.field] ?? f.field}: ${f.message}`);
+    if (parts.length) return `${base} ${parts.join('. ')}.`;
+  }
+  return base;
 }
 
 /** The same error with its message in plain words, for `ErrorState` (keeps the support reference). */

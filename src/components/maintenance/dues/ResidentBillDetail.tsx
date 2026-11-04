@@ -259,8 +259,11 @@ function LineRow({
               ))}
             </dl>
           )}
-          {c.ruleVersionId !== null && (
-            <p className="mt-2 text-[12.5px] text-muted">Rate rule version {c.ruleVersionId}</p>
+          {(c.ruleVersionNo ?? c.ruleVersionId) !== null && (
+            <p className="mt-2 text-[12.5px] text-muted">
+              Rate rule version {c.ruleVersionNo ?? c.ruleVersionId}
+              {c.ruleEffectiveFrom && `, in force from ${shortDate(c.ruleEffectiveFrom)}`}
+            </p>
           )}
         </div>
       )}
