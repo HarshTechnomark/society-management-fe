@@ -19,16 +19,28 @@ interface Props {
   /** Called for `INVITATION_ALREADY_PENDING` when the user picks "Resend". */
   onResend: (invitationId: number) => Promise<void> | void;
   onLimit?: (e: ApiError) => void;
+  /** Staff accounts tab: another title, and a role chosen when the modal opens (mount a new modal per preset). */
+  title?: string;
+  presetRoleId?: number;
 }
 
 type Errors = Partial<Record<'name' | 'mobile' | 'email' | 'roleId' | 'message' | 'locationLabel', string>>;
 
 /** Spec 11.2: "Invite a committee member". */
-export function InviteModal({ open, roles, onClose, onInvited, onResend, onLimit }: Props) {
+export function InviteModal({
+  open,
+  roles,
+  onClose,
+  onInvited,
+  onResend,
+  onLimit,
+  title = 'Invite a committee member',
+  presetRoleId,
+}: Props) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
-  const [roleId, setRoleId] = useState('');
+  const [roleId, setRoleId] = useState(presetRoleId ? String(presetRoleId) : '');
   const [location, setLocation] = useState('');
   const [message, setMessage] = useState('');
   const [errors, setErrors] = useState<Errors>({});
@@ -40,7 +52,7 @@ export function InviteModal({ open, roles, onClose, onInvited, onResend, onLimit
     setName('');
     setEmail('');
     setMobile('');
-    setRoleId('');
+    setRoleId(presetRoleId ? String(presetRoleId) : '');
     setLocation('');
     setMessage('');
     setErrors({});
@@ -109,7 +121,7 @@ export function InviteModal({ open, roles, onClose, onInvited, onResend, onLimit
     <Modal
       open={open}
       onClose={close}
-      title="Invite a committee member"
+      title={title}
       description="They get a message with a link, sign in with their mobile, then add their authenticator if the role needs it."
       footer={
         <>

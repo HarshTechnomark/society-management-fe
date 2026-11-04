@@ -20,6 +20,10 @@ import { UsageWarnings } from '@/components/subscription/UsageBanners';
 import type { Invitation, MemberRow } from '@/types/accessControl';
 import { CommitteeTab } from '@/components/committee/CommitteeTab';
 import { Tabs } from '@/components/residents/common';
+import { TermBanner } from '@/components/committee/TermBanner';
+import { COMMITTEE_ROLE_KEYS, useCommitteeSeats } from '@/components/committee/useCommitteeSeats';
+import { FLAG_LABEL, seatLabel } from '@/components/committee/format';
+import { StaffTab } from './StaffTab';
 import { Avatar } from '../Avatar';
 import { RowActions, type RowAction } from '../RowActions';
 import { SeatMeter } from '../SeatMeter';
@@ -48,10 +52,11 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
 };
 const YOURSELF = 'You cannot change yourself';
 
-type TabKey = 'all' | 'committee';
-const tabFrom = (value: string | null | undefined): TabKey => (value === 'committee' ? 'committee' : 'all');
+type TabKey = 'all' | 'committee' | 'staff';
+const tabFrom = (value: string | null | undefined): TabKey =>
+  value === 'committee' || value === 'staff' ? value : 'all';
 
-/** Spec 11.1: "Committee and team" with its tabs (All, Committee; module 10 spec 11.2). */
+/** Spec 11.1: "Committee and team" with its tabs (All, Committee, Staff and admins; module 10 spec 11.1 to 11.8). */
 export function TeamScreen() {
   const { ready } = useMe();
   const canView = usePermission(PERMISSIONS.settings.members.view);
@@ -73,6 +78,7 @@ export function TeamScreen() {
       tabs={[
         { key: 'all', label: 'All' },
         { key: 'committee', label: 'Committee' },
+        { key: 'staff', label: 'Staff and admins' },
       ]}
     />
   );
@@ -89,10 +95,22 @@ export function TeamScreen() {
         </div>
       </Page>
     );
-  return <TeamAll tabs={tabs} />;
+  if (tab === 'staff' && ready && canView)
+    return (
+      <Page>
+        <PageHead
+          title="Committee and team"
+          sub="Everyone who can sign in to manage this society. Two-step sign-in is required."
+        />
+        {tabs}
+        <StaffTab onOpenCommittee={() => choose('committee')} />
+      </Page>
+    );
+  return <TeamAll tabs={tabs} onOpenCommittee={() => choose('committee')} />;
 }
 
-function TeamAll({ tabs }: { tabs: ReactNode }) {
+function TeamAll({ tabs, onOpenCommittee }: { tabs: ReactNode; onOpenCommittee: () => void }) {
+  const seats = useCommitteeSeats();
   const { ready } = useMe();
   const canView = usePermission(PERMISSIONS.settings.members.view);
   const canCreate = usePermission(PERMISSIONS.settings.members.create);
@@ -258,6 +276,36 @@ function TeamAll({ tabs }: { tabs: ReactNode }) {
       sortValue: r => (r.kind === 'member' ? (r.m.locationLabel ?? '') : ''),
       render: r => (r.kind === 'member' ? (r.m.locationLabel ?? '') : ''),
     },
+    ...(seats.enabled
+      ? [
+          {
+            key: 'seat',
+            label: 'Committee seat',
+            sortValue: (r: TeamRow) => {
+              const seat = r.kind === 'member' ? seats.seatByUser.get(r.m.userId) : undefined;
+              return seat ? seatLabel(seat.designation, seat.joinMode) : '';
+            },
+            render: (r: TeamRow) => {
+              if (r.kind !== 'member') return <span aria-label="No committee seat">-</span>;
+              const seat = seats.seatByUser.get(r.m.userId);
+              if (seat)
+                return (
+                  <span className="flex flex-wrap gap-1">
+                    <Chip tone="gold">{seatLabel(seat.designation, seat.joinMode)}</Chip>
+                    {seat.flags.map(f => (
+                      <Chip key={f} tone="warn">
+                        Check: {FLAG_LABEL[f] ?? f}
+                      </Chip>
+                    ))}
+                  </span>
+                );
+              if (COMMITTEE_ROLE_KEYS.includes(r.m.role.key) && !seats.loading)
+                return <Chip tone="warn">No committee seat</Chip>;
+              return <span aria-label="No committee seat">-</span>;
+            },
+          } satisfies Column<TeamRow>,
+        ]
+      : []),
     {
       key: 'status',
       label: 'Status',
@@ -321,6 +369,7 @@ function TeamAll({ tabs }: { tabs: ReactNode }) {
       />
       {tabs}
       <div role="tabpanel" id="panel-all" aria-labelledby="tab-all">
+        <TermBanner banner={seats.banner} onOpen={onOpenCommittee} />
         {usage.data && <UsageWarnings items={usage.data.items} />}
         <Card>
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
