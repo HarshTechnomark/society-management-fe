@@ -11,7 +11,7 @@ export const DUES_TEXT: Record<string, string> = {
   PERMISSION_DENIED: 'You do not have permission to do this.',
   INVOICE_NOT_FOUND: 'This bill was not found. It may belong to another flat.',
   UNIT_NOT_FOUND:
-    'This flat was not found. Tenants cannot see the statement of the flat, use the list of your bills.',
+    'This flat was not found. You can only see the statement of a flat you own. Your bills are in the list of your bills.',
   INVALID_STATE: 'This bill is not open any more, so it cannot be reminded. Reload the page.',
   REMINDER_TOO_SOON: 'A reminder for this bill was sent in the last 24 hours. Try again tomorrow.',
   PDF_NOT_READY: 'The PDF of this bill is not ready yet. Try again in a few minutes.',

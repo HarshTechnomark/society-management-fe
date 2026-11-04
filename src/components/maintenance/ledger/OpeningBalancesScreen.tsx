@@ -103,7 +103,7 @@ function Inner() {
     try {
       const r = await ledgerService.importOpening(checked.fileId, checked.asOf);
       setSummary(
-        `${r.draftCount} valid rows and ${r.invalidCount} rows with errors imported. Nothing is posted yet.`,
+        `${rowsText(r.draftCount, 'valid ')} and ${rowsText(r.invalidCount)} with errors imported. Nothing is posted yet.`,
       );
       setChecked(null);
       setFile(null);
@@ -251,8 +251,7 @@ function Inner() {
             </Button>
             {checked && checked.result.draftCount + checked.result.invalidCount > 0 && (
               <Button loading={busy} onClick={importRows}>
-                Import {checked.result.draftCount + checked.result.invalidCount}{' '}
-                {checked.result.draftCount + checked.result.invalidCount === 1 ? 'row' : 'rows'}
+                {importLabel(checked.result.draftCount, checked.result.invalidCount)}
               </Button>
             )}
           </div>
@@ -285,8 +284,8 @@ function Inner() {
       )}
       {totals && totals.invalidCount > 0 && (
         <Alert tone="warn" className="mt-3">
-          {totals.invalidCount} rows have errors. Posting is blocked until you delete them or upload a
-          corrected file.
+          {totals.invalidCount === 1 ? '1 row has errors' : `${totals.invalidCount} rows have errors`}.
+          Posting is blocked until you delete them or upload a corrected file.
         </Alert>
       )}
 
@@ -373,15 +372,24 @@ function Inner() {
   );
 }
 
+/** "1 valid row", "3 valid rows": a count of rows with the right plural. */
+export const rowsText = (n: number, adjective = '') => `${n} ${adjective}${n === 1 ? 'row' : 'rows'}`;
+
+/** The import button: every checked row is imported, rows with errors are kept as invalid (not posted). */
+export function importLabel(valid: number, invalid: number): string {
+  const all = `Import ${rowsText(valid + invalid)}`;
+  if (invalid === 0) return all;
+  return `${all} (${invalid} with errors ${invalid === 1 ? 'is' : 'are'} kept as invalid)`;
+}
+
 /** What the dry run found: counts, the rows with errors and what importing will replace. */
 function CheckResult({ result }: { result: OpeningImportResult }) {
   const rows = result.draftCount + result.invalidCount;
   return (
     <div className="mt-3" data-testid="check-result">
       <Alert tone={result.invalidCount > 0 ? 'warn' : 'ok'}>
-        File checked, nothing is saved yet: {result.draftCount} valid{' '}
-        {result.draftCount === 1 ? 'row' : 'rows'} and {result.invalidCount}{' '}
-        {result.invalidCount === 1 ? 'row' : 'rows'} with errors.
+        File checked, nothing is saved yet: {rowsText(result.draftCount, 'valid ')} and{' '}
+        {rowsText(result.invalidCount)} with errors.
       </Alert>
       {result.errors.length > 0 && (
         <ul aria-label="Rows with errors" className="mb-3 list-disc space-y-0.5 pl-5 text-[13.5px]">
@@ -393,7 +401,7 @@ function CheckResult({ result }: { result: OpeningImportResult }) {
           ))}
           {result.invalidCount > result.errors.length && (
             <li className="list-none text-muted">
-              and {result.invalidCount - result.errors.length} more rows with errors.
+              and {rowsText(result.invalidCount - result.errors.length, 'more ')} with errors.
             </li>
           )}
         </ul>

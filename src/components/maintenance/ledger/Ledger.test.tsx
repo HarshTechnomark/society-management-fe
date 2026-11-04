@@ -11,7 +11,7 @@ import { building } from '@/test/setupFixtures';
 import { ADMIN_PERMS, RES_FEATURES } from '@/test/residentsFixtures';
 import { page } from '@/test/societyFixtures';
 import { signIn } from '@/test/setupHelpers';
-import { OpeningBalancesScreen } from './OpeningBalancesScreen';
+import { OpeningBalancesScreen, importLabel, rowsText } from './OpeningBalancesScreen';
 import { StatementDrawer } from './StatementDrawer';
 
 vi.mock('next/navigation', () => navigationMock());
@@ -67,7 +67,7 @@ describe('Opening balances screen', () => {
     expect(within(table).getByText('Invalid')).toBeInTheDocument();
     expect(within(table).getByText('Unknown flat')).toBeInTheDocument();
     expect(screen.getByText('Draft arrears ₹12,850.50')).toBeInTheDocument();
-    expect(screen.getByText(/1 rows have errors/)).toBeInTheDocument();
+    expect(screen.getByText(/1 row has errors\. Posting is blocked/)).toBeInTheDocument();
     expect(screen.getByText(/arrears invoice numbered/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Post opening balances' })).toBeDisabled();
   });
@@ -154,13 +154,23 @@ describe('Opening balances screen', () => {
     expect((dry.body as { asOfDate: string }).asOfDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(gets()).toBe(before);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Import 72 rows' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Import 72 rows (2 with errors are kept as invalid)' }),
+    );
     expect(await screen.findByText(/70 valid rows and 2 rows with errors imported/)).toBeInTheDocument();
     const real = api.last('POST', '/billing/opening-balances/import')!;
     expect(real.body).toEqual({ fileId: 9, asOfDate: (dry.body as { asOfDate: string }).asOfDate });
     expect(upload).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(gets()).toBeGreaterThan(before));
-    expect(screen.queryByRole('button', { name: /^Import \d+ rows?$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Import \d+ rows?/ })).toBeNull();
+  });
+
+  it('counts rows with the right plural and labels the import of rows with errors', () => {
+    expect(rowsText(1, 'valid ')).toBe('1 valid row');
+    expect(rowsText(2)).toBe('2 rows');
+    expect(importLabel(3, 0)).toBe('Import 3 rows');
+    expect(importLabel(0, 1)).toBe('Import 1 row (1 with errors is kept as invalid)');
+    expect(importLabel(70, 2)).toBe('Import 72 rows (2 with errors are kept as invalid)');
   });
 
   it('asks for a new check when the date changes after a check', async () => {

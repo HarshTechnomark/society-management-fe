@@ -321,7 +321,7 @@ describe('Statement of my flat', () => {
 
   it('tells a tenant to use the bill list (UNIT_NOT_FOUND)', async () => {
     show(<ResidentStatement unitId={101} />, { 'GET /me/units/101/statement': err(404, 'UNIT_NOT_FOUND') });
-    expect(await screen.findByText(/Tenants cannot see the statement of the flat/)).toBeInTheDocument();
+    expect(await screen.findByText(/You can only see the statement of a flat you own/)).toBeInTheDocument();
   });
 
   it('offers Share only when the browser supports it', async () => {
