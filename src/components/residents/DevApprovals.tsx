@@ -21,6 +21,7 @@ const TYPE_LABEL: Record<string, string> = {
   JOIN_REQUEST: 'Join request',
   MOVE_IN: 'Move in',
   MOVE_OUT: 'Move out',
+  BILLING_RUN_PUBLISH: 'Billing run publish',
 };
 
 /**
