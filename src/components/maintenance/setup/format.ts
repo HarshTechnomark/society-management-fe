@@ -29,6 +29,9 @@ const TEXT: Record<string, string> = {
   STALE_VERSION: 'Someone else changed this a moment ago. Reload and try again.',
   INVALID_STATE: 'This is not allowed in the current state. Reload and try again.',
   IDEMPOTENCY_KEY_REUSED: 'This request was already sent with different details. Try again.',
+  LATE_FEE_POLICY_NOT_FOUND: 'This late fee policy was not found. Reload the page.',
+  RUN_PERIOD_INVALID:
+    'The date must be the first day of a billing period of your cycle (for example 1 April, 1 July for quarterly).',
   CHARGE_HEAD_KEY_TAKEN: 'A charge head with this key already exists. Pick another key.',
   CHARGE_HEAD_IN_USE:
     'A live billing rate still uses this charge head. Stop the rate with a "No charge" version first.',
@@ -77,10 +80,35 @@ export function plainError(e: unknown): unknown {
     : e;
 }
 
-/** Field errors of a 400 as `{ field: message }`. */
+/** The backend names a field by its API name; the forms use their own keys. */
+const FIELD_ALIAS: Record<string, string> = {
+  amountPaise: 'amount',
+  ratePerSqftPaise: 'sqft',
+  unitTypeRates: 'typeRates',
+  billSplitRuleId: 'splitRuleId',
+  baseChargeHeadIds: 'baseIds',
+  interestRatePct: 'rate',
+  flatFeePaise: 'flat',
+  minChargePaise: 'minCharge',
+  fixedAmountPaise: 'fixed',
+  scopeType: 'scope',
+  scopeValues: 'scope',
+  unitIds: 'scope',
+  chargeHeadId: 'head',
+};
+
+/**
+ * Field errors of a 400 or 422 as `{ form key: message }`. The backend path `firstVersion.amountPaise` or
+ * `unitTypeRates.2BHK` becomes the form key `amount` or `typeRates`; the first message of a key wins.
+ */
 export function fieldErrors(e: unknown): Record<string, string> {
   const out: Record<string, string> = {};
-  if (e instanceof ApiError) for (const x of e.errors ?? []) out[x.field] ??= x.message;
+  if (e instanceof ApiError)
+    for (const x of e.errors ?? []) {
+      const parts = x.field.split('.').filter(p => p !== 'firstVersion' && p !== 'version' && p !== 'body');
+      const head = parts[0] ?? x.field;
+      out[FIELD_ALIAS[head] ?? head] ??= x.message;
+    }
   return out;
 }
 

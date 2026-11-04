@@ -115,7 +115,7 @@ export function ChargeHeadDrawer({
     try {
       const body: ChargeHeadInput = {
         name: f.name.trim(),
-        description: f.description.trim() || undefined,
+        description: f.description.trim() || (editing ? null : undefined),
         payerRouting: f.payerRouting,
         gstTreatment: f.gstTreatment,
         sacCode: f.gstTreatment === 'NONE' ? null : f.sacCode.trim(),

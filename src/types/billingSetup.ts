@@ -47,7 +47,7 @@ export interface ChargeHead {
 export interface ChargeHeadInput {
   key?: string;
   name: string;
-  description?: string;
+  description?: string | null;
   headType?: HeadType;
   payerRouting: PayerRouting;
   gstTreatment: GstTreatment;

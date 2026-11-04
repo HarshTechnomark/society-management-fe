@@ -3,8 +3,10 @@ import { ApiError } from '@/lib/apiClient';
 import { normaliseRule, normaliseVersion } from '@/services/billingSetupMappers';
 import { ruleRaw, versionRaw } from '@/test/billingSetupFixtures';
 import type { ChargeHead } from '@/types/billingSetup';
+import { createHeadBody, simulateBody } from '@/services/billingSetup.service';
 import {
   KNOWN_ERROR_CODES,
+  fieldErrors,
   billingSetupError,
   describeRate,
   isFirstOfMonth,
@@ -56,6 +58,8 @@ const SPEC_CODES = [
   'SOCIETY_CLOSED',
   'RATE_LIMITED',
   'INTERNAL_ERROR',
+  'LATE_FEE_POLICY_NOT_FOUND',
+  'RUN_PERIOD_INVALID',
 ];
 
 describe('billingSetupError', () => {
@@ -228,5 +232,52 @@ describe('mappers', () => {
     )!;
     expect(v.percent).toBe('7.5000');
     expect(v.baseChargeHeadIds).toEqual([1, 2]);
+  });
+});
+
+describe('real backend shapes', () => {
+  it('reads the rule head from the nested chargeHead object', () => {
+    const r = normaliseRule(ruleRaw());
+    expect(r.chargeHeadId).toBe(1);
+    expect(r.chargeHeadKey).toBe('MAINTENANCE');
+    expect(r.chargeHeadName).toBe('Maintenance (service charges)');
+  });
+  it('leaves a null SAC code out of the strict create-head body', () => {
+    const b = createHeadBody({
+      key: 'X',
+      name: 'Xx',
+      headType: 'OTHER',
+      payerRouting: 'BILL_TO',
+      gstTreatment: 'NONE',
+      sacCode: null,
+      prorate: true,
+      interestBearing: true,
+      ledgerAccountCode: '4100',
+    });
+    expect('sacCode' in b).toBe(false);
+  });
+  it('sends no reason or resolutionRef to the strict simulate call and at most 20 flats', () => {
+    const b = simulateBody({
+      chargeHeadId: 1,
+      version: { rateType: 'NONE', effectiveFrom: '2027-04-01', reason: 'x', resolutionRef: 'AGM' },
+      unitIds: Array.from({ length: 25 }, (_, i) => i + 1),
+      periodStart: '2027-04-01',
+    });
+    expect(b.version).toEqual({ rateType: 'NONE', effectiveFrom: '2027-04-01' });
+    expect(b.unitIds).toHaveLength(20);
+  });
+  it('maps API field names of errors[] to the form keys', () => {
+    const e = new ApiError(400, 'VALIDATION_FAILED', 'bad', [
+      { field: 'firstVersion.amountPaise', message: 'Too big' },
+      { field: 'unitTypeRates.2BHK', message: 'Not a unit type' },
+      { field: 'interestRatePct', message: 'Between 0.0001 and 21.0000' },
+      { field: 'name', message: 'Too short' },
+    ]);
+    expect(fieldErrors(e)).toEqual({
+      amount: 'Too big',
+      typeRates: 'Not a unit type',
+      rate: 'Between 0.0001 and 21.0000',
+      name: 'Too short',
+    });
   });
 });

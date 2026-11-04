@@ -30,14 +30,43 @@ const rows = async <T>(path: string, query: Query, map: (raw: unknown) => T): Pr
   return (Array.isArray(r.data) ? r.data : []).map(map);
 };
 
+interface SimulateBody {
+  chargeHeadId: number;
+  version: Omit<VersionInput, 'reason' | 'resolutionRef'> & { reason?: string; resolutionRef?: string };
+  unitIds: number[];
+  periodStart: string;
+}
+
+/** The simulate body is strict: the draft version has no `reason` or `resolutionRef`, and at most 20 flats. */
+export function simulateBody(b: SimulateBody) {
+  const version: Record<string, unknown> = { ...b.version };
+  delete version.reason;
+  delete version.resolutionRef;
+  return {
+    chargeHeadId: b.chargeHeadId,
+    version,
+    unitIds: b.unitIds.slice(0, 20),
+    periodStart: b.periodStart,
+  };
+}
+
+/** `POST /billing/charge-heads` is strict and takes `sacCode` only as text: a null or empty one is left out. */
+export function createHeadBody(b: ChargeHeadInput): ChargeHeadInput {
+  const out = { ...b };
+  if (out.sacCode === null || out.sacCode === '') delete out.sacCode;
+  return out;
+}
+
 export const billingSetupService = {
   // charge heads
   chargeHeads: (q: ChargeHeadQuery = {}) =>
     rows<ChargeHead>('/billing/charge-heads', { limit: 100, ...q } as Query, normaliseChargeHead),
   createChargeHead: (body: ChargeHeadInput) =>
-    api<unknown>('/billing/charge-heads', { method: 'POST', body, idempotent: true }).then(
-      normaliseChargeHead,
-    ),
+    api<unknown>('/billing/charge-heads', {
+      method: 'POST',
+      body: createHeadBody(body),
+      idempotent: true,
+    }).then(normaliseChargeHead),
   updateChargeHead: (id: number, body: Partial<ChargeHeadInput> & { version: number }) =>
     api<unknown>(`/billing/charge-heads/${id}`, { method: 'PATCH', body }).then(normaliseChargeHead),
   archiveChargeHead: (id: number, reason: string, version: number) =>
@@ -57,13 +86,10 @@ export const billingSetupService = {
     api<unknown>(`/billing/rules/${ruleId}/versions`, { method: 'POST', body, idempotent: true }).then(
       normaliseVersion,
     ),
-  simulate: (body: {
-    chargeHeadId: number;
-    version: Omit<VersionInput, 'reason' | 'resolutionRef'>;
-    unitIds: number[];
-    periodStart: string;
-  }): Promise<SimulateItem[]> =>
-    api<unknown>('/billing/rules/simulate', { method: 'POST', body }).then(normaliseSimulation),
+  simulate: (body: SimulateBody): Promise<SimulateItem[]> =>
+    api<unknown>('/billing/rules/simulate', { method: 'POST', body: simulateBody(body) }).then(
+      normaliseSimulation,
+    ),
 
   // bill split rules
   splitRules: (status: 'ACTIVE' | 'ARCHIVED' | 'ALL' = 'ACTIVE') =>
