@@ -125,7 +125,7 @@ export function ActivationWizard({
         <Button variant="ghost" disabled={busy} onClick={() => setStep('plan')}>
           Back
         </Button>
-        <Button loading={busy} disabled={blocked} onClick={() => void activate()}>
+        <Button loading={busy} disabled={blocked || reason.trim().length < 5} onClick={() => void activate()}>
           Activate committee
         </Button>
       </>

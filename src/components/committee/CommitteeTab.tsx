@@ -513,6 +513,7 @@ function DraftCard({
           title={`Delete the draft "${draft.name}"?`}
           description="The draft is removed. Roles do not change."
           confirmLabel="Delete draft"
+          disableUntilValid
           onCancel={() => setDeleting(false)}
           onConfirm={async reason => {
             try {

@@ -143,15 +143,16 @@ describe('Committee tab: edit term of the current committee', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Edit term' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.change(within(dialog).getByLabelText('End date'), { target: { value: '2029-06-30' } });
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
-    expect(await within(dialog).findByText('Enter a reason of 5 to 500 characters.')).toBeInTheDocument();
-    await userEvent.type(within(dialog).getByLabelText(/Reason/), 'Elections are delayed');
+    expect(within(dialog).getByRole('button', { name: 'Save' })).toBeDisabled();
+    await userEvent.type(within(dialog).getByLabelText(/Reason/), 'Late');
+    expect(within(dialog).getByRole('button', { name: 'Save' })).toBeDisabled();
+    await userEvent.type(within(dialog).getByLabelText(/Reason/), ' elections are delayed');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(api.last('PATCH', '/committee/terms/12')).toBeTruthy());
     expect(api.last('PATCH', '/committee/terms/12')!.body).toEqual({
       version: 4,
       endDate: '2029-06-30',
-      reason: 'Elections are delayed',
+      reason: 'Late elections are delayed',
     });
     expect(await screen.findByText('The end date is extended.')).toBeInTheDocument();
   });
@@ -229,8 +230,13 @@ describe('Committee tab: draft', () => {
     await screen.findByText('Farhan Qureshi');
     await userEvent.click(screen.getByRole('button', { name: 'Delete draft' }));
     const dialog = await screen.findByRole('dialog');
-    await userEvent.type(within(dialog).getByLabelText(/Reason/), 'Wrong dates entered');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Delete draft' }));
+    const confirm = within(dialog).getByRole('button', { name: 'Delete draft' });
+    expect(confirm).toBeDisabled();
+    await userEvent.type(within(dialog).getByLabelText(/Reason/), 'Wro');
+    expect(confirm).toBeDisabled();
+    await userEvent.type(within(dialog).getByLabelText(/Reason/), 'ng dates entered');
+    expect(confirm).toBeEnabled();
+    await userEvent.click(confirm);
     await waitFor(() => expect(api.last('DELETE', '/committee/terms/20')).toBeTruthy());
     expect(api.last('DELETE', '/committee/terms/20')!.body).toEqual({
       version: 2,

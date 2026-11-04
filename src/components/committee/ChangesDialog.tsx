@@ -183,7 +183,11 @@ export function ChangesDialog({
         <Button variant="ghost" disabled={busy} onClick={() => setStep('edit')}>
           Back
         </Button>
-        <Button loading={busy} disabled={!plan || plan.blockers.length > 0} onClick={() => void apply()}>
+        <Button
+          loading={busy}
+          disabled={!plan || plan.blockers.length > 0 || reason.trim().length < 5}
+          onClick={() => void apply()}
+        >
           Apply changes
         </Button>
       </>

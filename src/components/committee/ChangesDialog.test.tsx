@@ -85,9 +85,10 @@ describe('Make changes: vacate and redesignate', () => {
       changes: [{ op: 'VACATE', seatId: 'S3', exitReason: 'RESIGNED', note: 'Moved abroad' }],
     });
     expect(within(d).getByRole('region', { name: 'Joining' })).toBeInTheDocument();
-    await userEvent.click(within(d).getByRole('button', { name: 'Apply changes' }));
-    expect(await within(d).findByText('Enter a reason of 5 to 500 characters.')).toBeInTheDocument();
-    await userEvent.type(within(d).getByLabelText(/Reason/), 'Resignation letter received');
+    expect(within(d).getByRole('button', { name: 'Apply changes' })).toBeDisabled();
+    await userEvent.type(within(d).getByLabelText(/Reason/), 'Resi');
+    expect(within(d).getByRole('button', { name: 'Apply changes' })).toBeDisabled();
+    await userEvent.type(within(d).getByLabelText(/Reason/), 'gnation letter received');
     await userEvent.click(within(d).getByRole('button', { name: 'Apply changes' }));
     expect(await within(d).findByTestId('changes-result')).toHaveTextContent('The committee is updated.');
     expect(api.last('POST', '/committee/terms/12/changes')!.body).toMatchObject({

@@ -86,7 +86,11 @@ export function EditCurrentDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button loading={busy} onClick={() => void save()}>
+          <Button
+            loading={busy}
+            disabled={needsReason && reason.trim().length < 5}
+            onClick={() => void save()}
+          >
             Save
           </Button>
         </>

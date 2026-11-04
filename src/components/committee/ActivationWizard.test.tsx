@@ -182,9 +182,15 @@ describe('Activation wizard: step 2 and result', () => {
     });
     const d = await open();
     await userEvent.click(await within(d).findByRole('button', { name: 'Continue' }));
-    await userEvent.click(within(d).getByRole('button', { name: 'Activate committee' }));
+    const activate = within(d).getByRole('button', { name: 'Activate committee' });
+    expect(activate).toBeDisabled();
+    await userEvent.type(within(d).getByLabelText(/Reason/), 'Hmm');
+    expect(activate).toBeDisabled();
+    await userEvent.type(within(d).getByLabelText(/Reason/), ' ok');
+    expect(activate).toBeEnabled();
+    await userEvent.click(activate);
     expect(within(d).getByText('Enter the resolution reference (3 to 100 characters).')).toBeInTheDocument();
-    expect(within(d).getByText('Enter a reason of 5 to 500 characters.')).toBeInTheDocument();
+    await userEvent.clear(within(d).getByLabelText(/Reason/));
     expect(api.last('POST', '/committee/terms/20/activate')).toBeUndefined();
     await fillConfirm(d);
     await userEvent.click(within(d).getByRole('switch', { name: 'Announce to residents' }));

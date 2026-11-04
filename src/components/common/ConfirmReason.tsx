@@ -11,6 +11,8 @@ interface Props {
   confirmLabel?: string;
   variant?: ButtonVariant;
   minLength?: number;
+  /** Keep the confirm button disabled until the reason has `minLength` characters. Off by default. */
+  disableUntilValid?: boolean;
   onCancel: () => void;
   onConfirm: (reason: string) => Promise<void> | void;
 }
@@ -23,6 +25,7 @@ export function ConfirmReason({
   confirmLabel = 'Confirm',
   variant = 'danger',
   minLength = 5,
+  disableUntilValid = false,
   onCancel,
   onConfirm,
 }: Props) {
@@ -56,7 +59,12 @@ export function ConfirmReason({
           <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
-          <Button variant={variant} loading={busy} onClick={submit}>
+          <Button
+            variant={variant}
+            loading={busy}
+            disabled={disableUntilValid && trimmed.length < minLength}
+            onClick={submit}
+          >
             {confirmLabel}
           </Button>
         </>
