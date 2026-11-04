@@ -51,7 +51,7 @@ function Inner() {
   const [reverse, setReverse] = useState<OpeningBalanceRow | null>(null);
   const [remove, setRemove] = useState<OpeningBalanceRow | null>(null);
   const load = useLoad(
-    () => ledgerService.openingBalances({ status: filter === 'ALL' ? undefined : filter, limit: 200 }),
+    () => ledgerService.openingBalances({ status: filter === 'ALL' ? undefined : filter, limit: 1000 }),
     filter,
   );
   const totals = load.data?.totals;

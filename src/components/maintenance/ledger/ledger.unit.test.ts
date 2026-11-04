@@ -75,3 +75,31 @@ describe('format helpers', () => {
     expect(daysBetween('2026-01-01', '2026-01-31')).toBe(30);
   });
 });
+
+describe('ledgerError details from errors[]', () => {
+  it('has words for the 11.2 codes the backend adds', () => {
+    for (const code of [
+      'NO_BILL_TO',
+      'OPENING_BALANCE_INVALID',
+      'INVOICE_CANCEL_PENDING',
+      'INVOICE_NOT_FOUND',
+    ])
+      expect(ledgerError(new ApiError(422, code, 'raw')).length).toBeGreaterThan(10);
+  });
+  it('appends the header problem of a bad import file', () => {
+    const t = ledgerError(
+      new ApiError(422, 'IMPORT_FILE_INVALID', 'raw', [
+        { field: 'fileId', message: 'The header must be: unit,arrears_principal,arrears_interest,advance' },
+      ]),
+    );
+    expect(t).toContain('The header must be: unit,arrears_principal');
+  });
+  it('names the flat that has no one to bill', () => {
+    const t = ledgerError(
+      new ApiError(422, 'NO_BILL_TO', 'raw', [
+        { field: 'unit', message: 'A-1 has no owner or tenant on record' },
+      ]),
+    );
+    expect(t).toContain('A-1 has no owner');
+  });
+});

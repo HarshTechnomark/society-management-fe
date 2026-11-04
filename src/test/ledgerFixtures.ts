@@ -21,6 +21,7 @@ export const obRow = (over: Record<string, unknown> = {}) => ({
   validationError: null,
   invoiceId: null,
   postedAt: null,
+  reversedAt: null,
   version: 1,
   ...over,
 });

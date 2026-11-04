@@ -45,3 +45,22 @@ describe('ledger mappers', () => {
     expect(s.unit.label).toBe('A-1203');
   });
 });
+
+describe('real import answer', () => {
+  it('reads counts, dryRun and the first invalid rows', () => {
+    const r = mapImportResult({
+      draft: 8,
+      invalid: 2,
+      totals: obTotals({ invalidCount: 2 }),
+      dryRun: true,
+      errors: [{ rowNo: 4, unit: 'Z-9', message: 'Unknown flat' }],
+    });
+    expect(r).toMatchObject({ draftCount: 8, invalidCount: 2, dryRun: true });
+    expect(r.errors).toEqual([{ rowNo: 4, unit: 'Z-9', message: 'Unknown flat' }]);
+  });
+  it('keeps reversedAt of a reversed row', () => {
+    expect(
+      mapOpeningRow(obRow({ status: 'REVERSED', reversedAt: '2026-11-02T08:00:00.000Z' })).reversedAt,
+    ).toBe('2026-11-02T08:00:00.000Z');
+  });
+});

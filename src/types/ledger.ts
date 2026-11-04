@@ -16,6 +16,7 @@ export interface OpeningBalanceRow {
   validationError: string | null;
   invoiceId: number | null;
   postedAt: string | null;
+  reversedAt: string | null;
   version: number;
 }
 
@@ -42,6 +43,9 @@ export interface OpeningImportResult {
   draftCount: number;
   invalidCount: number;
   totals: OpeningTotals;
+  dryRun: boolean;
+  /** The first 50 invalid rows. */
+  errors: { rowNo: number; unit: string; message: string }[];
 }
 
 export interface OpeningPostResult {

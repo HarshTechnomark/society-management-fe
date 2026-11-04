@@ -40,6 +40,7 @@ export function mapOpeningRow(raw: unknown): OpeningBalanceRow {
     validationError: strOrNull(r.validationError),
     invoiceId: r.invoiceId == null ? null : num(r.invoiceId),
     postedAt: strOrNull(r.postedAt),
+    reversedAt: strOrNull(r.reversedAt),
     version: num(r.version, 1),
   };
 }
@@ -72,6 +73,12 @@ export function mapImportResult(raw: unknown): OpeningImportResult {
     draftCount: count(r.draft ?? r.draftCount),
     invalidCount: count(r.invalid ?? r.invalidCount ?? totals.invalidCount),
     totals,
+    dryRun: r.dryRun === true,
+    errors: (Array.isArray(r.errors) ? r.errors : []).map(e => ({
+      rowNo: num(obj(e).rowNo),
+      unit: str(obj(e).unit),
+      message: str(obj(e).message),
+    })),
   };
 }
 

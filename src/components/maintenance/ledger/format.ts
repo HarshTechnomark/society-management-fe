@@ -14,6 +14,10 @@ export const LEDGER_TEXT: Record<string, string> = {
   STALE_VERSION: 'Someone else changed this a moment ago. Reload and try again.',
   INVALID_STATE: 'This is not allowed in the current state. Reload and try again.',
   IDEMPOTENCY_KEY_REUSED: 'This request was already sent with different details. Try again.',
+  OPENING_BALANCE_INVALID: 'This opening balance row cannot be posted.',
+  NO_BILL_TO: 'A flat has no owner or tenant to bill. Add the resident first.',
+  INVOICE_CANCEL_PENDING: 'A cancellation request is open on this arrears invoice. Finish it first.',
+  INVOICE_NOT_FOUND: 'The arrears invoice was not found. Reload the list.',
   OPENING_BALANCE_EXISTS: 'This flat already has a posted opening balance. Reverse it first.',
   IMPORT_FILE_INVALID: 'The file could not be read, or a column heading is missing. Use the template.',
   IMPORT_TOO_MANY_ROWS: 'The file has more than 5,000 rows. Split it and import in parts.',
@@ -41,8 +45,12 @@ export const LEDGER_TEXT: Record<string, string> = {
 /** The message for an error in plain words. */
 export function ledgerError(e: unknown): string {
   if (!(e instanceof ApiError)) return e instanceof Error ? e.message : 'Something went wrong. Try again.';
-  return LEDGER_TEXT[e.code] ?? e.message;
+  const text = LEDGER_TEXT[e.code] ?? e.message;
+  // these codes name the flat or the file problem in errors[]
+  const detail = DETAIL_CODES.includes(e.code) ? e.errors?.[0]?.message : undefined;
+  return detail && !text.includes(detail) ? `${text} ${detail}.`.replace(/\.\.$/, '.') : text;
 }
+const DETAIL_CODES = ['IMPORT_FILE_INVALID', 'NO_BILL_TO', 'OPENING_BALANCE_INVALID', 'PERIOD_LOCKED'];
 
 export const OPENING_LABEL: Record<OpeningStatus, string> = {
   DRAFT: 'Draft',
