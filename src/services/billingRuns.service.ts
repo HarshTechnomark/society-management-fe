@@ -5,7 +5,6 @@ import {
   normaliseCycle,
   normaliseItem,
   normalisePagination,
-  normaliseRates,
   normaliseRun,
   normaliseSplitInputs,
   rows,
@@ -70,7 +69,8 @@ export const billingRunsService = {
 
   // read-only inputs of step 1
   // both lists are paged (20 by default, 100 at most)
-  rates: () => api<unknown>('/billing/rules', { query: { limit: 100 } }).then(normaliseRates),
+  /** The rules as sent: `normaliseRates(rules, periodStart)` reads the rates once the period is known. */
+  rules: () => api<unknown>('/billing/rules', { query: { limit: 100 } }),
   /** The split rules that need a typed amount for a run of `periodStart`. */
   splitRules: async (periodStart?: string) => {
     const [splits, rules] = await Promise.all([

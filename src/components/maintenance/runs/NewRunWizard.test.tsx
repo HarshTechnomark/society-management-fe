@@ -143,6 +143,24 @@ describe('New run wizard: step 1, heads', () => {
     expect(api.calls.some(c => c.method === 'GET' && c.path === '/billing/runs')).toBe(true);
   });
 
+  it('shows the rates in force on the chosen period start', async () => {
+    const rules: Record<string, unknown>[] = splitRateRulesRaw();
+    rules[1] = {
+      ...rules[1],
+      nextVersion: {
+        ...(rules[1].currentVersion as object),
+        amountPaise: 95000,
+        effectiveFrom: '2026-11-01',
+      },
+    };
+    renderIt({ 'GET /billing/rules': ok(rules) });
+    const list = await screen.findByRole('list', { name: 'Approved rates' });
+    await waitFor(() => expect(screen.getByLabelText('Billing period')).toHaveValue('2026-11-01'));
+    expect(within(list).getByText('₹950 per flat from 1 Nov 2026')).toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByLabelText('Billing period'), '2026-10-01');
+    expect(within(list).getByText('₹900 per flat')).toBeInTheDocument();
+  });
+
   it('offers quarterly periods for a quarterly society', async () => {
     renderIt({ 'GET /society/settings': ok(cycleSettings('QUARTERLY')) });
     const period = await screen.findByLabelText('Billing period');

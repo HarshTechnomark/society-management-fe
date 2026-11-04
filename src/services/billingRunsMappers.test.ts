@@ -82,6 +82,43 @@ describe('billing run mappers', () => {
     expect(r[1].pendingText).toBeNull();
   });
 
+  it('shows the rate in force on the period start, not today', () => {
+    const rule = (over: object) => ({
+      id: 11,
+      name: 'Water',
+      chargeHead: { name: 'Water' },
+      scopeType: 'ALL_UNITS',
+      status: 'ACTIVE',
+      currentVersion: null,
+      nextVersion: null,
+      pendingVersion: null,
+      ...over,
+    });
+    const water = rule({
+      currentVersion: {
+        rateType: 'FLAT_PER_UNIT',
+        amountPaise: 35000,
+        effectiveFrom: '2026-04-01',
+        effectiveTo: '2026-11-30',
+      },
+      nextVersion: { rateType: 'FLAT_PER_UNIT', amountPaise: 40000, effectiveFrom: '2026-12-01' },
+    });
+    const parking = rule({
+      id: 12,
+      name: 'Parking',
+      chargeHead: { name: 'Parking' },
+      nextVersion: { rateType: 'FLAT_PER_UNIT', amountPaise: 25000, effectiveFrom: '2026-12-01' },
+    });
+    const dec = normaliseRates([water, parking], '2026-12-01');
+    expect(dec[0].rateText).toBe('₹400 per flat from 1 Dec 2026');
+    expect(dec[1].rateText).toBe('₹250 per flat from 1 Dec 2026');
+    const nov = normaliseRates([water, parking], '2026-11-01');
+    expect(nov[0].rateText).toBe('₹350 per flat');
+    expect(nov[1].rateText).toBe('No approved rate for this period');
+    // no period: today's rate
+    expect(normaliseRates([water, parking])[1].rateText).toBe('No approved rate yet');
+  });
+
   it('keeps only run-input split rules and reads the cycle setting', () => {
     expect(normaliseSplitInputs(splitRulesRaw()).map(x => x.id)).toEqual([4, 6]);
     expect(normaliseSplitInputs(splitRulesRaw(), splitRateRulesRaw(), '2026-11-01')).toEqual([

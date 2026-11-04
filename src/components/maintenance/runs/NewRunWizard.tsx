@@ -13,8 +13,9 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useFeature } from '@/hooks/useFeature';
 import { useLoad } from '@/hooks/useLoad';
-import { inr } from '@/lib/money';
+import { inr, shortDate } from '@/lib/money';
 import { billingRunsService } from '@/services/billingRuns.service';
+import { normaliseRates } from '@/services/billingRunsMappers';
 import type { CreateRunInput, Run, RunType, ScopeType, SplitInput } from '@/types/billingRuns';
 import {
   CYCLE_LABEL,
@@ -61,7 +62,7 @@ function Inner() {
   const { run, error: runError, refresh, setRun } = useRunData(runId);
 
   const cycleLoad = useLoad(() => billingRunsService.cycle().catch(() => 'MONTHLY' as const));
-  const rates = useLoad(() => billingRunsService.rates().catch(() => null));
+  const rules = useLoad(() => billingRunsService.rules().catch(() => null));
   const cycle = cycleLoad.data ?? 'MONTHLY';
   // null when the runs could not be read: then the backend checks the period on create
   const starts = useLoad(() => billingRunsService.regularStarts().catch(() => null));
@@ -80,6 +81,11 @@ function Inner() {
   const choices = useMemo(() => runPeriodChoices(cycle, starts.data ?? []), [cycle, starts.data]);
   const options = choices.options;
   const chosen = period ?? choices.defaultValue;
+  // the rate in force on the period start, not today's (a new version may start with the period)
+  const rateRows = useMemo(
+    () => (rules.data === null ? null : normaliseRates(rules.data, chosen)),
+    [rules.data, chosen],
+  );
   const splits = useLoad(() => billingRunsService.splitRules(chosen).catch(() => null), chosen);
   const splitRules = splits.data ?? [];
 
@@ -239,23 +245,24 @@ function Inner() {
 
           <h3 className="mb-1 mt-6 text-[15px] font-bold">Approved rates</h3>
           <p className="mb-2 text-[13px] text-muted">
-            These come from the approved billing rules.{' '}
+            The rates in force on {shortDate(chosen)}, the first day of the period, from the approved billing
+            rules.{' '}
             <Link className="underline" href="/admin/settings/billing">
               Change rates in Settings › Billing
             </Link>
             .
           </p>
-          {rates.loading ? (
+          {rules.loading ? (
             <div className="skeleton h-24 w-full" data-testid="skeleton-row" />
-          ) : rates.data === null ? (
+          ) : rateRows === null ? (
             <Alert tone="warn">
               The rates could not be loaded. You can still continue; the preview uses them.
             </Alert>
-          ) : rates.data.length === 0 ? (
+          ) : rateRows.length === 0 ? (
             <Alert tone="warn">No billing rule is set up yet. Add rates in Settings › Billing first.</Alert>
           ) : (
             <ul aria-label="Approved rates" className="divide-y divide-[var(--line)] text-[14px]">
-              {rates.data.map(r => (
+              {rateRows.map(r => (
                 <li key={r.ruleId} className="flex flex-wrap justify-between gap-x-4 py-2">
                   <span>
                     {r.headName}

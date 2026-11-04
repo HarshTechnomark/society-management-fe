@@ -3,7 +3,7 @@
  * `types/billingRuns.ts`. All shape guessing lives here. Every normaliser tolerates missing optional fields and
  * never throws.
  */
-import { inr } from '@/lib/money';
+import { inr, shortDate } from '@/lib/money';
 import type {
   HeadTotal,
   ItemStatus,
@@ -217,19 +217,45 @@ const SCOPE_NAME: Record<string, string> = {
   UNITS: 'Some flats',
 };
 
-/** One read-only rate row per rule, from `GET /billing/rules` (current version, and a pending one if any). */
-export function normaliseRates(data: unknown): RateRow[] {
+/**
+ * The approved version of a rule in force on `periodStart`: the next version once it has started (`effectiveFrom` on or
+ * before the period start), else the current one when it has not ended before the period start. Without a period start,
+ * the current version (today's rate).
+ */
+export function versionOn(
+  rule: Record<string, unknown>,
+  periodStart?: string,
+): Record<string, unknown> | null {
+  const cur = rule.currentVersion ? obj(rule.currentVersion) : null;
+  if (!periodStart) return cur;
+  const next = rule.nextVersion ? obj(rule.nextVersion) : null;
+  if (next && str(next.effectiveFrom).slice(0, 10) <= periodStart) return next;
+  const curTo = cur ? strN(cur.effectiveTo)?.slice(0, 10) : null;
+  return cur && !(curTo && curTo < periodStart) ? cur : null;
+}
+
+/**
+ * One read-only rate row per rule, from `GET /billing/rules`: the rate in force on `periodStart` (a new rate says from
+ * when), and a pending one if any.
+ */
+export function normaliseRates(data: unknown, periodStart?: string): RateRow[] {
   return rows(data)
     .map(obj)
     .filter(r => str(r.status, 'ACTIVE') !== 'ARCHIVED')
     .map(r => {
       const head = obj(r.chargeHead);
       const pending = r.pendingVersion ? obj(r.pendingVersion) : null;
+      const v = versionOn(r, periodStart);
+      const isNew = !!v && !!r.nextVersion && v === obj(r.nextVersion);
       return {
         ruleId: num(r.id),
         headName: str(r.chargeHeadName, str(head.name, str(r.name))),
         scopeText: SCOPE_NAME[str(r.scopeType)] ?? '',
-        rateText: r.currentVersion ? rateText(r.currentVersion) : 'No approved rate yet',
+        rateText: v
+          ? `${rateText(v)}${isNew ? ` from ${shortDate(str(v.effectiveFrom).slice(0, 10))}` : ''}`
+          : periodStart && r.nextVersion
+            ? 'No approved rate for this period'
+            : 'No approved rate yet',
         pendingText: pending
           ? `Waiting for approval: ${rateText(pending)}${strN(pending.effectiveFrom) ? ` from ${str(pending.effectiveFrom)}` : ''}`
           : null,
