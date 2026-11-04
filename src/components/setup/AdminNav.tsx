@@ -37,6 +37,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { href: '/admin/locations', label: 'Locations', keys: [U.view] },
       { href: '/admin/holidays', label: 'Holidays', keys: [S.society.view] },
       { href: '/admin/settings', label: 'Settings', keys: [S.society.view] },
+      { href: '/admin/settings/billing', label: 'Billing rules', keys: [S.billingRules.view] },
     ],
   },
   {

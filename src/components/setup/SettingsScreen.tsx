@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { Page, PageHead, Card } from '@/components/common/PageHead';
 import { ConfirmReason } from '@/components/common/ConfirmReason';
@@ -13,6 +14,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { useToast } from '@/components/ui/Toast';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
+import { usePermission } from '@/hooks/usePermission';
 import { societySetupService } from '@/services/society-setup.service';
 import type { SettingItem } from '@/types/societySetup';
 import { Gate } from './Gate';
@@ -100,6 +102,7 @@ function Inner() {
 
 function Editor({ initial, onReload }: { initial: SettingItem[]; onReload: () => void }) {
   const toast = useToast();
+  const canSeeRules = usePermission(PERMISSIONS.settings.billingRules.view);
   const [items, setItems] = useState(initial);
   const editable = useMemo(() => items.filter(i => i.editVia === 'SETTINGS'), [items]);
   const namespaces = useMemo(() => {
@@ -196,6 +199,15 @@ function Editor({ initial, onReload }: { initial: SettingItem[]; onReload: () =>
           </Button>
         ))}
       </div>
+      {ns === 'billing' && canSeeRules && (
+        <p className="mb-4 text-[13.5px]">
+          Charge heads, rates, split rules and the late fee policy are on the{' '}
+          <Link href="/admin/settings/billing" className="font-semibold underline">
+            Billing rules page
+          </Link>
+          .
+        </p>
+      )}
       {formError && (
         <Alert tone="bad">
           {formError}{' '}
