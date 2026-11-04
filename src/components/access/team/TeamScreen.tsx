@@ -1,5 +1,6 @@
 'use client';
 import { useMemo, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Card, Page, PageHead } from '@/components/common/PageHead';
 import { Chip, type Tone } from '@/components/ui/Chip';
@@ -48,16 +49,15 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
 const YOURSELF = 'You cannot change yourself';
 
 type TabKey = 'all' | 'committee';
-const initialTab = (): TabKey =>
-  typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'committee'
-    ? 'committee'
-    : 'all';
+const tabFrom = (value: string | null | undefined): TabKey => (value === 'committee' ? 'committee' : 'all');
 
 /** Spec 11.1: "Committee and team" with its tabs (All, Committee; module 10 spec 11.2). */
 export function TeamScreen() {
   const { ready } = useMe();
   const canView = usePermission(PERMISSIONS.settings.members.view);
-  const [tab, setTab] = useState<TabKey>(initialTab);
+  // `useSearchParams` gives the same value on the server and in the browser, so the first render matches
+  const params = useSearchParams();
+  const [tab, setTab] = useState<TabKey>(() => tabFrom(params?.get('tab')));
   const choose = (k: TabKey) => {
     setTab(k);
     const url = new URL(window.location.href);

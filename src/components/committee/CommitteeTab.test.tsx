@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TeamScreen } from '@/components/access/team/TeamScreen';
 import { ToastProvider } from '@/components/ui/Toast';
 import { setMe } from '@/lib/auth';
-import { err, mockApi, ok, resetAll, sampleMe } from '@/test/helpers';
+import { err, mockApi, ok, resetAll, sampleMe, search } from '@/test/helpers';
 import {
   COMMITTEE_FEATURES,
   COMMITTEE_PERMS,
@@ -17,6 +17,8 @@ import {
 } from '@/test/committeeFixtures';
 import { page } from '@/test/societyFixtures';
 import { CommitteeTab } from './CommitteeTab';
+
+vi.mock('next/navigation', async () => (await import('@/test/helpers')).navigationMock());
 
 type Routes = Parameters<typeof mockApi>[0];
 function renderIt(routes: Routes = {}, perms = COMMITTEE_PERMS, features = COMMITTEE_FEATURES) {
@@ -327,7 +329,7 @@ describe('Team screen tabs', () => {
   });
 
   it('opens on the Committee tab from ?tab=committee', async () => {
-    window.history.replaceState(null, '', '/?tab=committee');
+    search.current = new URLSearchParams('tab=committee');
     setMe(sampleMe({ permissions: COMMITTEE_PERMS, features: COMMITTEE_FEATURES }));
     mockApi({ 'GET /committee': ok(overviewRaw()), 'GET /committee/terms/12': ok(termRaw()) });
     render(
@@ -339,7 +341,7 @@ describe('Team screen tabs', () => {
   });
 
   it('does not show the committee to a user without settings.members.view', async () => {
-    window.history.replaceState(null, '', '/?tab=committee');
+    search.current = new URLSearchParams('tab=committee');
     setMe(sampleMe({ permissions: [], features: COMMITTEE_FEATURES }));
     mockApi({});
     render(
