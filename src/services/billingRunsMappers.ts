@@ -73,6 +73,25 @@ const splitInput = (raw: unknown): SplitInput => {
   return { billSplitRuleId: num(s.billSplitRuleId), amountPaise: num(s.amountPaise) };
 };
 
+/**
+ * PATCH, recompute and cancel answer only `{ id, runLabel, runType, periodStart, periodEnd, billDate, status, version }`.
+ * This keeps what the screen already has (counts, totals, scope) and takes just those fields from the answer; the
+ * preview hash and stale flag are cleared because the run is being computed again.
+ */
+export function mergeShortRun(prev: Run, shortRaw: unknown): Run {
+  const r = obj(shortRaw);
+  return {
+    ...prev,
+    status: (strN(r.status) ?? prev.status) as RunStatus,
+    version: num(r.version, prev.version),
+    runLabel: str(r.runLabel, prev.runLabel),
+    billDate: str(r.billDate, prev.billDate),
+    previewHash: null,
+    isStale: false,
+    computeError: null,
+  };
+}
+
 export function normaliseRun(raw: unknown): Run {
   const r = obj(raw);
   return {
@@ -96,6 +115,7 @@ export function normaliseRun(raw: unknown): Run {
     byHead: list(r.byHead).map(headTotal),
     computedAt: strN(r.computedAt),
     isStale: bool(r.isStale),
+    previewHash: strN(r.previewHash),
     approvalRequestId: numN(r.approvalRequestId),
     computeError: strN(r.computeError),
     lastError: strN(r.lastError),
@@ -133,7 +153,10 @@ export function normaliseItem(raw: unknown): RunItem {
     exceptionCode: strN(i.exceptionCode),
     exceptionMessage: strN(i.exceptionMessage),
     warningCodes: codeList(i.warningCodes),
-    lines: list(i.lines ?? i.linesSnapshot).map(line),
+    // CGST, SGST and ROUND_OFF lines are shown as the tax and round-off rows, so only the charge lines are listed
+    lines: list(i.lines ?? i.linesSnapshot)
+      .filter(l => l.lineKind === undefined || l.lineKind === 'CHARGE')
+      .map(line),
     subtotalPaise: num(i.subtotalPaise),
     taxPaise: num(i.taxPaise),
     roundOffPaise: num(i.roundOffPaise),
@@ -214,12 +237,37 @@ export function normaliseRates(data: unknown): RateRow[] {
     });
 }
 
-/** Split rules whose total is typed for each run (`amountSource = RUN_INPUT`). */
-export function normaliseSplitInputs(data: unknown): SplitRuleInput[] {
+/**
+ * Split rules whose total is typed for each run (`amountSource = RUN_INPUT`). The backend takes an amount only for the
+ * split rules that an approved SPLIT_TOTAL rate of an active rule uses on the period start (any other id is a 400), so
+ * when the rules are given the list is narrowed to those; `periodStart` picks the rate version in force.
+ */
+export function normaliseSplitInputs(
+  data: unknown,
+  rulesData?: unknown,
+  periodStart?: string,
+): SplitRuleInput[] {
+  const used = rulesData === undefined ? null : usedSplitRuleIds(rulesData, periodStart);
   return rows(data)
     .map(obj)
     .filter(r => str(r.amountSource) === 'RUN_INPUT' && str(r.status, 'ACTIVE') !== 'ARCHIVED')
+    .filter(r => used === null || used.has(num(r.id)))
     .map(r => ({ id: num(r.id), name: str(r.name), description: str(r.description) }));
+}
+
+export function usedSplitRuleIds(rulesData: unknown, periodStart?: string): Set<number> {
+  const out = new Set<number>();
+  for (const r of rows(rulesData).map(obj)) {
+    if (str(r.status, 'ACTIVE') === 'ARCHIVED') continue;
+    for (const v of [r.currentVersion, r.nextVersion].map(obj)) {
+      if (str(v.rateType) !== 'SPLIT_TOTAL' || str(v.status, 'APPROVED') !== 'APPROVED') continue;
+      const from = str(v.effectiveFrom).slice(0, 10);
+      const to = strN(v.effectiveTo)?.slice(0, 10) ?? null;
+      if (periodStart && ((from && from > periodStart) || (to && to < periodStart))) continue;
+      out.add(num(v.billSplitRuleId));
+    }
+  }
+  return out;
 }
 
 /** The billing cycle from `GET /society/settings?namespace=billing` rows (`billing.cycle`). Defaults to monthly. */

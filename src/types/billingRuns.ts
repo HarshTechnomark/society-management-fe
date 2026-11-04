@@ -61,6 +61,8 @@ export interface Run {
   byHead: HeadTotal[];
   computedAt: string | null;
   isStale: boolean;
+  /** Hash of the preview, sent back to publish (only while the run is in PREVIEW). */
+  previewHash: string | null;
   approvalRequestId: number | null;
   computeError: string | null;
   lastError: string | null;

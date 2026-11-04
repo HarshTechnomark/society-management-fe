@@ -81,7 +81,7 @@ function Inner({ id }: { id: number }) {
         kind === 'recompute'
           ? await billingRunsService.recompute(run.id, run.version)
           : await billingRunsService.resumeIssue(run.id, run.version);
-      setRun(r);
+      setRun(billingRunsService.mergeShort(run, r));
       toast.show(kind === 'recompute' ? 'Computing the run again.' : 'Issuing resumed.');
     } catch (e) {
       setProblem(billingRunError(e));
@@ -252,7 +252,9 @@ function Inner({ id }: { id: number }) {
           max={500}
           onCancel={() => setDialog(null)}
           onSubmit={async reason => {
-            setRun(await billingRunsService.cancel(run.id, { reason, version: run.version }));
+            const short = await billingRunsService.cancel(run.id, { reason, version: run.version });
+            // the short answer has no cancelReason: show the reason that was sent
+            setRun({ ...billingRunsService.mergeShort(run, short), cancelReason: reason });
             setDialog(null);
             toast.show(`${run.runLabel} was cancelled.`);
           }}

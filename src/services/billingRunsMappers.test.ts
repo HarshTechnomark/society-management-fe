@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   codeList,
+  mergeShortRun,
   normaliseCycle,
   normaliseItem,
   normaliseRates,
@@ -15,6 +16,7 @@ import {
   itemRaw,
   rulesRaw,
   runRaw,
+  splitRateRulesRaw,
   splitRulesRaw,
 } from '@/test/billingRunsFixtures';
 
@@ -81,11 +83,48 @@ describe('billing run mappers', () => {
   });
 
   it('keeps only run-input split rules and reads the cycle setting', () => {
-    expect(normaliseSplitInputs(splitRulesRaw())).toEqual([
+    expect(normaliseSplitInputs(splitRulesRaw()).map(x => x.id)).toEqual([4, 6]);
+    expect(normaliseSplitInputs(splitRulesRaw(), splitRateRulesRaw(), '2026-11-01')).toEqual([
       { id: 4, name: 'Water tanker bill', description: 'Shared by area' },
     ]);
     expect(normaliseCycle(cycleSettings('QUARTERLY'))).toBe('QUARTERLY');
     expect(normaliseCycle({ items: cycleSettings('ANNUAL') })).toBe('ANNUAL');
     expect(normaliseCycle([])).toBe('MONTHLY');
+  });
+});
+
+describe('real backend shapes of 11.3', () => {
+  it('lists only CHARGE lines (tax and round-off lines are separate rows) and reads warningCodes null', () => {
+    const i = normaliseItem(
+      itemRaw({
+        warningCodes: null,
+        lines: [
+          { lineKind: 'CHARGE', headKey: 'MAINTENANCE', description: 'Maintenance', amountPaise: 100 },
+          { lineKind: 'CGST', headKey: null, description: 'CGST 9%', amountPaise: 9 },
+          { lineKind: 'ROUND_OFF', headKey: null, description: 'Round off', amountPaise: -1 },
+        ],
+      }),
+    );
+    expect(i.lines).toHaveLength(1);
+    expect(i.warningCodes).toEqual([]);
+  });
+  it('keeps the preview hash of a run in preview', () => {
+    expect(normaliseRun(runRaw()).previewHash).toBe('a'.repeat(64));
+    expect(normaliseRun(runRaw({ previewHash: null })).previewHash).toBeNull();
+  });
+  it('merges the short run answer of recompute and cancel into the run on screen', () => {
+    const prev = normaliseRun(runRaw());
+    const m = mergeShortRun(prev, {
+      id: 88,
+      runLabel: 'BR-2026-11',
+      runType: 'REGULAR',
+      periodStart: '2026-11-01',
+      periodEnd: '2026-11-30',
+      billDate: '2026-11-01',
+      status: 'DRAFT',
+      version: 4,
+    });
+    expect(m).toMatchObject({ status: 'DRAFT', version: 4, previewHash: null, totalPaise: prev.totalPaise });
+    expect(m.byHead).toHaveLength(2);
   });
 });

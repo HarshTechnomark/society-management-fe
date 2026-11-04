@@ -63,7 +63,6 @@ function Inner() {
 
   const cycleLoad = useLoad(() => billingRunsService.cycle().catch(() => 'MONTHLY' as const));
   const rates = useLoad(() => billingRunsService.rates().catch(() => null));
-  const splits = useLoad(() => billingRunsService.splitRules().catch(() => null));
   const cycle = cycleLoad.data ?? 'MONTHLY';
 
   const [period, setPeriod] = useState<string | null>(null);
@@ -79,6 +78,7 @@ function Inner() {
 
   const options = useMemo(() => periodOptions(cycle), [cycle]);
   const chosen = period ?? nextPeriod(cycle);
+  const splits = useLoad(() => billingRunsService.splitRules(chosen).catch(() => null), chosen);
   const splitRules = splits.data ?? [];
 
   const amountOf = (id: number) => {
@@ -141,7 +141,7 @@ function Inner() {
     setProblem(null);
     setBusy(true);
     try {
-      setRun(await billingRunsService.recompute(run.id, run.version));
+      setRun(billingRunsService.mergeShort(run, await billingRunsService.recompute(run.id, run.version)));
     } catch (err) {
       setProblem(billingRunError(err));
       void refresh();

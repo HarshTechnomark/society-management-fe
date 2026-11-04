@@ -8,7 +8,7 @@ import {
   cycleSettings,
   exceptionItemRaw,
   itemRaw,
-  rulesRaw,
+  splitRateRulesRaw,
   runRaw,
   splitRulesRaw,
 } from '@/test/billingRunsFixtures';
@@ -42,7 +42,7 @@ function renderIt(routes: Routes = {}, perms = RUN_PERMS, features = RUN_FEATURE
   signInAs(perms, features);
   const api = mockApi({
     'GET /society/settings': ok(cycleSettings()),
-    'GET /billing/rules': ok(rulesRaw()),
+    'GET /billing/rules': ok(splitRateRulesRaw()),
     'GET /billing/split-rules': ok(splitRulesRaw()),
     'POST /billing/runs': created(),
     'GET /billing/runs/88': ok(runRaw()),
@@ -344,6 +344,7 @@ describe('New run wizard: step 3, confirm', () => {
     expect(api.last('POST', '/billing/runs/88/publish')?.body).toEqual({
       confirmLabel: 'BR-2026-11',
       version: 3,
+      previewHash: 'a'.repeat(64),
     });
     expect(result).toHaveTextContent('BR-2026-11 was submitted.');
     expect(within(result).getByRole('link', { name: 'Open in approvals' })).toHaveAttribute(

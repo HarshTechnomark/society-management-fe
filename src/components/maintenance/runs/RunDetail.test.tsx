@@ -389,6 +389,7 @@ describe('Run detail: publish (submit for approval)', () => {
     expect(api.last('POST', '/billing/runs/88/publish')?.body).toEqual({
       confirmLabel: 'BR-2026-11',
       version: 3,
+      previewHash: 'a'.repeat(64),
     });
     const call = api.fn.mock.calls.find(c => String(c[0]).endsWith('/billing/runs/88/publish'))!;
     expect((call[1] as RequestInit).headers).toMatchObject({ 'Idempotency-Key': expect.any(String) });

@@ -58,7 +58,11 @@ export function PublishForm({
     setBusy(true);
     try {
       onPublished(
-        await billingRunsService.publish(run.id, { confirmLabel: typed.trim(), version: run.version }),
+        await billingRunsService.publish(run.id, {
+          confirmLabel: typed.trim(),
+          version: run.version,
+          ...(run.previewHash ? { previewHash: run.previewHash } : {}),
+        }),
       );
     } catch (e) {
       if (isCode(e, 'RUN_CONFIRM_MISMATCH')) setFieldError(billingRunError(e));

@@ -107,3 +107,18 @@ describe('money text', () => {
     expect(pctText(null)).toBe('-');
   });
 });
+
+describe('billingRunError details', () => {
+  it('shows what the 400 says is wrong, not the generic words', () => {
+    const e = new ApiError(400, 'VALIDATION_FAILED', 'raw', [
+      { field: 'scopeValues', message: 'Every flat must be an active flat of the society' },
+    ]);
+    expect(billingRunError(e)).toBe('Every flat must be an active flat of the society');
+  });
+  it('adds the split rule that has no amount', () => {
+    const e = new ApiError(422, 'RUN_SPLIT_INPUT_MISSING', 'raw', [
+      { field: 'splitInputs', message: 'Amount missing for split rule 4', billSplitRuleId: 4 },
+    ]);
+    expect(billingRunError(e)).toContain('Amount missing for split rule 4');
+  });
+});

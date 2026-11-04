@@ -29,6 +29,7 @@ const TEXT: Record<string, string> = {
   RUN_EMPTY: 'No flat is ready to be billed. Include at least one flat or recompute the run.',
   GST_SETTINGS_INVALID:
     'A taxed charge head has no SAC code. Add the SAC code in Settings > Billing and recompute.',
+  CONFLICT: 'The server could not finish this. Try again.',
   MAKER_CHECKER_VIOLATION: 'A different committee member must approve this run.',
   SOCIETY_SUSPENDED: 'The account of the society is suspended. This action is paused.',
   SOCIETY_CLOSED: 'This society is closed.',
@@ -41,7 +42,12 @@ export const KNOWN_ERROR_CODES = Object.keys(TEXT);
 /** The message for an error, in plain words. */
 export function billingRunError(e: unknown): string {
   if (!(e instanceof ApiError)) return e instanceof Error ? e.message : 'Something went wrong. Try again.';
-  return TEXT[e.code] ?? e.message;
+  const text = TEXT[e.code] ?? e.message;
+  // the 400 and the split input error name the field or the split rule in errors[]
+  const detail = e.errors?.map(x => x.message).filter(Boolean);
+  if ((e.code === 'VALIDATION_FAILED' || e.code === 'RUN_SPLIT_INPUT_MISSING') && detail?.length)
+    return e.code === 'VALIDATION_FAILED' ? detail.join(' ') : `${text} ${detail.join(' ')}`;
+  return text;
 }
 
 /** The same error with its message in plain words, for `ErrorState` (keeps the support reference). */
