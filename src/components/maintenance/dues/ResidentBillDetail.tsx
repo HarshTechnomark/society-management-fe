@@ -15,7 +15,7 @@ import { useLoad } from '@/hooks/useLoad';
 import { inr, shortDate } from '@/lib/money';
 import { billingResidentService } from '@/services/billingResident.service';
 import type { InvoiceLine, MyInvoice } from '@/types/billingDues';
-import { LINE_KIND_LABEL, billingDuesError, inputLabel, invoiceStatus, plainError } from './format';
+import { LINE_KIND_LABEL, billingDuesError, friendlyInputs, invoiceStatus, plainError } from './format';
 
 /** One bill (spec 11.10): lines with tap-to-explain, tax, previous dues, PDF and Pay. */
 export function ResidentBillDetail({ id }: { id: number }) {
@@ -217,6 +217,7 @@ function LineRow({
   onToggle: () => void;
 }) {
   const c = canExplain ? l.computation : null;
+  const inputs = c ? friendlyInputs(c.inputs) : [];
   const panel = `explain-${l.id}`;
   return (
     <li className="py-3" data-testid="bill-line">
@@ -241,16 +242,11 @@ function LineRow({
       {c && expanded && (
         <div id={panel} className="mt-2 rounded-[14px] bg-white/60 p-3 text-[13.5px]">
           {c.text && <p className="font-semibold">{c.text}</p>}
-          {c.formula && (
-            <p className="mt-1">
-              Formula: <code>{c.formula}</code>
-            </p>
-          )}
-          {c.inputs.length > 0 && (
+          {inputs.length > 0 && (
             <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
-              {c.inputs.map(i => (
-                <div key={i.key} className="contents">
-                  <dt className="text-muted">{inputLabel(i.key)}</dt>
+              {inputs.map(i => (
+                <div key={i.label} className="contents">
+                  <dt className="text-muted">{i.label}</dt>
                   <dd>{i.value}</dd>
                 </div>
               ))}

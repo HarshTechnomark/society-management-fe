@@ -1,5 +1,6 @@
 import type { Tone } from '@/components/ui/Chip';
 import { ApiError } from '@/lib/apiClient';
+import { inr } from '@/lib/money';
 import type { AgeingBucketKey, InvoiceStatus } from '@/types/billingDues';
 
 /** Words for every section 12 error code the dues, defaulter, reminder and resident bill routes can return. */
@@ -102,10 +103,61 @@ export function currentMonth(now = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
-/** Readable name of an input key of a computation: `areaSqft` becomes "Area sqft". */
-export function inputLabel(key: string): string {
-  const spaced = key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ');
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
+/** A number with up to 3 decimals, without trailing zeros: "800.000" becomes "800", "12.5" stays "12.5". */
+const plainNumber = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 3 });
+const numberOf = (v: string | undefined): number | null => {
+  if (v === undefined || v.trim() === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+/**
+ * The inputs of a line's computation in a resident's words and units (spec 11.10, explain my bill). Internal keys
+ * (paise, milli units, rule ids, slab tables) are never shown: each known key becomes a plain label and a value in
+ * rupees, square feet, units or days; unknown keys are left out.
+ */
+export function friendlyInputs(inputs: { key: string; value: string }[]): { label: string; value: string }[] {
+  const by = new Map(inputs.map(i => [i.key, i.value]));
+  const get = (k: string) => numberOf(by.get(k));
+  const out: { label: string; value: string }[] = [];
+  const add = (label: string, value: string | null) => {
+    if (value !== null) out.push({ label, value });
+  };
+  const milli = get('areaMilli');
+  const area = milli !== null ? milli / 1000 : get('areaSqft');
+  add('Area', area === null ? null : `${plainNumber(area)} sq ft`);
+  const basis = by.get('areaBasis');
+  add(
+    'Area type',
+    basis ? `${basis.charAt(0)}${basis.slice(1).toLowerCase().replace(/_/g, ' ')} area` : null,
+  );
+  const perSqft = get('ratePerSqftPaise');
+  add('Rate', perSqft === null ? null : `${inr(perSqft)} per sq ft`);
+  const flatType = by.get('class');
+  add('Flat type', flatType ? flatType : null);
+  const perFlat = get('ratePaise');
+  add('Rate', perFlat === null ? null : `${inr(perFlat)} per month`);
+  const share = get('sharePaise');
+  add('Your share', share === null ? null : inr(share));
+  const used = get('consumptionMilli');
+  add('Units used', used === null ? null : plainNumber(used / 1000));
+  const minimum = get('minimumChargePaise');
+  add('Minimum charge', minimum === null || minimum === 0 ? null : inr(minimum));
+  const base = get('basePaise');
+  add('Charged on', base === null ? null : inr(base));
+  const percent = get('percent');
+  add('Percent', percent === null ? null : `${plainNumber(percent)}%`);
+  const liable = get('liableDays');
+  const periodDays = get('periodDays');
+  add(
+    'Days charged',
+    liable === null ? null : periodDays === null ? String(liable) : `${liable} of ${periodDays}`,
+  );
+  const months = get('months');
+  add('Months', months === null ? null : plainNumber(months));
+  const amount = get('amountPaise');
+  add('Amount per month', amount === null ? null : inr(amount));
+  return out;
 }
 
 /** Link to the module 12 pay route (placeholder until module 12 ships), like the module 09 screens. */

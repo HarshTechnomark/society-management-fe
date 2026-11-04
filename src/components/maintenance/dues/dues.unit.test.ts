@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ApiError } from '@/lib/apiClient';
 import { mapDefaulters, mapInvoice, mapMyDues, mapSummary } from '@/services/billingDuesMappers';
 import { defaultersRaw, invoiceDetailRaw, myDuesRaw, summaryRaw } from '@/test/billingDuesFixtures';
-import { DUES_TEXT, billingDuesError, inputLabel, invoiceStatus, payHref } from './format';
+import { DUES_TEXT, billingDuesError, friendlyInputs, invoiceStatus, payHref } from './format';
 
 describe('billingDuesError', () => {
   // One test per section 12 code the dues, reminder and resident bill routes can return.
@@ -116,9 +116,39 @@ describe('format', () => {
     expect(invoiceStatus({ status: 'PAID', isOverdue: false }).label).toBe('Paid');
     expect(invoiceStatus({ status: 'CANCELLED', isOverdue: false }).label).toBe('Cancelled');
   });
-  it('builds labels and the pay link', () => {
-    expect(inputLabel('areaSqft')).toBe('Area sqft');
-    expect(inputLabel('ratePerSqftPaise')).toBe('Rate per sqft paise');
+  it('turns computation inputs into plain labels and units, leaving internals out', () => {
+    const inputs = (o: Record<string, string>) => Object.entries(o).map(([key, value]) => ({ key, value }));
+    expect(
+      friendlyInputs(
+        inputs({ areaSqft: '800.000', areaMilli: '800000', ratePerSqftPaise: '320', months: '1' }),
+      ),
+    ).toEqual([
+      { label: 'Area', value: '800 sq ft' },
+      { label: 'Rate', value: '₹3.20 per sq ft' },
+      { label: 'Months', value: '1' },
+    ]);
+    expect(friendlyInputs(inputs({ amountPaise: '60000', months: '3' }))).toEqual([
+      { label: 'Months', value: '3' },
+      { label: 'Amount per month', value: '₹600' },
+    ]);
+    expect(friendlyInputs(inputs({ class: '2BHK', ratePaise: '250000', months: '1' }))).toEqual([
+      { label: 'Flat type', value: '2BHK' },
+      { label: 'Rate', value: '₹2,500 per month' },
+      { label: 'Months', value: '1' },
+    ]);
+    expect(
+      friendlyInputs(inputs({ basePaise: '500000', percent: '18', liableDays: '15', periodDays: '30' })),
+    ).toEqual([
+      { label: 'Charged on', value: '₹5,000' },
+      { label: 'Percent', value: '18%' },
+      { label: 'Days charged', value: '15 of 30' },
+    ]);
+    expect(friendlyInputs(inputs({ sharePaise: '12345', billSplitRuleId: '9', slabs: '[]' }))).toEqual([
+      { label: 'Your share', value: '₹123.45' },
+    ]);
+  });
+
+  it('builds the pay link for module 12', () => {
     expect(payHref(312)).toBe('/pay?unitId=312');
     expect(payHref(312, 5)).toBe('/pay?unitId=312&invoiceId=5');
   });

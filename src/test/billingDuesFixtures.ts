@@ -158,8 +158,14 @@ export const invoiceDetailRaw = (over: Record<string, unknown> = {}) => ({
       periodDays: null,
       computation: {
         method: 'PER_SQFT',
-        formula: 'roundHalfUp(2150000 × 320 × 1, 1000)',
-        inputs: { areaSqft: '2150.000', areaBasis: 'CARPET', ratePerSqftPaise: 320, months: 1 },
+        formula: 'roundHalfUp(areaMilli × ratePerSqftPaise × months, 1000)',
+        inputs: {
+          areaSqft: '2150.000',
+          areaMilli: '2150000',
+          areaBasis: 'CARPET',
+          ratePerSqftPaise: 320,
+          months: 1,
+        },
         text: '2,150 sq ft × ₹3.20 = ₹6,880.00',
         areaBasis: 'CARPET',
         ruleVersionId: 28,

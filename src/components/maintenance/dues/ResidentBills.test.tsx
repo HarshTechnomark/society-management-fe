@@ -188,13 +188,21 @@ describe('Bill detail', () => {
     expect(screen.queryByText(/Earlier dues/)).toBeNull();
   });
 
-  it('explains a line: text, formula, inputs and rule version', async () => {
+  it('explains a line in plain words: text, friendly inputs and rule version, no internals', async () => {
     show(<ResidentBillDetail id={5123} />, detail());
     await userEvent.click(await screen.findByRole('button', { name: /how Maintenance/ }));
     expect(screen.getByText('2,150 sq ft × ₹3.20 = ₹6,880.00')).toBeInTheDocument();
-    expect(screen.getByText('roundHalfUp(2150000 × 320 × 1, 1000)')).toBeInTheDocument();
-    expect(screen.getByText('Area sqft')).toBeInTheDocument();
-    expect(screen.getByText('CARPET')).toBeInTheDocument();
+    const panel = document.getElementById('explain-90121')!;
+    const pairs = [...panel.querySelectorAll('dt')].map(
+      dt => `${dt.textContent}: ${dt.nextElementSibling?.textContent}`,
+    );
+    expect(pairs).toEqual([
+      'Area: 2,150 sq ft',
+      'Area type: Carpet area',
+      'Rate: ₹3.20 per sq ft',
+      'Months: 1',
+    ]);
+    expect(panel).not.toHaveTextContent(/formula|roundHalfUp|milli|paise/i);
     expect(screen.getByText('Rate rule version 3, in force from 1 Apr 2026')).toBeInTheDocument();
   });
 
