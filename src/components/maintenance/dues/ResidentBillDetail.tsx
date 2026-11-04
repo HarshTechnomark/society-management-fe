@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Card, Page } from '@/components/common/PageHead';
+import { PayLater } from '@/components/common/PayLater';
 import { Gate } from '@/components/setup/Gate';
 import { Alert } from '@/components/ui/Alert';
-import { Button, buttonClasses } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { useToast } from '@/components/ui/Toast';
 import { PERMISSIONS } from '@/constants/permissions';
@@ -14,7 +15,7 @@ import { useLoad } from '@/hooks/useLoad';
 import { inr, shortDate } from '@/lib/money';
 import { billingResidentService } from '@/services/billingResident.service';
 import type { InvoiceLine, MyInvoice } from '@/types/billingDues';
-import { LINE_KIND_LABEL, billingDuesError, inputLabel, invoiceStatus, payHref, plainError } from './format';
+import { LINE_KIND_LABEL, billingDuesError, inputLabel, invoiceStatus, plainError } from './format';
 
 /** One bill (spec 11.10): lines with tap-to-explain, tax, previous dues, PDF and Pay. */
 export function ResidentBillDetail({ id }: { id: number }) {
@@ -120,11 +121,7 @@ function Bill({ inv }: { inv: MyInvoice }) {
           </Alert>
         )}
         <div className="mt-4 flex flex-wrap gap-2">
-          {canPay && (
-            <Link href={payHref(inv.unitId, inv.id)} className={buttonClasses('primary', 'md')}>
-              Pay {inr(inv.outstandingPaise)}
-            </Link>
-          )}
+          {canPay && <PayLater>Pay {inr(inv.outstandingPaise)}</PayLater>}
           <Button
             variant="glass"
             loading={pdfBusy}

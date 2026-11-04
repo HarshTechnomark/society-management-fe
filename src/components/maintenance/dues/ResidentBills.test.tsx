@@ -97,18 +97,18 @@ describe('My bills', () => {
     expect(await screen.findByText('Overdue ₹1,000')).toBeInTheDocument();
   });
 
-  it('links Pay to the module 12 route and the statement for owners only', async () => {
+  it('shows Pay as disabled until online payment ships, and the statement for owners only', async () => {
     show(<ResidentBillsScreen />, listRoutes());
-    expect(await screen.findByRole('link', { name: 'Pay dues of C-0801' })).toHaveAttribute(
-      'href',
-      '/pay?unitId=312',
-    );
+    const pay = await screen.findByRole('button', { name: 'Pay dues of C-0801' });
+    expect(pay).toBeDisabled();
+    expect(pay).toHaveAccessibleDescription('Online payment comes with the payments update.');
+    expect(screen.queryByRole('link', { name: /^Pay/ })).toBeNull();
     expect(screen.getByRole('link', { name: 'Statement of C-0801' })).toHaveAttribute(
       'href',
       '/resident/bills/statement/312',
     );
     expect(screen.queryByRole('link', { name: 'Statement of C-0802' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Pay dues of C-0802' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pay dues of C-0802' })).toBeNull();
   });
 
   it('hides the statement link without the plan feature', async () => {
@@ -224,12 +224,12 @@ describe('Bill detail', () => {
     expect(screen.queryByRole('button', { name: 'Explain this bill' })).toBeNull();
   });
 
-  it('links Pay to the module 12 route for an open bill and hides it for a paid one', async () => {
+  it('shows Pay as disabled with a note for an open bill until online payment ships', async () => {
     show(<ResidentBillDetail id={5123} />, detail());
-    expect(await screen.findByRole('link', { name: 'Pay ₹5,061' })).toHaveAttribute(
-      'href',
-      '/pay?unitId=312&invoiceId=5123',
-    );
+    const pay = await screen.findByRole('button', { name: 'Pay ₹5,061' });
+    expect(pay).toBeDisabled();
+    expect(screen.getByText('Online payment comes with the payments update.')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Pay/ })).toBeNull();
   });
 
   it('shows no Pay link on a paid bill', async () => {
@@ -238,7 +238,7 @@ describe('Bill detail', () => {
       detail({ status: 'PAID', paidPaise: 1006100, outstandingPaise: 0 }),
     );
     await screen.findByRole('heading', { name: 'Nov 2026' });
-    expect(screen.queryByRole('link', { name: /^Pay/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Pay/ })).toBeNull();
     expect(screen.getAllByText('Paid').length).toBeGreaterThan(0);
   });
 

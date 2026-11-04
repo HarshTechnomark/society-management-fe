@@ -2,8 +2,9 @@
 import { useState } from 'react';
 import { ConfirmReason } from '@/components/common/ConfirmReason';
 import { Card, Page, PageHead } from '@/components/common/PageHead';
+import { PayLater } from '@/components/common/PayLater';
 import { Gate } from '@/components/setup/Gate';
-import { Button, buttonClasses } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useFeature } from '@/hooks/useFeature';
@@ -135,12 +136,7 @@ function Moves({ units }: { units: Units }) {
                     <div className="mt-3 flex flex-wrap gap-2">
                       {m.status === 'BLOCKED_DUES' && (
                         <>
-                          <a
-                            className={buttonClasses('primary', 'md')}
-                            href={m.next?.payUrl ?? `/pay?unitId=${m.unitId ?? ''}`}
-                          >
-                            Pay dues
-                          </a>
+                          <PayLater>Pay dues</PayLater>
                           <Button
                             variant="glass"
                             onClick={async () => {
@@ -160,14 +156,7 @@ function Moves({ units }: { units: Units }) {
                           </Button>
                         </>
                       )}
-                      {m.status === 'PENDING_DEPOSIT' && (
-                        <a
-                          className={buttonClasses('primary', 'md')}
-                          href={m.next?.payUrl ?? `/pay?unitId=${m.unitId ?? ''}`}
-                        >
-                          Pay deposit
-                        </a>
-                      )}
+                      {m.status === 'PENDING_DEPOSIT' && <PayLater>Pay deposit</PayLater>}
                       {!['COMPLETED', 'REJECTED', 'CANCELLED', 'IN_PROGRESS'].includes(m.status) &&
                         canCreate && (
                           <Button variant="danger-soft" onClick={() => setCancel(m)}>
@@ -287,14 +276,7 @@ function Permits({ units }: { units: Units }) {
                         </p>
                       )}
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {p.status === 'PENDING_DEPOSIT' && (
-                          <a
-                            className={buttonClasses('primary', 'md')}
-                            href={`/pay?paymentOrderId=${p.depositPayment?.paymentOrderId ?? ''}`}
-                          >
-                            Pay deposit
-                          </a>
-                        )}
+                        {p.status === 'PENDING_DEPOSIT' && <PayLater>Pay deposit</PayLater>}
                         {p.status === 'IN_PROGRESS' && canCreate && (
                           <Button
                             onClick={async () => {
