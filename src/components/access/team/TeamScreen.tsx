@@ -1,5 +1,6 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Card, Page, PageHead } from '@/components/common/PageHead';
 import { Chip, type Tone } from '@/components/ui/Chip';
@@ -17,6 +18,12 @@ import { accessControlService } from '@/services/access-control.service';
 import { subscriptionsService } from '@/services/subscriptions.service';
 import { UsageWarnings } from '@/components/subscription/UsageBanners';
 import type { Invitation, MemberRow } from '@/types/accessControl';
+import { CommitteeTab } from '@/components/committee/CommitteeTab';
+import { Tabs } from '@/components/residents/common';
+import { TermBanner } from '@/components/committee/TermBanner';
+import { COMMITTEE_ROLE_KEYS, useCommitteeSeats } from '@/components/committee/useCommitteeSeats';
+import { FLAG_LABEL, seatLabel } from '@/components/committee/format';
+import { StaffTab } from './StaffTab';
 import { Avatar } from '../Avatar';
 import { RowActions, type RowAction } from '../RowActions';
 import { SeatMeter } from '../SeatMeter';
@@ -45,8 +52,65 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
 };
 const YOURSELF = 'You cannot change yourself';
 
-/** Spec 11.1: "Committee and team". */
+type TabKey = 'all' | 'committee' | 'staff';
+const tabFrom = (value: string | null | undefined): TabKey =>
+  value === 'committee' || value === 'staff' ? value : 'all';
+
+/** Spec 11.1: "Committee and team" with its tabs (All, Committee, Staff and admins; module 10 spec 11.1 to 11.8). */
 export function TeamScreen() {
+  const { ready } = useMe();
+  const canView = usePermission(PERMISSIONS.settings.members.view);
+  // `useSearchParams` gives the same value on the server and in the browser, so the first render matches
+  const params = useSearchParams();
+  const [tab, setTab] = useState<TabKey>(() => tabFrom(params?.get('tab')));
+  const choose = (k: TabKey) => {
+    setTab(k);
+    const url = new URL(window.location.href);
+    if (k === 'all') url.searchParams.delete('tab');
+    else url.searchParams.set('tab', k);
+    window.history.replaceState(window.history.state, '', url);
+  };
+  const tabs = (
+    <Tabs
+      label="Team sections"
+      value={tab}
+      onChange={choose}
+      tabs={[
+        { key: 'all', label: 'All' },
+        { key: 'committee', label: 'Committee' },
+        { key: 'staff', label: 'Staff and admins' },
+      ]}
+    />
+  );
+  if (tab === 'committee' && ready && canView)
+    return (
+      <Page>
+        <PageHead
+          title="Committee and team"
+          sub="Everyone who can sign in to manage this society. Two-step sign-in is required."
+        />
+        {tabs}
+        <div role="tabpanel" id="panel-committee" aria-labelledby="tab-committee">
+          <CommitteeTab />
+        </div>
+      </Page>
+    );
+  if (tab === 'staff' && ready && canView)
+    return (
+      <Page>
+        <PageHead
+          title="Committee and team"
+          sub="Everyone who can sign in to manage this society. Two-step sign-in is required."
+        />
+        {tabs}
+        <StaffTab onOpenCommittee={() => choose('committee')} />
+      </Page>
+    );
+  return <TeamAll tabs={tabs} onOpenCommittee={() => choose('committee')} />;
+}
+
+function TeamAll({ tabs, onOpenCommittee }: { tabs: ReactNode; onOpenCommittee: () => void }) {
+  const seats = useCommitteeSeats();
   const { ready } = useMe();
   const canView = usePermission(PERMISSIONS.settings.members.view);
   const canCreate = usePermission(PERMISSIONS.settings.members.create);
@@ -212,6 +276,36 @@ export function TeamScreen() {
       sortValue: r => (r.kind === 'member' ? (r.m.locationLabel ?? '') : ''),
       render: r => (r.kind === 'member' ? (r.m.locationLabel ?? '') : ''),
     },
+    ...(seats.enabled
+      ? [
+          {
+            key: 'seat',
+            label: 'Committee seat',
+            sortValue: (r: TeamRow) => {
+              const seat = r.kind === 'member' ? seats.seatByUser.get(r.m.userId) : undefined;
+              return seat ? seatLabel(seat.designation, seat.joinMode) : '';
+            },
+            render: (r: TeamRow) => {
+              if (r.kind !== 'member') return <span aria-label="No committee seat">-</span>;
+              const seat = seats.seatByUser.get(r.m.userId);
+              if (seat)
+                return (
+                  <span className="flex flex-wrap gap-1">
+                    <Chip tone="gold">{seatLabel(seat.designation, seat.joinMode)}</Chip>
+                    {seat.flags.map(f => (
+                      <Chip key={f} tone="warn">
+                        Check: {FLAG_LABEL[f] ?? f}
+                      </Chip>
+                    ))}
+                  </span>
+                );
+              if (COMMITTEE_ROLE_KEYS.includes(r.m.role.key) && !seats.loading)
+                return <Chip tone="warn">No committee seat</Chip>;
+              return <span aria-label="No committee seat">-</span>;
+            },
+          } satisfies Column<TeamRow>,
+        ]
+      : []),
     {
       key: 'status',
       label: 'Status',
@@ -273,84 +367,90 @@ export function TeamScreen() {
           </>
         }
       />
-      {usage.data && <UsageWarnings items={usage.data.items} />}
-      <Card>
-        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-          {seatItem && <SeatMeter used={seatItem.used} limit={seatItem.limit} />}
-        </div>
-        {roles.error ? <Alert tone="warn">Roles could not be loaded. Some actions are limited.</Alert> : null}
-        <DataTable
-          caption="Committee and team"
-          columns={columns}
-          rows={rows}
-          rowKey={r => r.id}
-          loading={members.loading && !members.data}
-          error={members.error}
-          onRetry={reload}
-          searchText={r => `${name(r)} ${email(r) ?? ''} ${roleName(r)}`}
-          searchLabel="Search members"
-          initialSort={{ key: 'name', dir: 'asc' }}
-          onRowClick={r => r.kind === 'member' && setOpenId(r.m.id)}
-          rowLabel={name}
-          empty={{
-            title: 'Only you so far. Invite your committee.',
-            action: canCreate ? (
-              <Button onClick={() => setInviteOpen(true)}>Invite member</Button>
-            ) : undefined,
-          }}
-        />
-      </Card>
-
-      <Card
-        className="mt-4"
-        title="What each role can do"
-        sub="Permissions are enforced on the server. The interface only hides what you cannot use."
-      >
-        {!details ? (
-          <div className="skeleton h-24 w-full" />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-[14px]">
-              <caption className="sr-only">What each role can do</caption>
-              <thead>
-                <tr className="border-b border-[var(--line)] text-left text-[12px] uppercase text-muted">
-                  <th scope="col" className="px-3 py-2">
-                    Capability
-                  </th>
-                  {usedRoles.map(r => (
-                    <th key={r.id} scope="col" className="px-3 py-2 text-center">
-                      {r.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {SOCIETY_CAPABILITIES.map(c => (
-                  <tr key={c.label} className="border-b border-[var(--line)] last:border-0">
-                    <td className="px-3 py-2">{c.label}</td>
-                    {usedRoles.map(r => {
-                      const yes = hasCapability(details.get(r.id)?.permissionKeys ?? [], c);
-                      return (
-                        <td key={r.id} className="px-3 py-2 text-center">
-                          {yes ? (
-                            <span className="font-bold text-ok" aria-label="Yes">
-                              ✓
-                            </span>
-                          ) : (
-                            <span className="text-faint" aria-label="No">
-                              -
-                            </span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {tabs}
+      <div role="tabpanel" id="panel-all" aria-labelledby="tab-all">
+        <TermBanner banner={seats.banner} onOpen={onOpenCommittee} />
+        {usage.data && <UsageWarnings items={usage.data.items} />}
+        <Card>
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+            {seatItem && <SeatMeter used={seatItem.used} limit={seatItem.limit} />}
           </div>
-        )}
-      </Card>
+          {roles.error ? (
+            <Alert tone="warn">Roles could not be loaded. Some actions are limited.</Alert>
+          ) : null}
+          <DataTable
+            caption="Committee and team"
+            columns={columns}
+            rows={rows}
+            rowKey={r => r.id}
+            loading={members.loading && !members.data}
+            error={members.error}
+            onRetry={reload}
+            searchText={r => `${name(r)} ${email(r) ?? ''} ${roleName(r)}`}
+            searchLabel="Search members"
+            initialSort={{ key: 'name', dir: 'asc' }}
+            onRowClick={r => r.kind === 'member' && setOpenId(r.m.id)}
+            rowLabel={name}
+            empty={{
+              title: 'Only you so far. Invite your committee.',
+              action: canCreate ? (
+                <Button onClick={() => setInviteOpen(true)}>Invite member</Button>
+              ) : undefined,
+            }}
+          />
+        </Card>
+
+        <Card
+          className="mt-4"
+          title="What each role can do"
+          sub="Permissions are enforced on the server. The interface only hides what you cannot use."
+        >
+          {!details ? (
+            <div className="skeleton h-24 w-full" />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] text-[14px]">
+                <caption className="sr-only">What each role can do</caption>
+                <thead>
+                  <tr className="border-b border-[var(--line)] text-left text-[12px] uppercase text-muted">
+                    <th scope="col" className="px-3 py-2">
+                      Capability
+                    </th>
+                    {usedRoles.map(r => (
+                      <th key={r.id} scope="col" className="px-3 py-2 text-center">
+                        {r.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {SOCIETY_CAPABILITIES.map(c => (
+                    <tr key={c.label} className="border-b border-[var(--line)] last:border-0">
+                      <td className="px-3 py-2">{c.label}</td>
+                      {usedRoles.map(r => {
+                        const yes = hasCapability(details.get(r.id)?.permissionKeys ?? [], c);
+                        return (
+                          <td key={r.id} className="px-3 py-2 text-center">
+                            {yes ? (
+                              <span className="font-bold text-ok" aria-label="Yes">
+                                ✓
+                              </span>
+                            ) : (
+                              <span className="text-faint" aria-label="No">
+                                -
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
 
       <InviteModal
         open={inviteOpen}

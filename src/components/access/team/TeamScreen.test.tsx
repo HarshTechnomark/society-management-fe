@@ -3,8 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@/components/ui/Toast';
 import { setMe } from '@/lib/auth';
-import { err, mockApi, ok, resetAll, sampleMe } from '@/test/helpers';
+import { err, mockApi, navigationMock, ok, resetAll, sampleMe } from '@/test/helpers';
 import { invitation, member, pagination, roleDetail, roleSummary } from '@/test/accessFixtures';
+
+vi.mock('next/navigation', () => navigationMock());
 import { TeamScreen } from './TeamScreen';
 
 const ALL = [

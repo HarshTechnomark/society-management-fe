@@ -10,7 +10,8 @@ export type FilePurpose =
   | 'SOCIETY_LOGO'
   | 'KYC_DOCUMENT'
   | 'RESIDENT_RECORD'
-  | 'USER_PHOTO';
+  | 'USER_PHOTO'
+  | 'HANDOVER_EVIDENCE';
 
 export interface FileUploader {
   upload(file: File, purpose: FilePurpose, opts?: UploadOptions): Promise<{ fileId: number }>;
