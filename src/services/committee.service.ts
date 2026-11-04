@@ -2,6 +2,10 @@
 import { api, apiList } from '@/lib/apiClient';
 import {
   normaliseActivation,
+  normaliseHandover,
+  normaliseMyCommittee,
+  normalisePast,
+  normaliseSeatUsage,
   normaliseListItem,
   normaliseOverview,
   normalisePlan,
@@ -11,6 +15,9 @@ import {
 import type {
   ActivationInput,
   ChangesInput,
+  Designation,
+  Handover,
+  HandoverPatch,
   SeatPatch,
   TermInput,
   TermPatch,
@@ -52,4 +59,29 @@ export const committeeService = {
       term: normaliseTerm(r),
       summary: normaliseSummary(r),
     })),
+
+  handover: (id: number) => api<unknown>(`${base}/terms/${id}/handover`).then(normaliseHandover),
+  addHandoverItem: (
+    id: number,
+    body: { title: string; ownerDesignation: Designation | null },
+  ): Promise<Handover> =>
+    api<unknown>(`${base}/terms/${id}/handover/items`, { method: 'POST', body, idempotent: true }).then(
+      normaliseHandover,
+    ),
+  updateHandoverItem: (id: number, itemId: string, body: HandoverPatch): Promise<Handover> =>
+    api<unknown>(`${base}/terms/${id}/handover/items/${itemId}`, { method: 'PATCH', body }).then(
+      normaliseHandover,
+    ),
+
+  seatUsage: () => api<unknown>(`${base}/seat-usage`).then(normaliseSeatUsage),
+
+  // resident app
+  myCommittee: () => api<unknown>('/me/committee').then(normaliseMyCommittee),
+  myHistory: async (q: { page?: number; limit?: number } = {}) => {
+    const r = await apiList<unknown>('/me/committee/history', { query: q as Query });
+    return {
+      items: (Array.isArray(r.data) ? r.data : []).map(normalisePast),
+      pagination: r.pagination ?? null,
+    };
+  },
 };

@@ -7,6 +7,11 @@ import type {
   ActivationResult,
   Banner,
   ChangeSummary,
+  Handover,
+  HandoverItem,
+  MyCommittee,
+  PastCommittee,
+  SeatUsage,
   CommitteeOverview,
   CurrentSummary,
   Delegation,
@@ -290,5 +295,116 @@ export function normaliseActivation(raw: unknown): ActivationResult {
       : null,
     endedTerm: e ? { id: num(e.id), status: str(e.status), actualEndDate: strN(e.actualEndDate) } : null,
     summary: normaliseSummary(r),
+  };
+}
+
+export function normaliseHandover(raw: unknown): Handover {
+  const h = obj(raw);
+  const pr = obj(h.progress);
+  const items = list(h.items).map((i): HandoverItem => ({
+    itemId: str(i.itemId),
+    title: str(i.title),
+    ownerDesignation: strN(i.ownerDesignation) as HandoverItem['ownerDesignation'],
+    ownerName: strN(i.ownerName),
+    status: str(i.status, 'PENDING') as HandoverItem['status'],
+    note: strN(i.note),
+    evidenceFileIds: Array.isArray(i.evidenceFileIds)
+      ? i.evidenceFileIds.filter((x): x is number => typeof x === 'number')
+      : [],
+    updatedByName: strN(i.updatedByName),
+    updatedAt: strN(i.updatedAt),
+    canEdit: bool(i.canEdit),
+  }));
+  const done = items.filter(i => i.status === 'DONE').length;
+  const na = items.filter(i => i.status === 'NOT_APPLICABLE').length;
+  return {
+    termId: num(h.termId),
+    completedAt: strN(h.completedAt),
+    progress: {
+      total: num(pr.total, items.length),
+      done: num(pr.done, done),
+      notApplicable: num(pr.notApplicable, na),
+      pending: num(pr.pending, items.length - done - na),
+    },
+    items,
+  };
+}
+
+export function normaliseMyCommittee(raw: unknown): MyCommittee {
+  const c = obj(raw);
+  const t = c.term && typeof c.term === 'object' ? obj(c.term) : null;
+  return {
+    visible: bool(c.visible, true),
+    term: t
+      ? {
+          name: str(t.name),
+          startDate: str(t.startDate),
+          endDate: str(t.endDate),
+          status: str(t.status, 'ACTIVE') as NonNullable<MyCommittee['term']>['status'],
+          isOverdue: bool(t.isOverdue),
+        }
+      : null,
+    members: list(c.members).map(m => ({
+      name: str(m.name),
+      designation: str(m.designation, 'MEMBER') as MyCommittee['members'][number]['designation'],
+      designationLabel: str(m.designationLabel),
+      joinMode: str(m.joinMode, 'ELECTED') as MyCommittee['members'][number]['joinMode'],
+      unitLabel: strN(m.unitLabel),
+      photoFileId: numN(m.photoFileId),
+      mobile: strN(m.mobile),
+      publicEmail: strN(m.publicEmail),
+      portfolios: strs(m.portfolios) as MyCommittee['members'][number]['portfolios'],
+      since: strN(m.since),
+    })),
+    vacancies: num(c.vacancies),
+  };
+}
+
+export function normalisePast(raw: unknown): PastCommittee {
+  const p = obj(raw);
+  return {
+    name: str(p.name),
+    startDate: str(p.startDate),
+    endDate: str(p.endDate),
+    actualEndDate: strN(p.actualEndDate),
+    source: str(p.source, 'MANUAL') as PastCommittee['source'],
+    officeBearers: list(p.officeBearers).map(o => ({
+      designation: str(o.designation, 'MEMBER') as PastCommittee['officeBearers'][number]['designation'],
+      designationLabel: str(o.designationLabel),
+      name: str(o.name),
+      fromDate: strN(o.fromDate),
+      toDate: strN(o.toDate),
+    })),
+  };
+}
+
+export function normaliseSeatUsage(raw: unknown): SeatUsage {
+  const u = obj(raw);
+  const limit = numN(u.limit);
+  return {
+    limit,
+    used: num(u.used),
+    free: limit === null ? null : num(u.free, Math.max(0, limit - num(u.used))),
+    pendingStaffInvitations: num(u.pendingStaffInvitations),
+    byRole: list(u.byRole).map(r => ({
+      roleKey: str(r.roleKey),
+      roleName: str(r.roleName),
+      count: num(r.count),
+    })),
+    staffRoles: list(u.staffRoles).map(r => ({
+      roleKey: str(r.roleKey),
+      roleName: str(r.roleName),
+      consumesSeat: bool(r.consumesSeat),
+      isSystem: bool(r.isSystem),
+    })),
+    staff: list(u.staff).map(m => ({
+      memberId: num(m.memberId),
+      userId: num(m.userId),
+      name: strN(m.name),
+      roleKey: str(m.roleKey),
+      roleName: str(m.roleName),
+      status: str(m.status, 'ACTIVE'),
+      consumesSeat: bool(m.consumesSeat),
+    })),
   };
 }

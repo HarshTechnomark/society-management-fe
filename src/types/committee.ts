@@ -331,3 +331,88 @@ export interface ActivationResult {
   endedTerm: { id: number; status: string; actualEndDate: string | null } | null;
   summary: ChangeSummary;
 }
+
+/* hand-over checklist (spec 8.10) */
+export type HandoverStatus = 'PENDING' | 'DONE' | 'NOT_APPLICABLE';
+export interface HandoverItem {
+  itemId: string;
+  title: string;
+  ownerDesignation: Designation | null;
+  ownerName: string | null;
+  status: HandoverStatus;
+  note: string | null;
+  evidenceFileIds: number[];
+  updatedByName: string | null;
+  updatedAt: string | null;
+  canEdit: boolean;
+}
+export interface Handover {
+  termId: number;
+  completedAt: string | null;
+  progress: { total: number; done: number; notApplicable: number; pending: number };
+  items: HandoverItem[];
+}
+export interface HandoverPatch {
+  status?: HandoverStatus;
+  note?: string | null;
+  evidenceFileIds?: number[];
+}
+
+/* staff seat meter and staff accounts (spec 8.11) */
+export interface StaffRoleInfo {
+  roleKey: string;
+  roleName: string;
+  consumesSeat: boolean;
+  isSystem: boolean;
+}
+export interface StaffMember {
+  memberId: number;
+  userId: number;
+  name: string | null;
+  roleKey: string;
+  roleName: string;
+  status: string;
+  consumesSeat: boolean;
+}
+export interface SeatUsage {
+  limit: number | null;
+  used: number;
+  free: number | null;
+  pendingStaffInvitations: number;
+  byRole: { roleKey: string; roleName: string; count: number }[];
+  staffRoles: StaffRoleInfo[];
+  staff: StaffMember[];
+}
+
+/* resident app (spec 8.12 and 8.13) */
+export interface MyCommittee {
+  visible: boolean;
+  term: { name: string; startDate: string; endDate: string; status: TermStatus; isOverdue: boolean } | null;
+  members: {
+    name: string;
+    designation: Designation;
+    designationLabel: string;
+    joinMode: JoinMode;
+    unitLabel: string | null;
+    photoFileId: number | null;
+    mobile: string | null;
+    publicEmail: string | null;
+    portfolios: Portfolio[];
+    since: string | null;
+  }[];
+  vacancies: number;
+}
+export interface PastCommittee {
+  name: string;
+  startDate: string;
+  endDate: string;
+  actualEndDate: string | null;
+  source: TermSource;
+  officeBearers: {
+    designation: Designation;
+    designationLabel: string;
+    name: string;
+    fromDate: string | null;
+    toDate: string | null;
+  }[];
+}
