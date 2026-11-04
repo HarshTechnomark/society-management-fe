@@ -38,6 +38,11 @@ export const ADMIN_NAV: NavGroup[] = [
       { href: '/admin/holidays', label: 'Holidays', keys: [S.society.view] },
       { href: '/admin/settings', label: 'Settings', keys: [S.society.view] },
       { href: '/admin/settings/billing', label: 'Billing rules', keys: [S.billingRules.view] },
+      {
+        href: '/admin/settings/billing/opening-balances',
+        label: 'Opening balances',
+        keys: [PERMISSIONS.finance.billing.view],
+      },
     ],
   },
   {
