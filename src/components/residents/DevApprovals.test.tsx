@@ -38,4 +38,26 @@ describe('DevApprovals', () => {
     renderIt({ 'GET /dev/approvals': ok([]) });
     expect(await screen.findByText('Nothing is waiting for a decision.')).toBeInTheDocument();
   });
+
+  it('sends the source of a billing request so the right module decides it', async () => {
+    const api = renderIt({
+      'GET /dev/approvals': ok([
+        {
+          id: 4,
+          type: 'BILLING_RUN_PUBLISH',
+          entityId: 2,
+          societyId: 1,
+          status: 'PENDING',
+          source: 'billing',
+        },
+      ]),
+      'POST /dev/approvals/4/approve': ok({ id: 4, status: 'APPROVED' }),
+    });
+    expect(await screen.findByText('Billing run publish')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Approve request 4' }));
+    await waitFor(() => expect(api.last('POST', '/dev/approvals/4/approve')).toBeTruthy());
+    expect(
+      api.fn.mock.calls.some(c => String(c[0]).includes('/dev/approvals/4/approve?source=billing')),
+    ).toBe(true);
+  });
 });
