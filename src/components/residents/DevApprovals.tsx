@@ -24,6 +24,9 @@ const TYPE_LABEL: Record<string, string> = {
   MOVE_OUT: 'Move out',
   BILLING_RULE_CHANGE: 'Billing rule change',
   LATE_FEE_POLICY_CHANGE: 'Late fee policy change',
+  CREDIT_NOTE: 'Credit note',
+  WRITE_OFF: 'Write-off',
+  INVOICE_CANCEL: 'Invoice cancellation',
   BILLING_RUN_PUBLISH: 'Billing run publish',
 };
 
