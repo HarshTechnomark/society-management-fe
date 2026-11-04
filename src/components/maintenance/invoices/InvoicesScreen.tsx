@@ -52,7 +52,11 @@ function Inner() {
   const canExport = usePermission(B.export);
   const adHocOn = useFeature('billing.supplementary_and_ad_hoc_invoices');
   const toast = useToast();
-  const [status, setStatus] = useState(params.get('status') ?? '');
+  // the API rejects an unknown status (strict query), so a hand-edited link falls back to every bill
+  const [status, setStatus] = useState(() => {
+    const v = params.get('status') ?? '';
+    return STATUS_FILTERS.some(f => f.value === v) ? v : '';
+  });
   const [unit, setUnit] = useState<UnitOption | null>(() => {
     const id = num(params.get('unitId'));
     return id ? { id, label: `Flat ${id}` } : null;

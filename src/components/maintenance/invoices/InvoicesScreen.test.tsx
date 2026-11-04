@@ -118,6 +118,14 @@ describe('Invoice list', () => {
     await waitFor(() => expect(urls(api).at(-1)).not.toContain('billToResidentId'));
   });
 
+  it('ignores a status of the link the API does not know', async () => {
+    search.current = new URLSearchParams('status=LATE&unitId=abc');
+    const api = renderIt();
+    await screen.findAllByTestId('invoice-row');
+    expect(urls(api)[0]).not.toContain('status=');
+    expect(urls(api)[0]).not.toContain('unitId=');
+  });
+
   it('pages through a long list', async () => {
     const api = renderIt({ 'GET /invoices': list(ROWS, 3) });
     await screen.findAllByTestId('invoice-row');
