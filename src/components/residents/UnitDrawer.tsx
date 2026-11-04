@@ -9,7 +9,9 @@ import { PERMISSIONS } from '@/constants/permissions';
 import { useFeature } from '@/hooks/useFeature';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
-import { inr, shortDate } from '@/lib/money';
+import { StatementDrawer } from '@/components/maintenance/ledger/StatementDrawer';
+import { duesView } from '@/components/maintenance/ledger/format';
+import { shortDate } from '@/lib/money';
 import { residentsService } from '@/services/residents.service';
 import type { UnitOwner, UnitPanel } from '@/types/residents';
 import { FormDialog, Loading, Section, useRun } from './common';
@@ -26,6 +28,7 @@ import {
 } from './format';
 
 const P = PERMISSIONS.residents;
+const DUES_CLASS = { due: 'text-[#6f4200]', advance: 'text-[#0a4a63]', clear: 'text-[#14583a]' };
 const KIND: Record<string, string> = {
   MOVE_IN: 'Move-in',
   MOVE_OUT: 'Move-out',
@@ -55,6 +58,10 @@ export function UnitDrawer({
   const canReveal = usePermission(P.contacts.view);
   const sharesOn = useFeature('residents.joint_ownership');
   const timelineOn = useFeature('residents.resident_timeline');
+  const billingView = usePermission(PERMISSIONS.finance.billing.view);
+  const statementOn = useFeature('billing.statement_of_account');
+  const canStatement = billingView && statementOn;
+  const [statement, setStatement] = useState(false);
   const run = useRun();
   const [reveal, setReveal] = useState(false);
   const [vacate, setVacate] = useState(false);
@@ -74,8 +81,8 @@ export function UnitDrawer({
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-[12.5px] font-semibold uppercase text-muted">Dues</p>
-                <p className={`text-[30px] font-bold ${u.duesPaise ? 'text-[#6f4200]' : 'text-[#14583a]'}`}>
-                  {u.duesPaise ? inr(u.duesPaise) : 'Paid up'}
+                <p className={`text-[30px] font-bold ${DUES_CLASS[duesView(u.duesPaise).tone]}`}>
+                  {duesView(u.duesPaise).label}
                 </p>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -221,6 +228,11 @@ export function UnitDrawer({
             )}
 
             <div className="flex flex-wrap gap-2 border-t border-[var(--line)] pt-4">
+              {canStatement && (
+                <Button variant="glass" onClick={() => setStatement(true)}>
+                  Statement
+                </Button>
+              )}
               {canEdit && u.occupancy !== 'VACANT' && (
                 <>
                   {u.owners[0] && (
@@ -264,6 +276,13 @@ export function UnitDrawer({
           </>
         )}
       </Loading>
+      {statement && (
+        <StatementDrawer
+          unitId={unitId}
+          unitLabel={load.data?.unit.label ?? 'Flat'}
+          onClose={() => setStatement(false)}
+        />
+      )}
       {shares && (
         <SharesDialog
           panel={shares}
