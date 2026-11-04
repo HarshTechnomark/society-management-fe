@@ -73,4 +73,18 @@ describe('Admin navigation', () => {
     expect(activeHref('/admin/roles/5')).toBe('/admin/roles');
     expect(activeHref('/admin')).toBeNull();
   });
+
+  it('shows Billing runs only with finance.billing.view', () => {
+    signIn(['settings.society.view']);
+    const { unmount } = render(<AdminNav>x</AdminNav>);
+    expect(
+      within(screen.getByRole('navigation', { name: 'Admin' })).queryByRole('link', { name: 'Billing runs' }),
+    ).not.toBeInTheDocument();
+    unmount();
+    signIn(['finance.billing.view']);
+    render(<AdminNav>x</AdminNav>);
+    expect(
+      within(screen.getByRole('navigation', { name: 'Admin' })).getByRole('link', { name: 'Billing runs' }),
+    ).toHaveAttribute('href', '/admin/billing/runs');
+  });
 });

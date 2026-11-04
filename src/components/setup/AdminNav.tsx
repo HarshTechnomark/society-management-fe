@@ -24,6 +24,7 @@ interface NavGroup {
 const S = PERMISSIONS.settings;
 const U = PERMISSIONS.residents.units;
 const R = PERMISSIONS.residents;
+const F = PERMISSIONS.finance;
 
 /** Links to the admin pages that exist today (modules 02, 03, 05, 07, 08). */
 export const ADMIN_NAV: NavGroup[] = [
@@ -52,6 +53,10 @@ export const ADMIN_NAV: NavGroup[] = [
       { href: '/admin/team', label: 'Team', keys: [S.members.view] },
       { href: '/admin/roles', label: 'Roles', keys: [S.roles.view] },
     ],
+  },
+  {
+    title: 'Billing',
+    items: [{ href: '/admin/billing/runs', label: 'Billing runs', keys: [F.billing.view] }],
   },
   {
     title: 'Account',
