@@ -1,0 +1,135 @@
+/** Raw API shapes of module 11 invoices and notes (spec 8.11 to 8.17), as the backend sends them. */
+export const INV_VIEW_PERMS = ['finance.billing.view'];
+export const INV_PERMS = [
+  'finance.billing.view',
+  'finance.billing.create',
+  'finance.billing.edit',
+  'finance.billing.export',
+  'settings.billing_rules.view',
+];
+export const INV_FEATURES = [
+  'billing.supplementary_and_ad_hoc_invoices',
+  'billing.credit_notes',
+  'billing.debit_notes',
+  'billing.invoice_pdf_with_upi_qr',
+  'billing.statement_of_account',
+  'billing.explain_my_bill',
+];
+
+export const rowRaw = (over: Record<string, unknown> = {}) => ({
+  id: 5123,
+  invoiceNo: 'INV/2026-27/000201',
+  invoiceType: 'REGULAR',
+  unitId: 312,
+  unitLabel: 'C-0801',
+  billToName: 'Anil Deshmukh',
+  billToRelation: 'OWNER',
+  periodLabel: 'Nov 2026',
+  invoiceDate: '2026-11-01',
+  dueDate: '2026-11-10',
+  totalPaise: 1006100,
+  paidPaise: 500000,
+  outstandingPaise: 506100,
+  status: 'PARTIALLY_PAID',
+  isOverdue: false,
+  isDisputed: false,
+  ...over,
+});
+
+export const lineRaw = (over: Record<string, unknown> = {}) => ({
+  id: 90121,
+  lineNo: 1,
+  lineKind: 'CHARGE',
+  headKey: 'MAINTENANCE',
+  description: 'Maintenance: 2,150 sq ft × ₹3.20 (Nov 2026)',
+  quantity: '2150.0000',
+  ratePaise: 320,
+  amountPaise: 688000,
+  isTaxable: true,
+  creditedPaise: 0,
+  computation: { method: 'PER_SQFT', text: '2,150 sq ft × ₹3.20 = ₹6,880.00' },
+  ...over,
+});
+
+export const noteRaw = (over: Record<string, unknown> = {}) => ({
+  id: 611,
+  noteType: 'CREDIT',
+  noteNo: 'CN/2026-27/000017',
+  status: 'ISSUED',
+  reasonCode: 'WAIVER',
+  remarks: 'Goodwill',
+  invoiceId: 5123,
+  subtotalPaise: 50000,
+  taxPaise: 0,
+  totalPaise: 50000,
+  appliedToInvoicePaise: 50000,
+  excessToAdvancePaise: 0,
+  noteDate: '2026-11-18',
+  pdfStatus: 'READY',
+  ...over,
+});
+
+export const detailRaw = (over: Record<string, unknown> = {}) => ({
+  id: 5123,
+  invoiceNo: 'INV/2026-27/000201',
+  invoiceType: 'REGULAR',
+  status: 'PARTIALLY_PAID',
+  unit: { id: 312, label: 'C-0801' },
+  billTo: { residentId: 77, name: 'Anil Deshmukh', relation: 'OWNER' },
+  periodStart: '2026-11-01',
+  periodEnd: '2026-11-30',
+  periodLabel: 'Nov 2026',
+  invoiceDate: '2026-11-01',
+  dueDate: '2026-11-10',
+  isOverdue: false,
+  isDisputed: false,
+  gstApplied: true,
+  societyGstin: '27AAAAS1234A1Z5',
+  thresholdBasePaise: 823000,
+  taxableValuePaise: 823000,
+  subtotalPaise: 858000,
+  cgstPaise: 74070,
+  sgstPaise: 74070,
+  taxPaise: 148140,
+  roundOffPaise: -40,
+  totalPaise: 1006100,
+  debitedPaise: 0,
+  creditedPaise: 0,
+  paidPaise: 500000,
+  outstandingPaise: 506100,
+  previousDuesPaise: 0,
+  lines: [
+    lineRaw(),
+    lineRaw({
+      id: 90122,
+      lineNo: 2,
+      headKey: 'SINKING_FUND',
+      description: 'Sinking fund (Nov 2026)',
+      amountPaise: 170000,
+      isTaxable: false,
+      computation: null,
+    }),
+    { id: 90126, lineNo: 6, lineKind: 'CGST', description: 'CGST 9% on ₹8,230.00', amountPaise: 74070 },
+    { id: 90127, lineNo: 7, lineKind: 'SGST', description: 'SGST 9% on ₹8,230.00', amountPaise: 74070 },
+    { id: 90128, lineNo: 8, lineKind: 'ROUND_OFF', description: 'Round off', amountPaise: -40 },
+  ],
+  notes: [],
+  payments: [
+    { id: 9001, receiptNo: 'RCT/2026-27/000310', date: '2026-11-05', mode: 'UPI', amountPaise: 500000 },
+  ],
+  pdfStatus: 'READY',
+  version: 4,
+  ...over,
+});
+
+export const headRaw = (over: Record<string, unknown> = {}) => ({
+  id: 4,
+  key: 'HALL_BOOKING',
+  name: 'Hall booking',
+  gstTreatment: 'NONE',
+  isSystem: false,
+  status: 'ACTIVE',
+  ...over,
+});
+export const SYSTEM_HEAD = headRaw({ id: 1, key: 'MAINTENANCE', name: 'Maintenance', isSystem: true });
+export const unitRaw = (over: Record<string, unknown> = {}) => ({ id: 312, label: 'C-0801', ...over });
