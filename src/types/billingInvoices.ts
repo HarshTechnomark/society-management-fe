@@ -58,8 +58,11 @@ export interface NoteSummary {
   lines: InvoiceLine[];
 }
 
+/** An allocation of a payment to the bill (module 12); the API sends no receipt number or mode yet. */
 export interface PaymentRow {
   id: number;
+  /** Unique within the bill (one payment can be allocated twice). */
+  key: string;
   label: string;
   date: string | null;
   mode: string | null;
@@ -100,6 +103,8 @@ export interface InvoiceDetail {
   lines: InvoiceLine[];
   notes: NoteSummary[];
   payments: PaymentRow[];
+  financialYear: string | null;
+  settledOn: string | null;
   pdfStatus: PdfStatus;
   version: number;
 }

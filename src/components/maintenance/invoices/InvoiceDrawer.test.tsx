@@ -22,7 +22,7 @@ const UNPAID = detailRaw({
   status: 'ISSUED',
   paidPaise: 0,
   outstandingPaise: 1006100,
-  payments: [],
+  allocations: [],
 });
 
 function renderIt(
@@ -58,7 +58,8 @@ describe('Invoice drawer: reading', () => {
     expect(dlg).toHaveTextContent('SGST₹740.70');
     expect(dlg).toHaveTextContent('Round off-₹0.40');
     expect(dlg).toHaveTextContent('Total₹10,061');
-    expect(dlg).toHaveTextContent('RCT/2026-27/000310');
+    expect(dlg).toHaveTextContent('Payment #9001');
+    expect(dlg).toHaveTextContent('5 Nov 2026');
     expect(dlg).toHaveTextContent('Balance due₹5,061');
     expect(dlg).toHaveTextContent('27AAAAS1234A1Z5');
   });

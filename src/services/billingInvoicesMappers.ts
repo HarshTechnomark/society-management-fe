@@ -2,11 +2,12 @@
  * Normalisers from the module 11 backend shapes (spec 8.11 to 8.17) to the screen shapes in
  * `types/billingInvoices.ts`. All shape guessing lives here; none of them throws.
  *
- * Assumptions to check against the real backend:
- * - the detail has `unit {id,label}`, `billTo {residentId,name,relation}`, `lines[]`, `notes[]` (note summaries,
- *   optionally with `lines[]`), and optionally `payments[]` (or `allocations[]`) with `{id, receiptNo|label, date, mode, amountPaise}`;
- * - a line's `computation.text` (or `explanation`) is the explain-my-bill text;
- * - cancel answers `202 {approvalRequestId,status}` or `200` with the cancelled invoice.
+ * Checked against the backend (`billing.invoices.detail.ts`, `billing.notes.shared.ts`, `billing.notes.cancel.ts`):
+ * - the detail has `unit {id,label}`, `billTo {residentId,name,relation}`, `lines[]`, `notes[]` as summaries
+ *   `{id, noteType, noteNo, status, reasonCode, noteDate, totalPaise, pdfStatus}` (no lines: those come from
+ *   `GET /billing/notes/:id`), `allocations[] {paymentId, allocatedOn, amountPaise}` and `ledger[]`;
+ * - a line's `computation.text` is the explain-my-bill text (the object is left out when the feature is off);
+ * - cancel answers `202 {approvalRequestId,status:'PENDING'}` or `200` with the cancelled invoice detail.
  */
 import type {
   CancelResult,
@@ -100,12 +101,16 @@ export function normaliseNote(raw: unknown): NoteSummary {
   };
 }
 
-const payment = (raw: unknown): PaymentRow => {
+/** One allocation of the detail (8.12): `{ paymentId, allocatedOn, amountPaise }` from the module 12 port. */
+const payment = (raw: unknown, i: number): PaymentRow => {
   const p = obj(raw);
+  const paymentId = numN(p.paymentId) ?? numN(p.id);
+  const receipt = strN(p.receiptNo) ?? strN(p.label);
   return {
-    id: num(p.id),
-    label: str(p.receiptNo, str(p.label, str(p.paymentNo, 'Payment'))),
-    date: strN(p.date) ?? strN(p.paidOn) ?? strN(p.receivedOn),
+    id: paymentId ?? 0,
+    key: `${paymentId ?? 'x'}-${i}`,
+    label: receipt ?? (paymentId ? `Payment #${paymentId}` : 'Payment'),
+    date: strN(p.allocatedOn) ?? strN(p.date) ?? strN(p.paidOn),
     mode: strN(p.mode) ?? strN(p.paymentMode),
     amountPaise: num(p.amountPaise, num(p.allocatedPaise)),
   };
@@ -120,7 +125,7 @@ export function normaliseInvoice(raw: unknown): InvoiceDetail {
   const cgst = num(r.cgstPaise, sumKind('CGST'));
   const sgst = num(r.sgstPaise, sumKind('SGST'));
   const total = num(r.totalPaise);
-  const paymentsRaw = Array.isArray(r.payments) ? r.payments : r.allocations;
+  const paymentsRaw = Array.isArray(r.allocations) ? r.allocations : r.payments;
   return {
     id: num(r.id),
     invoiceNo: str(r.invoiceNo),
@@ -155,6 +160,8 @@ export function normaliseInvoice(raw: unknown): InvoiceDetail {
     lines,
     notes: list(r.notes).map(normaliseNote),
     payments: (Array.isArray(paymentsRaw) ? paymentsRaw : []).map(payment),
+    financialYear: strN(r.financialYear),
+    settledOn: strN(r.settledOn),
     pdfStatus: str(r.pdfStatus, 'PENDING') as PdfStatus,
     version: num(r.version, 1),
   };

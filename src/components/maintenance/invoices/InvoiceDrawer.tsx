@@ -348,7 +348,7 @@ function Body({
         ) : (
           <ul className="divide-y divide-[var(--line)]">
             {inv.payments.map(p => (
-              <li key={p.id} className="flex justify-between gap-3 py-2 text-[14px]">
+              <li key={p.key} className="flex justify-between gap-3 py-2 text-[14px]">
                 <span>
                   {p.label}
                   <span className="block text-[12.5px] text-muted">

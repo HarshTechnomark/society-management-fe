@@ -27,18 +27,49 @@ describe('billingInvoicesMappers', () => {
     expect(d.sgstPaise).toBe(74070);
     expect(d.lines).toHaveLength(5);
     expect(d.lines[0].explanation).toBe('2,150 sq ft × ₹3.20 = ₹6,880.00');
-    expect(d.payments[0]).toMatchObject({ label: 'RCT/2026-27/000310', amountPaise: 500000 });
+    expect(d.payments[0]).toMatchObject({ label: 'Payment #9001', amountPaise: 500000 });
+    expect(d.financialYear).toBe('2026-27');
   });
 
-  it('takes tax and round-off from the lines when the totals are missing, and accepts allocations', () => {
+  it('maps payments from the real allocations {paymentId, allocatedOn, amountPaise}', () => {
+    const d = normaliseInvoice(
+      detailRaw({
+        allocations: [
+          { paymentId: 9001, allocatedOn: '2026-11-05', amountPaise: 300000 },
+          { paymentId: 9001, allocatedOn: '2026-11-06', amountPaise: 200000 },
+          { allocatedOn: '2026-11-07', amountPaise: 100 },
+        ],
+      }),
+    );
+    expect(d.payments).toEqual([
+      {
+        id: 9001,
+        key: '9001-0',
+        label: 'Payment #9001',
+        date: '2026-11-05',
+        mode: null,
+        amountPaise: 300000,
+      },
+      {
+        id: 9001,
+        key: '9001-1',
+        label: 'Payment #9001',
+        date: '2026-11-06',
+        mode: null,
+        amountPaise: 200000,
+      },
+      { id: 0, key: 'x-2', label: 'Payment', date: '2026-11-07', mode: null, amountPaise: 100 },
+    ]);
+  });
+
+  it('takes tax and round-off from the lines when the totals are missing', () => {
     const d = normaliseInvoice(
       detailRaw({
         cgstPaise: undefined,
         sgstPaise: undefined,
         taxPaise: undefined,
         roundOffPaise: undefined,
-        payments: undefined,
-        allocations: [{ id: 1, allocatedPaise: 300 }],
+        allocations: [{ paymentId: 1, amountPaise: 300 }],
       }),
     );
     expect(d.cgstPaise).toBe(74070);
