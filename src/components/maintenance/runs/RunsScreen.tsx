@@ -12,7 +12,7 @@ import { usePermission } from '@/hooks/usePermission';
 import { useLoad } from '@/hooks/useLoad';
 import { inr } from '@/lib/money';
 import { billingRunsService } from '@/services/billingRuns.service';
-import { RUN_STATUS_LABEL, pctText, periodLabel, plainError } from './format';
+import { RUN_STATUS_LABEL, billCount, billsText, pctText, periodLabel, plainError } from './format';
 import { RunStatusChip } from './RunBits';
 
 const B = PERMISSIONS.finance.billing;
@@ -27,7 +27,7 @@ const TYPE_OPTIONS = [
   { value: 'SUPPLEMENTARY', label: 'Extra (supplementary)' },
 ];
 
-/** Billing runs list (spec 8.6, 11.1 "Billing runs"): one row per run with status in words, flats, total and change. */
+/** Billing runs list (spec 8.6, 11.1 "Billing runs"): one row per run with status in words, bills, total and change. */
 export function RunsScreen() {
   return (
     <Gate view={B.view} feature="billing.billing_run_pipeline" title="Billing runs">
@@ -130,9 +130,7 @@ function Inner() {
                   <span className="col-span-2 min-[900px]:col-span-1">
                     <RunStatusChip status={r.status} />
                   </span>
-                  <span className="text-[13.5px] text-muted">
-                    {r.counts.ready} {r.counts.ready === 1 ? 'flat' : 'flats'}
-                  </span>
+                  <span className="text-[13.5px] text-muted">{billsText(billCount(r))}</span>
                   <span className="text-right text-[14px] font-semibold tabular-nums">
                     {inr(r.totalPaise)}
                   </span>

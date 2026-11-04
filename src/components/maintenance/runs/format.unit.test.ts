@@ -8,6 +8,8 @@ import {
   periodLabel,
   periodOptions,
   runPeriodChoices,
+  billCount,
+  billsText,
   plainError,
   rupeesToPaise,
 } from './format';
@@ -125,6 +127,16 @@ describe('periods a new run can bill', () => {
     const c = runPeriodChoices('QUARTERLY', ['2026-10-01'], now);
     expect(c.options.map(o => o.value)).toEqual(['2026-10-01', '2027-01-01']);
     expect(c.defaultValue).toBe('2027-01-01');
+  });
+});
+
+describe('bill counts', () => {
+  it('counts bills: ready before issue, issued after', () => {
+    const c = (ready: number, issued: number) => ({ ready, issued });
+    expect(billCount({ status: 'PREVIEW', counts: c(71, 0) })).toBe(71);
+    expect(billCount({ status: 'ISSUING', counts: c(41, 30) })).toBe(71);
+    expect(billCount({ status: 'ISSUED', counts: c(0, 65) })).toBe(65);
+    expect(billsText(1)).toBe('1 bill');
   });
 });
 

@@ -281,5 +281,13 @@ export function rupeesToPaise(text: string): number | null {
 export const pctText = (p: number | null | undefined) =>
   p === null || p === undefined ? '-' : `${p > 0 ? '+' : ''}${p.toFixed(1)} %`;
 
+/**
+ * The number of bills of a run (one item is one bill: a flat can get an owner bill and a tenant bill). Once issued it is
+ * the issued count (the ready count drops to 0); while issuing, the bills issued plus the ones still to issue.
+ */
+export const billCount = (r: { status: RunStatus; counts: { ready: number; issued: number } }) =>
+  r.status === 'ISSUED' ? r.counts.issued : r.counts.ready + r.counts.issued;
+export const billsText = (n: number) => `${n} ${n === 1 ? 'bill' : 'bills'}`;
+
 /** Statuses in which the run is still being worked on in the background, so the screen polls. */
 export const BUSY: RunStatus[] = ['DRAFT', 'COMPUTING', 'ISSUING'];

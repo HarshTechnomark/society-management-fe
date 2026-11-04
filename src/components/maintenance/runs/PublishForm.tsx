@@ -9,7 +9,7 @@ import { ApiError } from '@/lib/apiClient';
 import { approvalsPageHref } from '@/services/residents.service';
 import { billingRunsService } from '@/services/billingRuns.service';
 import type { Run } from '@/types/billingRuns';
-import { billingRunError, isCode, periodLabel } from './format';
+import { billingRunError, billsText, isCode, periodLabel } from './format';
 
 /** Why a run cannot be submitted yet, in words; null when it can. */
 export function publishBlock(run: Run): string | null {
@@ -83,7 +83,7 @@ export function PublishForm({
         A different committee member must approve this run before bills are issued and residents are notified.
       </Alert>
       <p className="mb-3 text-[14px]">
-        {run.runLabel} bills <b>{run.counts.ready}</b> {run.counts.ready === 1 ? 'flat' : 'flats'} for{' '}
+        {run.runLabel} makes <b>{billsText(run.counts.ready)}</b> for{' '}
         {periodLabel(run.periodStart, run.cycle)}, <b>{inr(run.totalPaise)}</b> in total. Bills are dated{' '}
         {shortDate(run.billDate)} or the day they are issued, whichever is later.
         {run.counts.excluded > 0 && ` ${run.counts.excluded} excluded.`}

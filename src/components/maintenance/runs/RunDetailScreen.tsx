@@ -148,7 +148,7 @@ function Inner({ id }: { id: number }) {
             value={null}
             text={
               run.counts.items > 0
-                ? `Computing the bills. ${run.counts.items} flats done so far. You can leave this page.`
+                ? `Computing the bills. ${run.counts.items} bills done so far. You can leave this page.`
                 : 'Computing the bills. This can take a minute. You can leave this page.'
             }
           />

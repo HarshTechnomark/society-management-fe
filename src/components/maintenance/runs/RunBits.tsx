@@ -155,10 +155,17 @@ export function RunSummary({ run }: { run: Run }) {
           </tbody>
         </table>
       )}
-      <ul className="mt-4 flex flex-wrap gap-2 text-[13px]" aria-label="Flat counts">
-        <li>
-          <Chip tone="ok">{c.ready} ready</Chip>
-        </li>
+      <ul className="mt-4 flex flex-wrap gap-2 text-[13px]" aria-label="Bill counts">
+        {c.issued > 0 && (
+          <li>
+            <Chip tone="info">{c.issued} issued</Chip>
+          </li>
+        )}
+        {(c.ready > 0 || c.issued === 0) && (
+          <li>
+            <Chip tone="ok">{c.ready} ready</Chip>
+          </li>
+        )}
         <li>
           <Chip tone={c.exceptions > 0 ? 'bad' : 'neutral'}>
             {c.exceptions} {c.exceptions === 1 ? 'needs attention' : 'need attention'}

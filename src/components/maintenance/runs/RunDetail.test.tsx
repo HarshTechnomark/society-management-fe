@@ -170,7 +170,7 @@ describe('Run detail: statuses', () => {
       ],
     });
     const bar = await screen.findByRole('progressbar', { name: 'Computing the run' });
-    expect(bar).toHaveAttribute('aria-valuetext', expect.stringContaining('40 flats done so far'));
+    expect(bar).toHaveAttribute('aria-valuetext', expect.stringContaining('40 bills done so far'));
     expect(screen.getAllByText('Computing').length).toBeGreaterThan(0);
     expect(await screen.findByText('Ready to review')).toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).toBeNull();
@@ -205,6 +205,18 @@ describe('Run detail: statuses', () => {
     await waitFor(() =>
       expect(api.last('POST', '/billing/runs/88/resume-issue')?.body).toEqual({ version: 9 }),
     );
+  });
+
+  it('shows the issued count after issue instead of 0 ready', async () => {
+    renderIt({
+      'GET /billing/runs/88': ok(
+        withCounts({ items: 65, ready: 0, issued: 65, excluded: 0, warnings: 0 }, { status: 'ISSUED' }),
+      ),
+    });
+    const counts = await screen.findByRole('list', { name: 'Bill counts' });
+    expect(within(counts).getByText('65 issued')).toBeInTheDocument();
+    expect(within(counts).queryByText('0 ready')).toBeNull();
+    expect(screen.getByText(/Issued.*65 bills/)).toBeInTheDocument();
   });
 
   it('has no Resume button while issuing without an error', async () => {
@@ -382,7 +394,7 @@ describe('Run detail: publish (submit for approval)', () => {
     });
     const d = await open();
     expect(within(d).getByText(/A different committee member must approve this run/)).toBeInTheDocument();
-    expect(d).toHaveTextContent('BR-2026-11 bills 71 flats for November 2026, ₹3,33,631 in total.');
+    expect(d).toHaveTextContent('BR-2026-11 makes 71 bills for November 2026, ₹3,33,631 in total.');
     await userEvent.type(within(d).getByLabelText(/Type BR-2026-11 to confirm/), 'BR-2026-11');
     await userEvent.click(within(d).getByRole('button', { name: 'Submit for approval' }));
     const result = await screen.findByTestId('publish-result');

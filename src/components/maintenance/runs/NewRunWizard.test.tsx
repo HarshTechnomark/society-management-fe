@@ -274,7 +274,7 @@ describe('New run wizard: step 2, preview', () => {
     });
     await fillAndCreate();
     const bar = await screen.findByRole('progressbar', { name: 'Computing the run' });
-    expect(bar).toHaveAttribute('aria-valuetext', expect.stringContaining('25 flats done so far'));
+    expect(bar).toHaveAttribute('aria-valuetext', expect.stringContaining('25 bills done so far'));
     expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
     expect(await screen.findByRole('heading', { name: /Preview of BR-2026-11/ })).toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).toBeNull();

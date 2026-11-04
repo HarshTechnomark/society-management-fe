@@ -19,7 +19,7 @@ const RUNS = [
     status: 'ISSUED',
     changePct: '-2.5',
     totalPaise: 32980000,
-    counts: { items: 70, ready: 70, issued: 70 },
+    counts: { items: 65, ready: 0, issued: 65 },
   }),
   runRaw({
     id: 90,
@@ -47,10 +47,13 @@ describe('Billing runs list', () => {
     expect(rows[0]).toHaveTextContent('BR-2026-11');
     expect(rows[0]).toHaveTextContent('November 2026');
     expect(rows[0]).toHaveTextContent('Ready to review');
-    expect(rows[0]).toHaveTextContent('71 flats');
+    // one item is one bill (owner and tenant bills of a flat); after issue the ready count is 0
+    expect(rows[0]).toHaveTextContent('71 bills');
     expect(rows[0]).toHaveTextContent('₹3,33,631');
     expect(rows[1]).toHaveTextContent('Issued');
     expect(rows[1]).toHaveTextContent('-2.5 %');
+    expect(rows[1]).toHaveTextContent('65 bills');
+    expect(rows[1]).not.toHaveTextContent('0 bills');
     expect(rows[2]).toHaveTextContent('(extra run)');
     expect(rows[2]).toHaveTextContent('Waiting for approval');
     expect(within(rows[0]).getByRole('link')).toHaveAttribute('href', '/admin/billing/runs/88');
