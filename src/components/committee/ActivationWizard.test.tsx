@@ -123,6 +123,28 @@ describe('Activation wizard: step 1, what will change', () => {
     expect(within(d).getByRole('button', { name: 'Continue' })).toBeDisabled();
   });
 
+  it('names the committee that will end and the hand-over note', async () => {
+    renderIt();
+    const d = await open();
+    const line = await within(d).findByTestId('plan-ending');
+    expect(line).toHaveTextContent('Managing Committee 2024-2029 will end on 31 Mar 2029.');
+    expect(within(d).getByTestId('plan-handover')).toHaveTextContent(/handed over/);
+  });
+
+  it('shows raw dates in server messages as readable dates', async () => {
+    renderIt({
+      'GET /committee/terms/20/activation-preview': ok(
+        planRaw({
+          blockers: [{ code: 'TERM_NOT_STARTED', message: 'This committee starts on 2029-04-01.' }],
+          warnings: [{ code: 'X', message: 'Ends 2029-03-31 and 2030-01-05.' }],
+        }),
+      ),
+    });
+    const d = await open();
+    expect(await within(d).findByTestId('plan-blockers')).toHaveTextContent('starts on 1 Apr 2029.');
+    expect(within(d).getByTestId('plan-warnings')).toHaveTextContent('Ends 31 Mar 2029 and 5 Jan 2030.');
+  });
+
   it('shows an error with the reference and retries', async () => {
     const api = renderIt({
       'GET /committee/terms/20/activation-preview': [err(409, 'INVALID_STATE'), ok(planRaw())],

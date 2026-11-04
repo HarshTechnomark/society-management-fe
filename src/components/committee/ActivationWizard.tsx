@@ -30,6 +30,7 @@ export function ActivationWizard({
   termName,
   startDate,
   draftVersion,
+  ending,
   onClose,
   onDone,
 }: {
@@ -37,6 +38,7 @@ export function ActivationWizard({
   termName: string;
   startDate: string | null;
   draftVersion: number;
+  ending?: { name: string; endDate: string } | null;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -162,7 +164,7 @@ export function ActivationWizard({
               ))}
             </div>
           ) : (
-            <PlanView plan={plan} />
+            <PlanView plan={plan} ending={ending} />
           )}
         </>
       )}

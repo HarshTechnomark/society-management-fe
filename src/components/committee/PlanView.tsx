@@ -1,7 +1,8 @@
 import { Alert } from '@/components/ui/Alert';
 import { Chip } from '@/components/ui/Chip';
 import type { Plan, PlanAction, PlanIssue } from '@/types/committee';
-import { BLOCKER_FIX, roleLabel } from './format';
+import { shortDate } from '@/lib/money';
+import { BLOCKER_FIX, readableDates, roleLabel } from './format';
 
 type Group = 'JOINING' | 'CONTINUING' | 'LEAVING';
 const GROUP_TITLE: Record<Group, string> = {
@@ -65,7 +66,7 @@ function Issues({
         <Alert key={`${b.code}-${i}`} tone={kind === 'blocker' ? 'bad' : 'warn'} className="!mb-2">
           <span>
             <strong>{kind === 'blocker' ? `Cannot ${verb} yet: ` : 'Note: '}</strong>
-            {b.message}
+            {readableDates(b.message)}
             {issueDetail(plan, b) && <span className="block">{issueDetail(plan, b)}</span>}
             {kind === 'blocker' && BLOCKER_FIX[b.code] && (
               <span className="block font-semibold">How to fix: {BLOCKER_FIX[b.code]}</span>
@@ -82,7 +83,16 @@ function Issues({
  * blockers, warnings, the people grouped as Joining, Continuing and Leaving with "role now → role after",
  * the staff seat effect (only when it moves), and the hand-over delegations. Status is always in words.
  */
-export function PlanView({ plan, verb = 'activate' }: { plan: Plan; verb?: 'activate' | 'apply' }) {
+export function PlanView({
+  plan,
+  verb = 'activate',
+  ending,
+}: {
+  plan: Plan;
+  verb?: 'activate' | 'apply';
+  /** The current committee that ends when this one takes charge (activation only). */
+  ending?: { name: string; endDate: string } | null;
+}) {
   const groups = (['JOINING', 'CONTINUING', 'LEAVING'] as Group[])
     .map(g => ({ g, items: plan.actions.filter(a => groupOf(a) === g) }))
     .filter(x => x.items.length > 0);
@@ -90,6 +100,11 @@ export function PlanView({ plan, verb = 'activate' }: { plan: Plan; verb?: 'acti
   const { limit, used, delta } = plan.staffSeats;
   return (
     <div>
+      {ending && (
+        <p className="mb-4 text-[14px]" data-testid="plan-ending">
+          <strong>{ending.name}</strong> will end on {shortDate(ending.endDate)}.
+        </p>
+      )}
       <Issues plan={plan} items={plan.blockers} kind="blocker" verb={verb} />
       <Issues plan={plan} items={plan.warnings} kind="warning" />
       {groups.length === 0 && <p className="text-[14px] text-muted">No role changes are needed.</p>}
@@ -145,6 +160,10 @@ export function PlanView({ plan, verb = 'activate' }: { plan: Plan; verb?: 'acti
       {plan.handoverDelegations.length > 0 && (
         <section aria-label="Hand-over of approvals" className="mb-2" data-testid="plan-handover">
           <h3 className="mb-1.5 text-[14px] font-bold">Hand-over of approvals</h3>
+          <p className="mb-1.5 text-[13.5px] text-muted">
+            Approvals still waiting on an outgoing office bearer are handed over to the new holder for a
+            while.
+          </p>
           <ul className="list-disc space-y-1 pl-5 text-[14px]">
             {plan.handoverDelegations.map((d, i) => (
               <li key={i}>

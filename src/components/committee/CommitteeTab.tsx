@@ -181,6 +181,7 @@ function Loaded({
           termName={o.draft.name}
           startDate={activating.startDate}
           draftVersion={o.draft.version}
+          ending={o.current ? { name: o.current.name, endDate: o.current.endDate } : null}
           onClose={() => setActivating(null)}
           onDone={() => {
             setActivating(null);
