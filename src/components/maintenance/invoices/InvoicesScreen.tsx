@@ -33,7 +33,7 @@ import {
 
 const B = PERMISSIONS.finance.billing;
 const PAGE = 20;
-const COLS = 'min-[900px]:grid-cols-[11rem_1fr_8rem_7rem_7rem_7rem_8.5rem]';
+const COLS = 'min-[900px]:grid-cols-[11rem_1fr_7rem_7rem_6.5rem_6.5rem_6.5rem_8.5rem]';
 
 /** Invoice list (spec 8.11, 11.1): filters, sort, pages, CSV export, status chips in words, drawer on row click. */
 export function InvoicesScreen() {
@@ -230,9 +230,10 @@ function Inner() {
               <span>Invoice</span>
               <span>Flat</span>
               <span>Period</span>
-              <span>Due</span>
+              <span>Due date</span>
               <span className="text-right">Amount</span>
               <span className="text-right">Paid</span>
+              <span className="text-right">Due</span>
               <span>Status</span>
             </li>
             {items.map(r => (
@@ -257,12 +258,22 @@ function Inner() {
                     </span>
                   </span>
                   <span className="text-[13.5px] text-muted">{r.periodLabel || '-'}</span>
-                  <span className="text-[13.5px]">Due {shortDate(r.dueDate)}</span>
+                  <span className="text-[13.5px]">
+                    <span className="min-[900px]:hidden">Due by </span>
+                    {shortDate(r.dueDate)}
+                  </span>
                   <span className="text-[14px] font-semibold tabular-nums min-[900px]:text-right">
                     {inr(r.totalPaise)}
                   </span>
                   <span className="text-[13.5px] tabular-nums text-muted min-[900px]:text-right">
                     Paid {inr(r.paidPaise)}
+                  </span>
+                  <span
+                    className="text-[13.5px] font-semibold tabular-nums min-[900px]:text-right"
+                    data-testid="invoice-due"
+                  >
+                    <span className="min-[900px]:hidden">Due </span>
+                    {inr(r.outstandingPaise)}
                   </span>
                   <span className="col-span-2 flex flex-wrap gap-1 min-[900px]:col-span-1">
                     <InvoiceStatusChip status={r.status} />

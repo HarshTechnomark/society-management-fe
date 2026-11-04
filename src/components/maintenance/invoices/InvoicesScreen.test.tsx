@@ -65,6 +65,8 @@ describe('Invoice list', () => {
     expect(rows[0]).toHaveTextContent('Anil Deshmukh (Owner)');
     expect(rows[0]).toHaveTextContent('₹10,061');
     expect(rows[0]).toHaveTextContent('Part paid');
+    // what is still owed: total ₹10,061 less ₹5,000 paid
+    expect(within(rows[0]).getByTestId('invoice-due')).toHaveTextContent('Due ₹5,061');
     expect(rows[1]).toHaveTextContent('Unpaid');
     expect(rows[1]).toHaveTextContent('Overdue');
     expect(rows[1]).toHaveTextContent('Meera Shah (Tenant)');
