@@ -57,6 +57,26 @@ describe('Committee tab: states and gates', () => {
     expect(screen.getByRole('button', { name: 'Record a past committee' })).toBeInTheDocument();
   });
 
+  it('offers Plan next committee when a current term exists and no draft', async () => {
+    renderIt({ 'GET /committee': ok(overviewRaw({ draft: null })) });
+    await screen.findByText('Rajesh Kulkarni');
+    await userEvent.click(screen.getByRole('button', { name: 'Plan next committee' }));
+    expect(await screen.findByRole('button', { name: /Save/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Back|Cancel/ })).toBeInTheDocument();
+  });
+
+  it('hides Plan next committee when a draft exists or create is not allowed', async () => {
+    renderIt({ 'GET /committee': ok(overviewRaw({ draft: draftRaw() })) });
+    await screen.findByText('Rajesh Kulkarni');
+    expect(screen.queryByRole('button', { name: 'Plan next committee' })).toBeNull();
+  });
+
+  it('hides Plan next committee without settings.members.create', async () => {
+    renderIt({ 'GET /committee': ok(overviewRaw({ draft: null })) }, ['settings.members.view']);
+    await screen.findByText('Rajesh Kulkarni');
+    expect(screen.queryByRole('button', { name: 'Plan next committee' })).toBeNull();
+  });
+
   it('hides the create actions without settings.members.create', async () => {
     renderIt({ 'GET /committee': ok(overviewRaw({ current: null })) }, ['settings.members.view']);
     expect(await screen.findByText(/No committee recorded yet/)).toBeInTheDocument();

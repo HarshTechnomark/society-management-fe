@@ -134,7 +134,12 @@ function Loaded({
           </span>
         </Alert>
       )}
-      <div className="mb-3 flex justify-end">
+      <div className="mb-3 flex flex-wrap justify-end gap-2">
+        {canCreate && o.current && !o.draft && (
+          <Button size="sm" onClick={() => setView({ k: 'editor', mode: 'new' })}>
+            Plan next committee
+          </Button>
+        )}
         <Button variant="glass" size="sm" onClick={() => setView({ k: 'history' })}>
           Past committees
         </Button>
