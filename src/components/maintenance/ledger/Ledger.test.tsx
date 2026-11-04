@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResidentsScreen } from '@/components/residents/ResidentsScreen';
 import { ToastProvider } from '@/components/ui/Toast';
 import { configureFileUploader } from '@/lib/fileUpload';
@@ -21,7 +21,11 @@ const upload = vi.fn(async () => ({ fileId: 9 }));
 
 function renderOb(routes: Routes = {}, perms = LEDGER_PERMS, features = LEDGER_FEATURES) {
   signIn(perms, features);
-  const api = mockApi({ 'GET /billing/opening-balances': ok(obList()), ...routes });
+  const api = mockApi({
+    'GET /billing/opening-balances': ok(obList()),
+    'GET /billing/runs': ok([]),
+    ...routes,
+  });
   render(
     <ToastProvider>
       <OpeningBalancesScreen />
@@ -116,23 +120,95 @@ describe('Opening balances screen', () => {
     expect(screen.getByText(/File upload is not available yet/)).toBeInTheDocument();
   });
 
-  it('uploads the file, sends the dry run with the date and reloads the list', async () => {
+  it('checks the file with a dry run first and imports only on Import N rows', async () => {
     const api = renderOb({
+      'POST /billing/opening-balances/import': body =>
+        (body as { dryRun?: boolean }).dryRun
+          ? ok({
+              draft: 70,
+              invalid: 2,
+              dryRun: true,
+              totals: obTotals(),
+              errors: [
+                { rowNo: 4, unit: 'A-999', message: 'Unknown flat' },
+                { rowNo: 9, unit: 'B-101', message: 'Arrears and advance together' },
+              ],
+            })
+          : ok({ draft: 70, invalid: 2, dryRun: false, totals: obTotals({ invalidCount: 2 }), errors: [] }),
+    });
+    await screen.findByRole('table', { name: 'Opening balances' });
+    const gets = () =>
+      api.calls.filter(c => c.method === 'GET' && c.path === '/billing/opening-balances').length;
+    const before = gets();
+    await userEvent.upload(screen.getByLabelText('File'), new File(['a'], 'ob.csv', { type: 'text/csv' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Check file' }));
+    const result = await screen.findByTestId('check-result');
+    expect(result).toHaveTextContent('nothing is saved yet: 70 valid rows and 2 rows with errors');
+    const errors = within(result).getByRole('list', { name: 'Rows with errors' });
+    expect(errors).toHaveTextContent('Row 4 (A-999): Unknown flat');
+    expect(errors).toHaveTextContent('Row 9 (B-101): Arrears and advance together');
+    expect(result).toHaveTextContent(/Importing replaces every draft row and every row with errors/);
+    expect(upload).toHaveBeenCalledWith(expect.any(File), 'IMPORT_FILE');
+    const dry = api.last('POST', '/billing/opening-balances/import')!;
+    expect(dry.body).toMatchObject({ fileId: 9, dryRun: true });
+    expect((dry.body as { asOfDate: string }).asOfDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(gets()).toBe(before);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Import 72 rows' }));
+    expect(await screen.findByText(/70 valid rows and 2 rows with errors imported/)).toBeInTheDocument();
+    const real = api.last('POST', '/billing/opening-balances/import')!;
+    expect(real.body).toEqual({ fileId: 9, asOfDate: (dry.body as { asOfDate: string }).asOfDate });
+    expect(upload).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(gets()).toBeGreaterThan(before));
+    expect(screen.queryByRole('button', { name: /^Import \d+ rows?$/ })).toBeNull();
+  });
+
+  it('asks for a new check when the date changes after a check', async () => {
+    renderOb({
       'POST /billing/opening-balances/import': ok({
-        draft: 70,
-        invalid: 2,
-        totals: obTotals({ invalidCount: 2 }),
+        draft: 3,
+        invalid: 0,
+        dryRun: true,
+        totals: obTotals(),
+        errors: [],
       }),
     });
     await screen.findByRole('table', { name: 'Opening balances' });
-    await userEvent.upload(screen.getByLabelText('File'), new File(['a'], 'ob.csv', { type: 'text/csv' }));
+    await userEvent.upload(screen.getByLabelText('File'), new File(['a'], 'ob.csv'));
     await userEvent.click(screen.getByRole('button', { name: 'Check file' }));
-    expect(await screen.findByText(/70 valid rows and 2 rows with errors/)).toBeInTheDocument();
-    expect(upload).toHaveBeenCalledWith(expect.any(File), 'IMPORT_FILE');
-    const call = api.last('POST', '/billing/opening-balances/import')!;
-    expect(call.body).toMatchObject({ fileId: 9 });
-    expect((call.body as { asOfDate: string }).asOfDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(api.calls.filter(c => c.method === 'GET').length).toBeGreaterThan(1);
+    expect(await screen.findByRole('button', { name: 'Import 3 rows' })).toBeInTheDocument();
+    const d = screen.getByLabelText('Balances as of');
+    await userEvent.clear(d);
+    await userEvent.type(d, '2026-01-31');
+    expect(screen.queryByRole('button', { name: 'Import 3 rows' })).toBeNull();
+  });
+
+  describe('the default as-of date', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 10, 4));
+    });
+    afterEach(() => vi.useRealTimers());
+
+    it('is the last day of the previous month before any regular run', async () => {
+      renderOb();
+      await waitFor(() => expect(screen.getByLabelText('Balances as of')).toHaveValue('2026-10-31'));
+      expect(screen.getByText(/The day the old dues and advances were counted/)).toBeInTheDocument();
+    });
+
+    it('is the day before the billing start once a regular run exists', async () => {
+      renderOb({
+        'GET /billing/runs': ok([
+          { id: 2, runType: 'REGULAR', status: 'ISSUED', periodStart: '2026-12-01' },
+          { id: 1, runType: 'REGULAR', status: 'ISSUED', periodStart: '2026-11-01' },
+          { id: 3, runType: 'REGULAR', status: 'CANCELLED', periodStart: '2026-09-01' },
+        ]),
+      });
+      await waitFor(() => expect(screen.getByLabelText('Balances as of')).toHaveValue('2026-10-31'));
+      expect(
+        screen.getByText(/Billing started on 1 Nov 2026, so this must be the day before/),
+      ).toBeInTheDocument();
+    });
   });
 
   it('refuses a future as-of date before calling the API', async () => {
@@ -140,6 +216,7 @@ describe('Opening balances screen', () => {
     await screen.findByRole('table', { name: 'Opening balances' });
     await userEvent.upload(screen.getByLabelText('File'), new File(['a'], 'ob.csv'));
     const d = screen.getByLabelText('Balances as of');
+    await waitFor(() => expect(d).toBeEnabled());
     await userEvent.clear(d);
     await userEvent.type(d, '2999-01-01');
     await userEvent.click(screen.getByRole('button', { name: 'Check file' }));

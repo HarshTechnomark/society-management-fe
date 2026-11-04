@@ -4,6 +4,7 @@ import {
   LEDGER_TEXT,
   balanceText,
   daysBetween,
+  defaultAsOfDate,
   duesView,
   financialYearStart,
   ledgerError,
@@ -101,5 +102,15 @@ describe('ledgerError details from errors[]', () => {
       ]),
     );
     expect(t).toContain('A-1 has no owner');
+  });
+});
+
+describe('defaultAsOfDate', () => {
+  it('is the day before the billing start, or the last day of the previous month', () => {
+    expect(defaultAsOfDate('2026-11-01')).toBe('2026-10-31');
+    expect(defaultAsOfDate('2027-01-01')).toBe('2026-12-31');
+    expect(defaultAsOfDate('2024-03-01')).toBe('2024-02-29');
+    expect(defaultAsOfDate(null, new Date(2026, 10, 4))).toBe('2026-10-31');
+    expect(defaultAsOfDate(null, new Date(2027, 0, 15))).toBe('2026-12-31');
   });
 });

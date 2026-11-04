@@ -16,9 +16,10 @@ import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { fileUploadAvailable, uploadFile } from '@/lib/fileUpload';
 import { inr, shortDate } from '@/lib/money';
+import { billingRunsService } from '@/services/billingRuns.service';
 import { ledgerService } from '@/services/ledger.service';
-import type { OpeningBalanceRow, OpeningStatus } from '@/types/ledger';
-import { OPENING_LABEL, OPENING_TONE, isoDate, ledgerError, rupeesToPaise } from './format';
+import type { OpeningBalanceRow, OpeningImportResult, OpeningStatus } from '@/types/ledger';
+import { OPENING_LABEL, OPENING_TONE, defaultAsOfDate, isoDate, ledgerError, rupeesToPaise } from './format';
 
 const B = PERMISSIONS.finance.billing;
 const FILTERS: { key: OpeningStatus | 'ALL'; label: string }[] = [
@@ -43,10 +44,28 @@ function Inner() {
   const toast = useToast();
   const [filter, setFilter] = useState<OpeningStatus | 'ALL'>('ALL');
   const [file, setFile] = useState<File | null>(null);
-  const [asOf, setAsOf] = useState(isoDate(new Date()));
+  // the billing start (earliest regular run); null when there is no regular run or the runs cannot be read
+  const start = useLoad(() =>
+    billingRunsService
+      .regularStarts()
+      .then(s => s[0] ?? null)
+      .catch(() => null),
+  );
+  const billingStart = start.data ?? null;
+  const [asOf, setAsOf] = useState<string | null>(null);
+  const asOfValue = asOf ?? defaultAsOfDate(billingStart);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
+  /** The dry run of the chosen file and date: nothing is written until "Import" is pressed. */
+  const [lastCheck, setChecked] = useState<{
+    file: File;
+    fileId: number;
+    asOf: string;
+    result: OpeningImportResult;
+  } | null>(null);
+  // a new file or date needs a new check
+  const checked = lastCheck && lastCheck.file === file && lastCheck.asOf === asOfValue ? lastCheck : null;
   const [posting, setPosting] = useState(false);
   const [reverse, setReverse] = useState<OpeningBalanceRow | null>(null);
   const [remove, setRemove] = useState<OpeningBalanceRow | null>(null);
@@ -58,16 +77,35 @@ function Inner() {
   const draftNet = totals ? totals.draftArrearsPaise - totals.draftAdvancePaise : 0;
   const hasDraft = !!totals && (totals.draftArrearsPaise > 0 || totals.draftAdvancePaise > 0);
 
+  /** Step 1: uploads the file and checks it with `dryRun: true` (nothing is written). */
   const check = async () => {
     if (!file) return;
-    if (asOf > isoDate(new Date())) return setError('The as-of date cannot be in the future.');
+    if (asOfValue > isoDate(new Date())) return setError('The as-of date cannot be in the future.');
     setBusy(true);
     setError(null);
     setSummary(null);
     try {
       const { fileId } = await uploadFile(file, 'IMPORT_FILE');
-      const r = await ledgerService.importOpening(fileId, asOf);
-      setSummary(`${r.draftCount} valid rows and ${r.invalidCount} rows with errors. Nothing is posted yet.`);
+      const result = await ledgerService.importOpening(fileId, asOfValue, true);
+      setChecked({ file, fileId, asOf: asOfValue, result });
+    } catch (e) {
+      setError(ledgerError(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Step 2: imports the checked file; this replaces the earlier draft and invalid rows. */
+  const importRows = async () => {
+    if (!checked) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await ledgerService.importOpening(checked.fileId, checked.asOf);
+      setSummary(
+        `${r.draftCount} valid rows and ${r.invalidCount} rows with errors imported. Nothing is posted yet.`,
+      );
+      setChecked(null);
       setFile(null);
       setFilter('ALL');
       load.reload();
@@ -143,7 +181,7 @@ function Inner() {
     <Page>
       <PageHead
         title="Opening balances"
-        sub="Load each flat's old dues or advance once, when you go live. Check the file first; nothing is posted until you confirm."
+        sub="Load each flat's old dues or advance once, when you go live. Check the file, then import it; nothing is posted until you confirm."
         actions={
           canImport && (
             <Button disabled={!hasDraft || (totals?.invalidCount ?? 0) > 0} onClick={() => setPosting(true)}>
@@ -184,9 +222,14 @@ function Inner() {
               label="Balances as of"
               type="date"
               max={isoDate(new Date())}
-              value={asOf}
+              value={asOfValue}
+              disabled={start.loading && asOf === null}
               onChange={e => setAsOf(e.target.value)}
-              hint="Once billing has started this must be the day before the billing start."
+              hint={
+                billingStart
+                  ? `The day the old dues and advances were counted. Billing started on ${shortDate(billingStart)}, so this must be the day before, ${shortDate(defaultAsOfDate(billingStart))}.`
+                  : 'The day the old dues and advances were counted, usually the day before the first bill from this app. Once billing has started this must be the day before the billing start.'
+              }
             />
           </div>
           {!fileUploadAvailable() && (
@@ -196,10 +239,22 @@ function Inner() {
           )}
           {error && <Alert tone="bad">{error}</Alert>}
           {summary && <Alert tone="ok">{summary}</Alert>}
-          <div className="mt-3 flex justify-end">
-            <Button loading={busy} disabled={!file || !fileUploadAvailable()} onClick={check}>
+          {checked && <CheckResult result={checked.result} />}
+          <div className="mt-3 flex flex-wrap justify-end gap-2">
+            <Button
+              variant={checked ? 'glass' : 'primary'}
+              loading={busy && !checked}
+              disabled={!file || !fileUploadAvailable() || (busy && !!checked)}
+              onClick={check}
+            >
               Check file
             </Button>
+            {checked && checked.result.draftCount + checked.result.invalidCount > 0 && (
+              <Button loading={busy} onClick={importRows}>
+                Import {checked.result.draftCount + checked.result.invalidCount}{' '}
+                {checked.result.draftCount + checked.result.invalidCount === 1 ? 'row' : 'rows'}
+              </Button>
+            )}
           </div>
         </Card>
       )}
@@ -315,6 +370,41 @@ function Inner() {
         }}
       />
     </Page>
+  );
+}
+
+/** What the dry run found: counts, the rows with errors and what importing will replace. */
+function CheckResult({ result }: { result: OpeningImportResult }) {
+  const rows = result.draftCount + result.invalidCount;
+  return (
+    <div className="mt-3" data-testid="check-result">
+      <Alert tone={result.invalidCount > 0 ? 'warn' : 'ok'}>
+        File checked, nothing is saved yet: {result.draftCount} valid{' '}
+        {result.draftCount === 1 ? 'row' : 'rows'} and {result.invalidCount}{' '}
+        {result.invalidCount === 1 ? 'row' : 'rows'} with errors.
+      </Alert>
+      {result.errors.length > 0 && (
+        <ul aria-label="Rows with errors" className="mb-3 list-disc space-y-0.5 pl-5 text-[13.5px]">
+          {result.errors.map(e => (
+            <li key={`${e.rowNo}-${e.unit}`}>
+              Row {e.rowNo}
+              {e.unit ? ` (${e.unit})` : ''}: {e.message}
+            </li>
+          ))}
+          {result.invalidCount > result.errors.length && (
+            <li className="list-none text-muted">
+              and {result.invalidCount - result.errors.length} more rows with errors.
+            </li>
+          )}
+        </ul>
+      )}
+      {rows > 0 && (
+        <Alert tone="warn">
+          Importing replaces every draft row and every row with errors already on this page with the rows of
+          this file. Posted rows are kept. Nothing is posted until you press Post opening balances.
+        </Alert>
+      )}
+    </div>
   );
 }
 

@@ -102,6 +102,18 @@ export function duesView(paise: number): { label: string; tone: 'due' | 'advance
 const pad = (n: number) => String(n).padStart(2, '0');
 export const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
+/**
+ * The default "Balances as of" date of the opening balances: the day before the billing start (the period start of the
+ * earliest regular run, as the backend requires once a regular run exists), else the last day of the previous month.
+ */
+export function defaultAsOfDate(billingStart: string | null, now = new Date()): string {
+  if (billingStart) {
+    const [y, m, d] = billingStart.slice(0, 10).split('-').map(Number);
+    return isoDate(new Date(y, m - 1, d - 1));
+  }
+  return isoDate(new Date(now.getFullYear(), now.getMonth(), 0));
+}
+
 /** First day of the current Indian financial year (1 April). */
 export function financialYearStart(now = new Date()): string {
   const y = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
