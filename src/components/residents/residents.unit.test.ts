@@ -246,8 +246,9 @@ describe('navigation', () => {
       visibleResidentNav(sampleMe({ permissions: perms })).map(i => i.label);
     expect(labels([])).toEqual(['Join a society']);
     expect(labels(['resident.home.view', 'resident.requests.view'])).toEqual(
-      expect.arrayContaining(['Requests', 'Privacy', 'My pets']),
+      expect.arrayContaining(['Requests', 'Privacy', 'My pets', 'Committee']),
     );
     expect(labels(['resident.requests.view'])).not.toContain('Privacy');
+    expect(labels(['resident.requests.view'])).not.toContain('Committee');
   });
 });

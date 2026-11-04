@@ -24,6 +24,7 @@ export const RESIDENT_NAV: Item[] = [
   { href: '/resident/tenant', label: 'My tenant', keys: [RES.household.view] },
   { href: '/resident/requests', label: 'Requests', keys: [RES.requests.view] },
   { href: '/resident/directory', label: 'Directory', keys: [RES.community.view] },
+  { href: '/resident/committee', label: 'Committee', keys: [RES.home.view] },
   { href: '/resident/privacy', label: 'Privacy', keys: [RES.home.view] },
   { href: '/resident/emergency', label: 'Emergency profile', keys: [RES.home.view] },
   { href: '/resident/pets', label: 'My pets', keys: [RES.home.view] },
