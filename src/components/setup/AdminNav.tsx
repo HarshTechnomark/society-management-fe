@@ -59,6 +59,7 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { href: '/admin/billing/runs', label: 'Billing runs', keys: [F.billing.view] },
       { href: '/admin/billing/invoices', label: 'Invoices', keys: [F.billing.view] },
+      { href: '/admin/billing/dues', label: 'Dues', keys: [F.billing.view] },
     ],
   },
   {
