@@ -19,6 +19,7 @@ import { ActivationWizard } from './ActivationWizard';
 import { ChangesDialog } from './ChangesDialog';
 import { CommitteeHistory } from './CommitteeHistory';
 import { EditCurrentDialog } from './EditCurrentDialog';
+import { HandoverScreen } from './HandoverScreen';
 import { SeatCard } from './SeatCard';
 import { TermEditor } from './TermEditor';
 import {
@@ -35,7 +36,11 @@ import type { EditorMode } from './termForm';
 const M = PERMISSIONS.settings.members;
 const NO_BEARERS = 'Office bearers are not part of your plan, so this is not available.';
 
-type View = { k: 'main' } | { k: 'editor'; mode: EditorMode; termId?: number } | { k: 'history' };
+type View =
+  | { k: 'main' }
+  | { k: 'editor'; mode: EditorMode; termId?: number }
+  | { k: 'history' }
+  | { k: 'handover'; termId: number; termName: string };
 
 /** Team › Committee tab (spec 11.2): current term, seats, draft, past committees. */
 export function CommitteeTab() {
@@ -66,6 +71,17 @@ function Inner() {
       />
     );
   if (view.k === 'history') return <CommitteeHistory onBack={back} />;
+  if (view.k === 'handover')
+    return (
+      <HandoverScreen
+        termId={view.termId}
+        termName={view.termName}
+        onBack={() => {
+          setTick(t => t + 1);
+          back();
+        }}
+      />
+    );
   return <Overview tick={tick} setView={setView} onChanged={() => setTick(t => t + 1)} />;
 }
 
@@ -163,7 +179,13 @@ function Loaded({
         </Card>
       )}
       {o.current && (
-        <CurrentCard current={o.current} canEdit={canEdit} bearers={bearers} onChanged={onChanged} />
+        <CurrentCard
+          current={o.current}
+          canEdit={canEdit}
+          bearers={bearers}
+          onChanged={onChanged}
+          onHandover={() => setView({ k: 'handover', termId: o.current!.id, termName: o.current!.name })}
+        />
       )}
       {o.draft && (
         <DraftCard
@@ -224,11 +246,13 @@ function CurrentCard({
   canEdit,
   bearers,
   onChanged,
+  onHandover,
 }: {
   current: CurrentSummary;
   canEdit: boolean;
   bearers: boolean;
   onChanged: () => void;
+  onHandover: () => void;
 }) {
   const detail = useLoad(() => committeeService.term(current.id), `${current.id}-${current.version}`);
   const [editing, setEditing] = useState(false);
@@ -301,9 +325,14 @@ function CurrentCard({
         </dl>
         {h.total > 0 && (
           <div className="mt-3">
-            <p className="mb-1 text-[13px] text-muted">
-              Hand-over checklist: {h.done} of {h.total} done{h.completedAt ? ' (complete)' : ''}
-            </p>
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[13px] text-muted">
+                Hand-over checklist: {h.done} of {h.total} done{h.completedAt ? ' (complete)' : ''}
+              </p>
+              <Button size="xs" variant="glass" onClick={onHandover}>
+                Open checklist
+              </Button>
+            </div>
             <div
               role="progressbar"
               aria-label="Hand-over checklist progress"

@@ -258,3 +258,131 @@ export const activationRaw = (over: Record<string, unknown> = {}) => ({
   },
   ...over,
 });
+
+export const handoverItemRaw = (over: Record<string, unknown> = {}) => ({
+  itemId: 'H1',
+  title: 'Bank passbooks and cheque books',
+  ownerDesignation: 'TREASURER',
+  ownerName: 'Arjun Shah',
+  status: 'PENDING',
+  note: null,
+  evidenceFileIds: [],
+  updatedByName: null,
+  updatedAt: null,
+  canEdit: true,
+  ...over,
+});
+
+export const handoverRaw = (over: Record<string, unknown> = {}) => ({
+  termId: 12,
+  completedAt: null,
+  progress: { total: 3, done: 1, notApplicable: 0, pending: 2 },
+  items: [
+    handoverItemRaw({
+      itemId: 'H1',
+      status: 'DONE',
+      updatedByName: 'Arjun Shah',
+      updatedAt: '2026-10-01T08:00:00.000Z',
+    }),
+    handoverItemRaw({ itemId: 'H2', title: 'Society seal and stamp', ownerDesignation: 'SECRETARY' }),
+    handoverItemRaw({
+      itemId: 'H3',
+      title: 'Insurance papers',
+      ownerDesignation: 'TREASURER',
+      canEdit: false,
+      evidenceFileIds: [41],
+      note: 'Policy 2026',
+    }),
+  ],
+  ...over,
+});
+
+export const seatUsageRaw = (over: Record<string, unknown> = {}) => ({
+  limit: 8,
+  used: 2,
+  free: 6,
+  pendingStaffInvitations: 0,
+  byRole: [{ roleKey: 'accountant', roleName: 'Accountant', count: 2 }],
+  staffRoles: [
+    { roleKey: 'society_admin', roleName: 'Society Admin', consumesSeat: true, isSystem: true },
+    { roleKey: 'accountant', roleName: 'Accountant', consumesSeat: true, isSystem: true },
+  ],
+  staff: [
+    {
+      memberId: 7,
+      userId: 70,
+      name: 'Asha Menon',
+      roleKey: 'accountant',
+      roleName: 'Accountant',
+      status: 'ACTIVE',
+      consumesSeat: true,
+    },
+    {
+      memberId: 8,
+      userId: 80,
+      name: 'Vikram Rao',
+      roleKey: 'accountant',
+      roleName: 'Accountant',
+      status: 'ACTIVE',
+      consumesSeat: true,
+    },
+  ],
+  ...over,
+});
+
+export const myCommitteeRaw = (over: Record<string, unknown> = {}) => ({
+  visible: true,
+  term: {
+    name: 'Managing Committee 2024-2029',
+    startDate: '2024-04-01',
+    endDate: '2029-03-31',
+    status: 'ACTIVE',
+    isOverdue: false,
+  },
+  members: [
+    {
+      name: 'Rajesh Kulkarni',
+      designation: 'CHAIRMAN',
+      designationLabel: 'Chairman',
+      joinMode: 'ELECTED',
+      unitLabel: 'A-501',
+      photoFileId: 31,
+      mobile: '98XXXXX111',
+      publicEmail: 'chair@sky.example',
+      portfolios: ['LEGAL'],
+      since: '2024-04-01',
+    },
+    {
+      name: 'Meera Iyer',
+      designation: 'MEMBER',
+      designationLabel: 'Member',
+      joinMode: 'CO_OPTED',
+      unitLabel: null,
+      photoFileId: null,
+      mobile: null,
+      publicEmail: null,
+      portfolios: [],
+      since: '2025-01-10',
+    },
+  ],
+  vacancies: 1,
+  ...over,
+});
+
+export const pastCommitteeRaw = (over: Record<string, unknown> = {}) => ({
+  name: 'Managing Committee 2019-2024',
+  startDate: '2019-04-01',
+  endDate: '2024-03-31',
+  actualEndDate: '2024-03-31',
+  source: 'MANUAL',
+  officeBearers: [
+    {
+      designation: 'CHAIRMAN',
+      designationLabel: 'Chairman',
+      name: 'Old Chair',
+      fromDate: '2019-04-01',
+      toDate: '2024-03-31',
+    },
+  ],
+  ...over,
+});
