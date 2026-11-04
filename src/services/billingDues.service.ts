@@ -7,9 +7,14 @@ export const billingDuesService = {
   /** `month` is `YYYY-MM`; the API defaults to the current month. */
   summary: (month?: string) =>
     api<unknown>('/billing/summary', { query: { month: month || undefined } }).then(mapSummary),
-  defaulters: (q: DefaulterQuery) =>
-    api<unknown>('/billing/defaulters', { query: { ...q, format: 'json' } }).then(mapDefaulters),
-  defaultersCsv: (q: DefaulterQuery) => apiBlob('/billing/defaulters', { query: { ...q, format: 'csv' } }),
+  /** One page; `data` is `{ items, totals }` (totals of every page) and `pagination` sits next to it. */
+  defaulters: async (q: DefaulterQuery) => {
+    const r = await apiList<unknown>('/billing/defaulters', { query: { ...q, format: 'json' } });
+    return mapDefaulters(r.data, r.pagination);
+  },
+  /** The whole list (every page) as CSV. */
+  defaultersCsv: (q: DefaulterQuery) =>
+    apiBlob('/billing/defaulters', { query: { ...q, page: undefined, limit: undefined, format: 'csv' } }),
   /** One invoice (`finance.billing.edit`): answers `{ sentAt }`. */
   remind: (invoiceId: number) =>
     api<{ sentAt?: string }>(`/invoices/${invoiceId}/remind`, { method: 'POST', body: {} }),

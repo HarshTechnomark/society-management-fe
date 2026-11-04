@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '@/lib/apiClient';
-import { mapInvoice, mapMyDues, mapSummary } from '@/services/billingDuesMappers';
-import { invoiceDetailRaw, myDuesRaw, summaryRaw } from '@/test/billingDuesFixtures';
+import { mapDefaulters, mapInvoice, mapMyDues, mapSummary } from '@/services/billingDuesMappers';
+import { defaultersRaw, invoiceDetailRaw, myDuesRaw, summaryRaw } from '@/test/billingDuesFixtures';
 import { DUES_TEXT, billingDuesError, inputLabel, invoiceStatus, payHref } from './format';
 
 describe('billingDuesError', () => {
@@ -38,6 +38,15 @@ describe('billingDuesError', () => {
     expect(billingDuesError(e)).toContain('about 30 minutes');
   });
 
+  it('adds the field messages of VALIDATION_FAILED (statement range)', () => {
+    const e = new ApiError(400, 'VALIDATION_FAILED', 'x', [
+      { field: 'to', message: 'The range is at most 366 days' },
+    ]);
+    expect(billingDuesError(e)).toBe(
+      'Some details are not valid. Check the fields and try again. To: The range is at most 366 days.',
+    );
+  });
+
   it('falls back to the server message for an unknown code', () => {
     expect(billingDuesError(new ApiError(400, 'NEW_CODE', 'Server words'))).toBe('Server words');
   });
@@ -54,7 +63,34 @@ describe('mappers', () => {
     expect(mapSummary({ efficiencyPct: null }).efficiencyPct).toBeNull();
   });
 
+  it('reads efficiencyPct sent as a string with one decimal', () => {
+    expect(mapSummary(summaryRaw()).efficiencyPct).toBe(75);
+    expect(mapSummary(summaryRaw({ efficiencyPct: '50.0' })).efficiencyPct).toBe(50);
+  });
+
+  it('maps the defaulters: data.items, totals of every page, pagination, billToNames as one text', () => {
+    const p = mapDefaulters(defaultersRaw(undefined, { flats: 40, overduePaise: 99 }), {
+      page: 2,
+      limit: 20,
+      total: 40,
+      totalPages: 2,
+    });
+    expect(p.items).toHaveLength(2);
+    expect(p.items[1].billToNames).toEqual(['Meera Shah, Ravi Nair']);
+    expect(p.totals).toEqual({ flats: 40, overduePaise: 99 });
+    expect(p.page).toBe(2);
+    expect(p.totalPages).toBe(2);
+    expect(mapDefaulters({ items: [{ unitId: 1, billToNames: '' }] }).items[0].billToNames).toEqual([]);
+  });
+
+  it('maps the rule version number and date of a computation (resident detail)', () => {
+    const c = mapInvoice(invoiceDetailRaw()).lines[0].computation;
+    expect(c).toMatchObject({ ruleVersionId: 28, ruleVersionNo: 3, ruleEffectiveFrom: '2026-04-01' });
+    expect(mapInvoice(invoiceDetailRaw()).unitId).toBe(312);
+  });
+
   it('maps my dues and a bill with its optional explanation', () => {
+    expect(mapMyDues({ units: [{ unitId: 9, relation: 'FORMER' }] })[0].relation).toBe('FORMER');
     expect(mapMyDues(myDuesRaw())[0]).toMatchObject({
       unitId: 312,
       relation: 'OWNER',

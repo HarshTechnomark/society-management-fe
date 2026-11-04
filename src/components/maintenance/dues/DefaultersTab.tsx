@@ -26,6 +26,7 @@ const SORTS: { value: DefaulterSort; label: string }[] = [
   { value: 'daysOverdue', label: 'Days overdue' },
   { value: 'unitLabel', label: 'Flat' },
 ];
+const PAGE = 50;
 const COLS = 'min-[900px]:grid-cols-[5.5rem_1fr_1fr_7rem_6.5rem_4.5rem_4rem_12rem] min-[900px]:items-center';
 
 /** Defaulters (spec 11.8, BR-11-64): thresholds, the list, reminders and the CSV export. */
@@ -46,8 +47,9 @@ export function DefaultersTab() {
   const [exporting, setExporting] = useState(false);
   const [busyUnit, setBusyUnit] = useState<number | null>(null);
   const [statement, setStatement] = useState<Defaulter | null>(null);
-  const q = `${applied.minDaysOverdue}|${applied.minAmountPaise}|${applied.sortBy}`;
-  const load = useLoad(() => billingDuesService.defaulters(applied), q);
+  const [page, setPage] = useState(1);
+  const q = `${applied.minDaysOverdue}|${applied.minAmountPaise}|${applied.sortBy}|${page}`;
+  const load = useLoad(() => billingDuesService.defaulters({ ...applied, page, limit: PAGE }), q);
 
   const apply = () => {
     const d = /^\d+$/.test(days.trim()) ? Number(days) : NaN;
@@ -56,6 +58,7 @@ export function DefaultersTab() {
     if (p === null || p < 0 || p > 1_000_000_000)
       return setProblem('Enter the amount in rupees, for example 5000 or 5000.50.');
     setProblem(null);
+    setPage(1);
     setApplied({ minDaysOverdue: d, minAmountPaise: p, sortBy });
   };
 
@@ -94,8 +97,9 @@ export function DefaultersTab() {
     }
   };
 
-  const rows = load.data ?? [];
-  const total = rows.reduce((s, r) => s + r.overduePaise, 0);
+  const rows = load.data?.items ?? [];
+  const totals = load.data?.totals ?? { flats: 0, overduePaise: 0 };
+  const pages = load.data?.totalPages ?? 1;
   return (
     <Card
       title="Defaulters"
@@ -156,7 +160,7 @@ export function DefaultersTab() {
       ) : (
         <>
           <p className="mb-2 text-[13.5px] text-muted" aria-live="polite">
-            {rows.length} {rows.length === 1 ? 'flat' : 'flats'} owe {inr(total)} in all.
+            {totals.flats} {totals.flats === 1 ? 'flat' : 'flats'} owe {inr(totals.overduePaise)} in all.
           </p>
           <div
             aria-hidden="true"
@@ -240,6 +244,19 @@ export function DefaultersTab() {
               </li>
             ))}
           </ul>
+          {pages > 1 && (
+            <nav aria-label="Pages of defaulters" className="mt-3 flex items-center justify-center gap-3">
+              <Button size="sm" variant="glass" disabled={page <= 1} onClick={() => setPage(x => x - 1)}>
+                Previous
+              </Button>
+              <span className="text-[13.5px]">
+                Page {page} of {pages}
+              </span>
+              <Button size="sm" variant="glass" disabled={page >= pages} onClick={() => setPage(x => x + 1)}>
+                Next
+              </Button>
+            </nav>
+          )}
         </>
       )}
       {statement && (

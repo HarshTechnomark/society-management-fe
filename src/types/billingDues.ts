@@ -20,6 +20,8 @@ export interface DefaulterQuery {
   minDaysOverdue: number;
   minAmountPaise: number;
   sortBy: DefaulterSort;
+  page?: number;
+  limit?: number;
 }
 export interface Defaulter {
   unitId: number;
@@ -30,6 +32,14 @@ export interface Defaulter {
   oldestDueDate: string;
   daysOverdue: number;
   invoiceCount: number;
+}
+
+/** `GET /billing/defaulters` answers `data: { items, totals }` and `pagination`; the totals cover every page. */
+export interface DefaulterPage {
+  items: Defaulter[];
+  totals: { flats: number; overduePaise: number };
+  page: number;
+  totalPages: number;
 }
 
 export interface BulkReminderResult {
@@ -93,6 +103,9 @@ export interface MyInvoiceQuery {
 export interface LineComputation {
   method: string;
   ruleVersionId: number | null;
+  /** Number of the rate rule version (1, 2, ...) and the date it took effect. */
+  ruleVersionNo: number | null;
+  ruleEffectiveFrom: string | null;
   inputs: { key: string; value: string }[];
   formula: string;
   text: string;

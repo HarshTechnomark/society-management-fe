@@ -7,6 +7,7 @@ import type {
   AgeingBucketKey,
   BulkReminderResult,
   Defaulter,
+  DefaulterPage,
   DuesSummary,
   InvoiceLine,
   InvoiceStatus,
@@ -56,9 +57,10 @@ export function mapSummary(raw: unknown): DuesSummary {
 
 export function mapDefaulter(raw: unknown): Defaulter {
   const d = obj(raw);
+  // the backend sends one text, the names already joined by ", " (GROUP_CONCAT), or ''
   const names = Array.isArray(d.billToNames)
     ? d.billToNames.map(n => str(n))
-    : d.billToNames
+    : str(d.billToNames)
       ? [str(d.billToNames)]
       : [];
   return {
@@ -72,7 +74,24 @@ export function mapDefaulter(raw: unknown): Defaulter {
     invoiceCount: num(d.invoiceCount),
   };
 }
-export const mapDefaulters = (raw: unknown): Defaulter[] => rowsOf(raw).map(mapDefaulter);
+/** `data: { items, totals: { flats, overduePaise } }` plus the envelope's `pagination`. */
+export function mapDefaulters(data: unknown, pagination?: unknown): DefaulterPage {
+  const items = rowsOf(data).map(mapDefaulter);
+  const t = obj(obj(data).totals);
+  const p = obj(pagination);
+  return {
+    items,
+    totals: {
+      flats: num(t.flats, items.length),
+      overduePaise: num(
+        t.overduePaise,
+        items.reduce((a, d) => a + d.overduePaise, 0),
+      ),
+    },
+    page: num(p.page, 1),
+    totalPages: Math.max(1, num(p.totalPages, 1)),
+  };
+}
 
 export function mapBulkReminder(raw: unknown): BulkReminderResult {
   const r = obj(raw);
@@ -146,6 +165,8 @@ function mapComputation(raw: unknown): LineComputation | null {
   return {
     method: str(c.method),
     ruleVersionId: c.ruleVersionId == null ? null : num(c.ruleVersionId),
+    ruleVersionNo: c.ruleVersionNo == null ? null : num(c.ruleVersionNo),
+    ruleEffectiveFrom: strOrNull(c.ruleEffectiveFrom),
     inputs,
     formula: str(c.formula),
     text: str(c.text),

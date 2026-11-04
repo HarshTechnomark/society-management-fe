@@ -6,6 +6,8 @@ import {
   DUES_FEATURES,
   DUES_PERMS,
   DUES_VIEW_PERMS,
+  defaulterItems,
+  defaultersPagination,
   defaultersRaw,
   invoiceItemRaw,
   summaryRaw,
@@ -22,7 +24,7 @@ function renderIt(routes: Routes = {}, perms = DUES_PERMS, features = DUES_FEATU
   signIn(perms, features);
   const api = mockApi({
     'GET /billing/summary': ok(summaryRaw()),
-    'GET /billing/defaulters': ok(defaultersRaw()),
+    'GET /billing/defaulters': ok(defaultersRaw(), 'OK', defaultersPagination()),
     ...routes,
   });
   render(
@@ -157,6 +159,25 @@ describe('Defaulters tab', () => {
     expect(call).toContain('minAmountPaise=500000');
   });
 
+  it('reads data.items and the totals of every page, and pages through the list', async () => {
+    const api = await openTab({
+      'GET /billing/defaulters': ok(
+        defaultersRaw(defaulterItems(), { flats: 57, overduePaise: 98765400 }),
+        'OK',
+        defaultersPagination({ total: 57, totalPages: 2 }),
+      ),
+    });
+    expect(await screen.findAllByTestId('defaulter-row')).toHaveLength(2);
+    expect(screen.getByText(/57 flats owe ₹9,87,654 in all/)).toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => {
+      const u = api.fn.mock.calls.map(c => String(c[0])).filter(x => x.includes('/billing/defaulters'));
+      expect(u.at(-1)).toContain('page=2');
+      expect(u.at(-1)).toContain('limit=50');
+    });
+  });
+
   it('sends the thresholds typed by the user, in paise', async () => {
     const api = await openTab();
     await screen.findAllByTestId('defaulter-row');
@@ -188,7 +209,9 @@ describe('Defaulters tab', () => {
   });
 
   it('shows an empty state', async () => {
-    await openTab({ 'GET /billing/defaulters': ok([]) });
+    await openTab({
+      'GET /billing/defaulters': ok(defaultersRaw([]), 'OK', defaultersPagination({ total: 0 })),
+    });
     expect(await screen.findByText('No defaulters')).toBeInTheDocument();
   });
 
