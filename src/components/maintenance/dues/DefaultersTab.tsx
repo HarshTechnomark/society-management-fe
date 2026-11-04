@@ -46,6 +46,8 @@ export function DefaultersTab() {
   const [problem, setProblem] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [busyUnit, setBusyUnit] = useState<number | null>(null);
+  /** Flats reminded from this screen, so the row keeps a "Reminder sent" note after the toast is gone. */
+  const [reminded, setReminded] = useState<Set<number>>(() => new Set());
   const [statement, setStatement] = useState<Defaulter | null>(null);
   const [page, setPage] = useState(1);
   const q = `${applied.minDaysOverdue}|${applied.minAmountPaise}|${applied.sortBy}|${page}`;
@@ -79,6 +81,7 @@ export function DefaultersTab() {
     try {
       const r = await billingDuesService.remindFlat(d.unitId);
       if (r.sent > 0) {
+        setReminded(prev => new Set(prev).add(d.unitId));
         toast.show(
           `Reminder sent for ${r.sent} ${r.sent === 1 ? 'bill' : 'bills'} of ${d.unitLabel}` +
             (r.tooSoon ? `, ${r.tooSoon} skipped (reminded in the last 24 hours)` : ''),
@@ -222,6 +225,9 @@ export function DefaultersTab() {
                     >
                       Remind
                     </Button>
+                  )}
+                  {reminded.has(d.unitId) && (
+                    <span className="self-center text-[12.5px] font-semibold text-ok">Reminder sent</span>
                   )}
                   {statementOn && (
                     <Button

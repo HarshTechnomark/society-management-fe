@@ -10,6 +10,7 @@ import { FeatureGate, PlanLocked } from '@/components/subscription/FeatureGate';
 import { Alert } from '@/components/ui/Alert';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useToast } from '@/components/ui/Toast';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
@@ -39,6 +40,7 @@ function Inner() {
   const [confirm, setConfirm] = useState(false);
   const [bulk, setBulk] = useState<BulkReminderResult | null>(null);
   const [bulkError, setBulkError] = useState<string | null>(null);
+  const toast = useToast();
   const summary = useLoad(() => billingDuesService.summary(month), month);
 
   const flats = summary.data?.overdueFlats;
@@ -46,7 +48,9 @@ function Inner() {
     setBulk(null);
     setBulkError(null);
     try {
-      setBulk(await billingDuesService.remindAllOverdue());
+      const r = await billingDuesService.remindAllOverdue();
+      setBulk(r);
+      toast.show(bulkReminderText(r));
     } catch (e) {
       setBulkError(billingDuesError(e));
     }
@@ -129,6 +133,12 @@ function Inner() {
       />
     </Page>
   );
+}
+
+/** The toast after "Remind all overdue": the counts the backend queued. */
+export function bulkReminderText(r: BulkReminderResult): string {
+  if (r.flats === 0) return 'No flat has an overdue bill to remind.';
+  return `Reminders queued for ${r.flats} ${r.flats === 1 ? 'flat' : 'flats'} (${r.invoices} ${r.invoices === 1 ? 'bill' : 'bills'}).`;
 }
 
 function Tile({ label, value, note }: { label: string; value: string; note?: string }) {

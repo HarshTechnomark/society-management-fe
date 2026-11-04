@@ -124,6 +124,7 @@ describe('Remind all overdue', () => {
     expect(
       await screen.findByText(/Reminders are on their way to 11 flats for 15 bills/),
     ).toBeInTheDocument();
+    expect(screen.getByText('Reminders queued for 11 flats (15 bills).')).toBeInTheDocument();
     expect(api.last('POST', '/billing/reminders')?.body).toEqual({ scope: 'OVERDUE' });
   });
 
@@ -240,6 +241,7 @@ describe('Defaulters tab', () => {
         /Reminder sent for 1 bill of A-1203, 1 skipped \(reminded in the last 24 hours\)/,
       ),
     ).toBeInTheDocument();
+    expect(screen.getByText('Reminder sent')).toBeInTheDocument();
     const list = api.fn.mock.calls.map(c => String(c[0])).find(u => u.includes('/invoices?'))!;
     expect(list).toContain('unitId=101');
     expect(list).toContain('status=OVERDUE');
@@ -254,6 +256,7 @@ describe('Defaulters tab', () => {
     expect(
       await screen.findByText('A reminder for this bill was sent in the last 24 hours. Try again tomorrow.'),
     ).toBeInTheDocument();
+    expect(screen.queryByText('Reminder sent')).toBeNull();
   });
 
   it('hides Remind without finance.billing.edit and Export without finance.billing.export', async () => {
