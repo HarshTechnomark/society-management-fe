@@ -1,4 +1,8 @@
-export const BILLING_PERMS = ['settings.billing_rules.view', 'settings.billing_rules.edit', 'settings.society.view'];
+export const BILLING_PERMS = [
+  'settings.billing_rules.view',
+  'settings.billing_rules.edit',
+  'settings.society.view',
+];
 export const BILLING_FEATURES = [
   'billing.charge_head_master',
   'billing.versioned_billing_rules',
@@ -30,9 +34,32 @@ export const headRaw = (over: Record<string, unknown> = {}) => ({
 });
 export const HEADS_RAW = [
   headRaw(),
-  headRaw({ id: 2, key: 'SINKING_FUND', name: 'Sinking fund', headType: 'SINKING_FUND', payerRouting: 'OWNER', ledgerAccountCode: '2410' }),
-  headRaw({ id: 3, key: 'NON_OCCUPANCY', name: 'Non-occupancy charges', headType: 'NON_OCCUPANCY', payerRouting: 'OWNER', ledgerAccountCode: '4110' }),
-  headRaw({ id: 9, key: 'INTEREST', name: 'Interest on arrears', headType: 'INTEREST', gstTreatment: 'FOLLOW_SOURCE', isSystem: true, interestBearing: false, ledgerAccountCode: '4140' }),
+  headRaw({
+    id: 2,
+    key: 'SINKING_FUND',
+    name: 'Sinking fund',
+    headType: 'SINKING_FUND',
+    payerRouting: 'OWNER',
+    ledgerAccountCode: '2410',
+  }),
+  headRaw({
+    id: 3,
+    key: 'NON_OCCUPANCY',
+    name: 'Non-occupancy charges',
+    headType: 'NON_OCCUPANCY',
+    payerRouting: 'OWNER',
+    ledgerAccountCode: '4110',
+  }),
+  headRaw({
+    id: 9,
+    key: 'INTEREST',
+    name: 'Interest on arrears',
+    headType: 'INTEREST',
+    gstTreatment: 'FOLLOW_SOURCE',
+    isSystem: true,
+    interestBearing: false,
+    ledgerAccountCode: '4140',
+  }),
 ];
 
 export const versionRaw = (over: Record<string, unknown> = {}) => ({
