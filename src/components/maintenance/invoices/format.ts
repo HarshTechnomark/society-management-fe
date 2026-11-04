@@ -1,5 +1,6 @@
 import type { Tone } from '@/components/ui/Chip';
 import { ApiError } from '@/lib/apiClient';
+import { inr } from '@/lib/money';
 import type {
   CreditReason,
   DebitReason,
@@ -41,6 +42,8 @@ const TEXT: Record<string, string> = {
   GST_SETTINGS_INVALID:
     'A taxed charge head has no SAC code. Add the SAC code in Settings > Billing and try again.',
   PERIOD_LOCKED: 'The books are locked for this date. Ask the accountant to open the period.',
+  FUND_NOT_RESOLVED:
+    'The fund this charge is booked to could not be found. Check the fund of the charge head in Settings > Billing.',
   EXPORT_TOO_LARGE: 'Too many invoices to export at once (more than 50,000). Narrow the filters.',
   SOCIETY_SUSPENDED: 'The account of the society is suspended. This action is paused.',
   SOCIETY_CLOSED: 'This society is closed.',
@@ -50,10 +53,64 @@ const TEXT: Record<string, string> = {
 };
 export const KNOWN_ERROR_CODES = Object.keys(TEXT);
 
-/** The message for an error, in plain words. */
+const FIELD_LABEL: Record<string, string> = {
+  unitId: 'Flat',
+  dueDate: 'Due date',
+  description: 'Description',
+  remarks: 'Remarks',
+  reason: 'Reason',
+  reasonCode: 'Reason',
+  amountPaise: 'Amount',
+  chargeHeadId: 'Charge head',
+  invoiceLineId: 'Line',
+  lines: 'Lines',
+  version: 'Version',
+};
+/** `lines[1].amountPaise` reads "Line 2, amount"; `dueDate` reads "Due date". */
+export function fieldLabel(field: string): string {
+  const m = /^lines\[(\d+)\](?:\.(\w+))?$/.exec(field);
+  if (m) {
+    const part = m[2] && m[2] !== 'invoiceLineId' ? `, ${(FIELD_LABEL[m[2]] ?? m[2]).toLowerCase()}` : '';
+    return `Line ${Number(m[1]) + 1}${part}`;
+  }
+  return FIELD_LABEL[field] ?? field;
+}
+
+/** The extra detail of an error from its `errors[]` (field messages, the maximum allowed, when a failed PDF is retried). */
+function detail(e: ApiError): string {
+  const errors = e.errors ?? [];
+  if (
+    e.code === 'VALIDATION_FAILED' ||
+    e.code === 'CHARGE_HEAD_NOT_ALLOWED' ||
+    e.code === 'CHARGE_HEAD_ARCHIVED'
+  ) {
+    const parts = errors
+      .filter(f => f.field && f.message)
+      .slice(0, 3)
+      .map(f => `${fieldLabel(String(f.field))}: ${f.message}`);
+    return parts.length ? ` ${parts.join('. ')}.` : '';
+  }
+  if (e.code === 'WRITE_OFF_EXCEEDS_OUTSTANDING' || e.code === 'CREDIT_EXCEEDS_LINE') {
+    const whole = errors.find(
+      f => (f.field === 'amountPaise' || f.field === 'lines') && f.maxAllowedPaise != null,
+    );
+    return whole ? ` At most ${inr(Number(whole.maxAllowedPaise))} in all.` : '';
+  }
+  if (e.code === 'PDF_NOT_READY') {
+    const at = errors.find(f => typeof f.retryAt === 'string')?.retryAt as string | undefined;
+    const d = at ? new Date(at) : null;
+    return d && !Number.isNaN(d.getTime())
+      ? ` Making it failed; it is tried again after ${d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}.`
+      : '';
+  }
+  return '';
+}
+
+/** The message for an error, in plain words, with the details the API gives in `errors[]`. */
 export function billingInvoiceError(e: unknown): string {
   if (!(e instanceof ApiError)) return e instanceof Error ? e.message : 'Something went wrong. Try again.';
-  return TEXT[e.code] ?? e.message;
+  const base = TEXT[e.code];
+  return base ? `${base}${detail(e)}` : e.message;
 }
 
 /** The same error with its message in plain words, for `ErrorState` (keeps the support reference). */
@@ -63,14 +120,18 @@ export function plainError(e: unknown): unknown {
     : e;
 }
 
-/** "Max ₹X" per line from a `CREDIT_EXCEEDS_LINE` answer: `errors[]` has `{ field: 'lines.<id>', maxAllowedPaise }`. */
-export function creditLimits(e: unknown): Record<number, number> {
+/**
+ * "Max ₹X" per line from a `CREDIT_EXCEEDS_LINE` answer. The API names the line by its position in the request
+ * (`{ field: 'lines[i].amountPaise', maxAllowedPaise }`), so `sentLineIds[i]` is the invoice line it means.
+ */
+export function creditLimits(e: unknown, sentLineIds: number[]): Record<number, number> {
   const out: Record<number, number> = {};
   if (!(e instanceof ApiError)) return out;
   for (const f of e.errors ?? []) {
-    const id = Number(String(f.field).match(/(\d+)\D*$/)?.[1]);
-    const max = Number(f.maxAllowedPaise ?? f.message);
-    if (id && Number.isFinite(max)) out[id] = max;
+    const m = /^lines\[(\d+)\]\.amountPaise$/.exec(String(f.field));
+    const id = m ? sentLineIds[Number(m[1])] : undefined;
+    const max = Number(f.maxAllowedPaise);
+    if (id !== undefined && f.maxAllowedPaise != null && Number.isFinite(max)) out[id] = max;
   }
   return out;
 }

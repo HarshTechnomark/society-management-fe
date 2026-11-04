@@ -35,6 +35,7 @@ const SECTION_12_INVOICE_CODES = [
   'MIXED_BILL_TO',
   'GST_SETTINGS_INVALID',
   'PERIOD_LOCKED',
+  'FUND_NOT_RESOLVED',
   'EXPORT_TOO_LARGE',
   'SOCIETY_SUSPENDED',
   'SOCIETY_CLOSED',
@@ -65,12 +66,56 @@ describe('billingInvoiceError: one plain message per code', () => {
 });
 
 describe('credit helpers', () => {
-  it('reads the maximum per line from CREDIT_EXCEEDS_LINE', () => {
+  it('reads the maximum per line from CREDIT_EXCEEDS_LINE: lines[i] is the i-th line sent', () => {
     const e = new ApiError(422, 'CREDIT_EXCEEDS_LINE', 'x', [
-      { field: 'lines.90121.amountPaise', message: 'too much', maxAllowedPaise: 5000 },
+      { field: 'lines[1].amountPaise', message: 'too much', maxAllowedPaise: 5000 },
+      { field: 'lines[0].amountPaise', message: 'too much', maxAllowedPaise: 0 },
     ]);
-    expect(creditLimits(e)).toEqual({ 90121: 5000 });
-    expect(creditLimits(new Error('x'))).toEqual({});
+    expect(creditLimits(e, [90122, 90121])).toEqual({ 90121: 5000, 90122: 0 });
+    expect(creditLimits(e, [])).toEqual({});
+    expect(creditLimits(new Error('x'), [1])).toEqual({});
+  });
+
+  it('gives the whole-bill cap of CREDIT_EXCEEDS_LINE and WRITE_OFF_EXCEEDS_OUTSTANDING in words', () => {
+    const whole = new ApiError(422, 'CREDIT_EXCEEDS_LINE', 'x', [
+      { field: 'lines', message: 'More than the invoice still owes', maxAllowedPaise: 120000 },
+    ]);
+    expect(billingInvoiceError(whole)).toMatch(/At most ₹1,200 in all\.$/);
+    expect(creditLimits(whole, [90121])).toEqual({});
+    const w = new ApiError(422, 'WRITE_OFF_EXCEEDS_OUTSTANDING', 'x', [
+      { field: 'amountPaise', message: 'More than the outstanding amount', maxAllowedPaise: 50000 },
+    ]);
+    expect(billingInvoiceError(w)).toMatch(/At most ₹500 in all\.$/);
+  });
+});
+
+describe('billingInvoiceError: errors[] details', () => {
+  it('lists the field messages of VALIDATION_FAILED with readable names', () => {
+    const e = new ApiError(400, 'VALIDATION_FAILED', 'x', [
+      { field: 'dueDate', message: 'Today up to one year ahead' },
+      { field: 'lines[1].amountPaise', message: 'Too big' },
+      { field: 'lines[0].invoiceLineId', message: 'This line cannot be credited' },
+      { field: 'remarks', message: 'Too short' },
+    ]);
+    expect(billingInvoiceError(e)).toBe(
+      'Some details are not valid. Check the fields and try again. Due date: Today up to one year ahead. ' +
+        'Line 2, amount: Too big. Line 1: This line cannot be credited.',
+    );
+  });
+
+  it('names the line of a charge head error', () => {
+    const e = new ApiError(422, 'CHARGE_HEAD_ARCHIVED', 'x', [
+      { field: 'lines[2].chargeHeadId', message: 'Archived' },
+    ]);
+    expect(billingInvoiceError(e)).toMatch(/Line 3, charge head: Archived\.$/);
+  });
+
+  it('says when a failed PDF is tried again', () => {
+    const e = new ApiError(409, 'PDF_NOT_READY', 'x', [
+      { field: 'pdf', message: 'Rendering failed', retryAt: '2026-11-04T10:30:00.000Z' },
+    ]);
+    expect(billingInvoiceError(e)).toMatch(/tried again after/);
+    expect(billingInvoiceError(new ApiError(409, 'PDF_NOT_READY', 'x'))).not.toMatch(/tried again/);
   });
 
   it('estimates GST on the taxable part only', () => {

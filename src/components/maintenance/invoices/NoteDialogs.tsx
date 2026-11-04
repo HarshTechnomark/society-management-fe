@@ -35,10 +35,14 @@ interface Creditable {
   source: string;
   max: number;
 }
-/** Lines that can still be credited: charge, interest and late fee lines of the bill and of its issued debit notes (BR-11-41). */
-export function creditableLines(d: InvoiceDetail): Creditable[] {
+/**
+ * Lines that can still be credited: charge, interest and late fee lines of the bill and of its issued debit notes
+ * (BR-11-41). The detail lists notes without lines, so the debit notes come from `GET /billing/notes/:id`; their lines
+ * carry no credited amount, so the server's `CREDIT_EXCEEDS_LINE` answer gives the real maximum.
+ */
+export function creditableLines(d: InvoiceDetail, debitNotes: NoteSummary[] = []): Creditable[] {
   const own = d.lines.map(line => ({ line, source: d.invoiceNo }));
-  const debit = d.notes
+  const debit = debitNotes
     .filter(n => n.noteType === 'DEBIT' && n.status === 'ISSUED')
     .flatMap(n => n.lines.map(line => ({ line, source: n.noteNo ?? 'Debit note' })));
   return [...own, ...debit]
@@ -57,7 +61,9 @@ export function CreditNoteDialog({
   onClose: () => void;
   onDone: (note: NoteSummary) => void;
 }) {
-  const lines = useMemo(() => creditableLines(invoice), [invoice]);
+  const hasDebit = invoice.notes.some(n => n.noteType === 'DEBIT' && n.status === 'ISSUED');
+  const debitNotes = useLoad(() => billingInvoicesService.debitNotesWithLines(invoice), invoice.id);
+  const lines = useMemo(() => creditableLines(invoice, debitNotes.data ?? []), [invoice, debitNotes.data]);
   const [reason, setReason] = useState<CreditReason>('BILLING_ERROR');
   const [remarks, setRemarks] = useState('');
   const [amounts, setAmounts] = useState<Record<number, string>>({});
@@ -93,16 +99,24 @@ export function CreditNoteDialog({
     if (fail) return setProblem(fail);
     setBusy(true);
     setProblem(null);
+    const sent = entered.map(x => ({ invoiceLineId: x.l.line.id, amountPaise: x.paise }));
     try {
       onDone(
         await billingInvoicesService.creditNote(invoice.id, {
           reasonCode: reason,
           remarks: text,
-          lines: entered.map(x => ({ invoiceLineId: x.l.line.id, amountPaise: x.paise })),
+          lines: sent,
         }),
       );
     } catch (e) {
-      if (e instanceof ApiError && e.code === 'CREDIT_EXCEEDS_LINE') setLimits(creditLimits(e));
+      if (e instanceof ApiError && e.code === 'CREDIT_EXCEEDS_LINE')
+        setLimits(l => ({
+          ...l,
+          ...creditLimits(
+            e,
+            sent.map(x => x.invoiceLineId),
+          ),
+        }));
       setProblem(billingInvoiceError(e));
       setBusy(false);
     }
@@ -144,7 +158,15 @@ export function CreditNoteDialog({
         onChange={e => setRemarks(e.target.value)}
         required
       />
-      {lines.length === 0 ? (
+      {debitNotes.error != null && (
+        <Alert tone="warn" className="mb-3">
+          The lines of the debit notes could not be loaded, so only the lines of the bill are shown.{' '}
+          {billingInvoiceError(debitNotes.error)}
+        </Alert>
+      )}
+      {hasDebit && debitNotes.loading ? (
+        <div className="skeleton mb-3 h-24 w-full" aria-busy="true" aria-label="Loading lines" />
+      ) : lines.length === 0 ? (
         <Alert tone="info">Every line of this bill is already credited.</Alert>
       ) : (
         <ul aria-label="Lines to credit" className="mb-3 flex flex-col gap-2">

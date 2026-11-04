@@ -29,6 +29,15 @@ export const billingInvoicesService = {
   },
   get: (id: number) => api<unknown>(`/invoices/${id}`).then(normaliseInvoice),
   pdfUrl: (id: number) => api<unknown>(`/invoices/${id}/pdf-url`).then(normalisePdfUrl),
+  /** The full note with its lines (the invoice detail lists notes without lines). */
+  note: (id: number) => api<unknown>(`/billing/notes/${id}`).then(normaliseNote),
+  /** Issued debit notes of a bill with their lines: their charge lines can be credited too (BR-11-41). */
+  debitNotesWithLines: (d: { notes: { id: number; noteType: string; status: string }[] }) =>
+    Promise.all(
+      d.notes
+        .filter(n => n.noteType === 'DEBIT' && n.status === 'ISSUED')
+        .map(n => billingInvoicesService.note(n.id)),
+    ),
   notePdfUrl: (id: number) => api<unknown>(`/billing/notes/${id}/pdf-url`).then(normalisePdfUrl),
   createAdHoc: (body: AdHocInput) => post('/invoices', body).then(normaliseInvoice),
   creditNote: (invoiceId: number, body: CreditNoteInput) =>

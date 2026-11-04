@@ -9,7 +9,9 @@ import {
   INV_VIEW_PERMS,
   detailRaw,
   lineRaw,
+  noteLineRaw,
   noteRaw,
+  noteSummaryRaw,
 } from '@/test/billingInvoicesFixtures';
 import { err, mockApi, navigationMock, ok, resetAll } from '@/test/helpers';
 import { signInAs } from '@/test/residentsHelpers';
@@ -235,21 +237,34 @@ describe('Invoice drawer: credit note', () => {
     expect(within(dlg).getAllByTestId('credit-line')).toHaveLength(1);
   });
 
-  it('adds issued debit-note lines to the creditable lines', async () => {
-    const { dlg } = await open(
-      {},
-      detailRaw({
-        notes: [
+  it('adds the lines of issued debit notes, fetched from GET /billing/notes/:id', async () => {
+    const { dlg, api } = await open(
+      {
+        'GET /billing/notes/613': ok(
           noteRaw({
+            id: 613,
             noteType: 'DEBIT',
             noteNo: 'DN/2026-27/000002',
-            lines: [lineRaw({ id: 777, description: 'Penalty', amountPaise: 50000 })],
+            reasonCode: 'ADDITIONAL_CHARGE',
+            lines: [
+              noteLineRaw({ id: 777, description: 'Penalty', amountPaise: 50000 }),
+              noteLineRaw({ id: 778, lineKind: 'CGST', description: 'CGST', amountPaise: 4500 }),
+            ],
           }),
+        ),
+      },
+      detailRaw({
+        notes: [
+          noteSummaryRaw({ id: 613, noteType: 'DEBIT', noteNo: 'DN/2026-27/000002' }),
+          noteSummaryRaw({ id: 614, noteType: 'DEBIT', noteNo: null, status: 'REJECTED' }),
         ],
       }),
     );
-    expect(within(dlg).getAllByTestId('credit-line')).toHaveLength(3);
-    expect(dlg).toHaveTextContent('DN/2026-27/000002');
+    await waitFor(() => expect(within(dlg).getAllByTestId('credit-line')).toHaveLength(3));
+    expect(dlg).toHaveTextContent('DN/2026-27/000002 · Max ₹500');
+    expect(api.calls.filter(c => c.path.startsWith('/billing/notes/')).map(c => c.path)).toEqual([
+      '/billing/notes/613',
+    ]);
   });
 
   it('says a big note needs approval', async () => {
@@ -302,7 +317,7 @@ describe('Invoice drawer: credit note', () => {
   it('shows the maximum per line after CREDIT_EXCEEDS_LINE', async () => {
     const { dlg } = await open({
       'POST /invoices/5123/credit-notes': err(422, 'CREDIT_EXCEEDS_LINE', [
-        { field: 'lines.90121.amountPaise', message: 'x', maxAllowedPaise: 25000 },
+        { field: 'lines[0].amountPaise', message: 'x', maxAllowedPaise: 25000 },
       ]),
     });
     await userEvent.type(within(dlg).getByLabelText(/^Remarks/), 'Billing error fixed');
