@@ -7,6 +7,7 @@ import {
   pctText,
   periodLabel,
   periodOptions,
+  runPeriodChoices,
   plainError,
   rupeesToPaise,
 } from './format';
@@ -89,6 +90,41 @@ describe('periods', () => {
   it('a date in January belongs to the financial year that began the April before', () => {
     expect(nextPeriod('MONTHLY', new Date(2027, 0, 5))).toBe('2027-02-01');
     expect(nextPeriod('QUARTERLY', new Date(2027, 0, 5))).toBe('2027-04-01');
+  });
+});
+
+describe('periods a new run can bill', () => {
+  const now = new Date(2026, 10, 4); // 4 Nov 2026
+  it('with no regular run: the current period by default, then the next, nothing older', () => {
+    const c = runPeriodChoices('MONTHLY', [], now);
+    expect(c.defaultValue).toBe('2026-11-01');
+    expect(c.billingStart).toBeNull();
+    expect(c.options.map(o => [o.value, o.isCurrent, o.isNext])).toEqual([
+      ['2026-11-01', true, false],
+      ['2026-12-01', false, true],
+    ]);
+  });
+  it('after a first run of November: December by default, never before November', () => {
+    const c = runPeriodChoices('MONTHLY', ['2026-11-01'], now);
+    expect(c.defaultValue).toBe('2026-12-01');
+    expect(c.billingStart).toBe('2026-11-01');
+    expect(c.options.map(o => o.value)).toEqual(['2026-11-01', '2026-12-01']);
+  });
+  it('offers the gaps since the billing start, but not more than 12 months back', () => {
+    const c = runPeriodChoices('MONTHLY', ['2025-06-01', '2026-09-01'], now);
+    expect(c.options[0].value).toBe('2025-12-01');
+    expect(c.options.at(-1)!.value).toBe('2026-12-01');
+    expect(c.defaultValue).toBe('2026-10-01');
+  });
+  it('defaults to the next period when the latest run is the current one or ahead', () => {
+    expect(runPeriodChoices('MONTHLY', ['2026-10-01', '2026-11-01'], now).defaultValue).toBe('2026-12-01');
+    expect(runPeriodChoices('MONTHLY', ['2026-12-01'], now).defaultValue).toBe('2026-12-01');
+  });
+  it('quarterly: the current quarter first, then the period after the latest run', () => {
+    expect(runPeriodChoices('QUARTERLY', [], now).defaultValue).toBe('2026-10-01');
+    const c = runPeriodChoices('QUARTERLY', ['2026-10-01'], now);
+    expect(c.options.map(o => o.value)).toEqual(['2026-10-01', '2027-01-01']);
+    expect(c.defaultValue).toBe('2027-01-01');
   });
 });
 

@@ -52,6 +52,21 @@ export const billingRunsService = {
   resumeIssue: (id: number, version: number) =>
     api<unknown>(`${base}/${id}/resume-issue`, { method: 'POST', body: { version } }),
   mergeShort: (prev: Run, short: unknown): Run => mergeShortRun(prev, short),
+  /**
+   * Period starts of the regular runs that are not cancelled: the earliest (first page, oldest first) is the billing
+   * start of the society and the latest (first page, newest first) the last period billed.
+   */
+  regularStarts: async (): Promise<string[]> => {
+    const q = { runType: 'REGULAR', sortBy: 'periodStart', limit: 100 } as const;
+    const pages = await Promise.all([
+      billingRunsService.runs({ ...q, sortOrder: 'asc' }),
+      billingRunsService.runs({ ...q, sortOrder: 'desc' }),
+    ]);
+    const starts = pages.flatMap(p =>
+      p.items.filter(r => r.status !== 'CANCELLED').map(r => r.periodStart.slice(0, 10)),
+    );
+    return [...new Set(starts)].sort();
+  },
 
   // read-only inputs of step 1
   // both lists are paged (20 by default, 100 at most)

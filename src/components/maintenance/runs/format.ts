@@ -220,6 +220,54 @@ export function periodOptions(cycle: RunCycle, now = new Date(), back = 2) {
 export const nextPeriod = (cycle: RunCycle, now = new Date()) =>
   periodOptions(cycle, now).find(o => o.isNext)!.value;
 
+/** First day of the month `n` months after the month of `ymd` (n may be negative). */
+function addMonths(ymd: string, n: number): string {
+  const m = Number(ymd.slice(5, 7)) - 1 + n;
+  const y = Number(ymd.slice(0, 4)) + Math.floor(m / 12);
+  return iso(y, ((m % 12) + 12) % 12);
+}
+const ymdOf = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+export interface PeriodChoices {
+  options: { value: string; label: string; isNext: boolean; isCurrent: boolean }[];
+  defaultValue: string;
+  /** The period start of the earliest regular run (not cancelled): no regular run can bill before it. */
+  billingStart: string | null;
+}
+
+/**
+ * The periods a new run can bill (mirrors `createRun` of the backend): never more than one period ahead
+ * (`RUN_PERIOD_TOO_FAR`), never more than 12 months old and, once a regular run exists, never before the billing start,
+ * which is the period start of the earliest regular run (`RUN_PERIOD_INVALID`). The first regular run fixes the billing
+ * start, so with no regular run yet only the current and the next period are offered and the current one is the
+ * default. Otherwise the default is the period after the latest regular run (at most the next period).
+ * `regularStarts` are the period starts of the regular runs that are not cancelled.
+ */
+export function runPeriodChoices(cycle: RunCycle, regularStarts: string[], now = new Date()): PeriodChoices {
+  const step = CYCLE_MONTHS[cycle];
+  const [cur, nxt] = periodOptions(cycle, now, 0).map(o => o.value);
+  const option = (value: string) => ({
+    value,
+    label: periodLabel(value, cycle),
+    isNext: value === nxt,
+    isCurrent: value === cur,
+  });
+  if (regularStarts.length === 0)
+    return { options: [option(cur), option(nxt)], defaultValue: cur, billingStart: null };
+  const sorted = [...regularStarts].sort();
+  const billingStart = sorted[0];
+  const latest = sorted[sorted.length - 1];
+  const today = ymdOf(now);
+  const oldest = `${Number(today.slice(0, 4)) - 1}${today.slice(4)}`;
+  const values: string[] = [];
+  for (let v = nxt; v >= billingStart && v >= oldest; v = addMonths(v, -step)) values.unshift(v);
+  if (values.length === 0) values.push(nxt);
+  const after = addMonths(latest, step);
+  const defaultValue = after > nxt ? nxt : after < values[0] ? values[0] : after;
+  return { options: values.map(option), defaultValue, billingStart };
+}
+
 /** "Billing run BR-2026-11 sent for approval" and the like need a short date range. */
 export const rangeText = (start: string, end: string) => `${shortDate(start)} to ${shortDate(end)}`;
 

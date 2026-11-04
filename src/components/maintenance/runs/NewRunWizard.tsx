@@ -20,11 +20,10 @@ import {
   CYCLE_LABEL,
   billingRunError,
   computeErrorText,
-  nextPeriod,
   periodLabel,
-  periodOptions,
   plainError,
   rupeesToPaise,
+  runPeriodChoices,
 } from './format';
 import { PublishForm, PublishResult, publishBlock } from './PublishForm';
 import { ProgressBar, RunSummary } from './RunBits';
@@ -64,6 +63,8 @@ function Inner() {
   const cycleLoad = useLoad(() => billingRunsService.cycle().catch(() => 'MONTHLY' as const));
   const rates = useLoad(() => billingRunsService.rates().catch(() => null));
   const cycle = cycleLoad.data ?? 'MONTHLY';
+  // null when the runs could not be read: then the backend checks the period on create
+  const starts = useLoad(() => billingRunsService.regularStarts().catch(() => null));
 
   const [period, setPeriod] = useState<string | null>(null);
   const [runType, setRunType] = useState<RunType>('REGULAR');
@@ -76,8 +77,9 @@ function Inner() {
   const [busy, setBusy] = useState(false);
   const [published, setPublished] = useState<Run | null>(null);
 
-  const options = useMemo(() => periodOptions(cycle), [cycle]);
-  const chosen = period ?? nextPeriod(cycle);
+  const choices = useMemo(() => runPeriodChoices(cycle, starts.data ?? []), [cycle, starts.data]);
+  const options = choices.options;
+  const chosen = period ?? choices.defaultValue;
   const splits = useLoad(() => billingRunsService.splitRules(chosen).catch(() => null), chosen);
   const splitRules = splits.data ?? [];
 
@@ -187,12 +189,16 @@ function Inner() {
             <Select
               label="Billing period"
               value={chosen}
-              disabled={!!runId}
-              hint={`${CYCLE_LABEL[cycle]} billing. Periods follow your financial year.`}
+              disabled={!!runId || starts.loading}
+              hint={
+                choices.billingStart
+                  ? `${CYCLE_LABEL[cycle]} billing. Periods follow your financial year. Billing started with ${periodLabel(choices.billingStart, cycle)}; earlier periods cannot be billed.`
+                  : `${CYCLE_LABEL[cycle]} billing. Periods follow your financial year. The first regular run sets the billing start: earlier periods cannot be billed after it.`
+              }
               onChange={e => setPeriod(e.target.value)}
               options={options.map(o => ({
                 value: o.value,
-                label: o.isNext ? `${o.label} (next)` : o.label,
+                label: o.isNext ? `${o.label} (next)` : o.isCurrent ? `${o.label} (current)` : o.label,
               }))}
             />
             {supplementaryOn && (
@@ -298,7 +304,7 @@ function Inner() {
             </Button>
             <Button
               loading={busy}
-              disabled={cycleLoad.loading || splits.loading}
+              disabled={cycleLoad.loading || starts.loading || splits.loading}
               onClick={() => void submitStep1()}
             >
               Next

@@ -38,10 +38,22 @@ const created = (over: object = {}) =>
     'Billing run created; computing',
   );
 
+/** A regular run of October 2026 already exists, so the wizard offers November 2026 next. */
+const octoberRun = (over: object = {}) =>
+  runRaw({
+    id: 70,
+    runLabel: 'BR-2026-10',
+    periodStart: '2026-10-01',
+    periodEnd: '2026-10-31',
+    status: 'ISSUED',
+    ...over,
+  });
+
 function renderIt(routes: Routes = {}, perms = RUN_PERMS, features = RUN_FEATURES) {
   signInAs(perms, features);
   const api = mockApi({
     'GET /society/settings': ok(cycleSettings()),
+    'GET /billing/runs': page([octoberRun()]),
     'GET /billing/rules': ok(splitRateRulesRaw()),
     'GET /billing/split-rules': ok(splitRulesRaw()),
     'POST /billing/runs': created(),
@@ -98,6 +110,39 @@ describe('New run wizard: step 1, heads', () => {
     expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('1. Heads');
   });
 
+  it('with no regular run yet, defaults to the current period and offers only the current and the next', async () => {
+    renderIt({ 'GET /billing/runs': page([]) });
+    const period = await screen.findByLabelText('Billing period');
+    await waitFor(() => expect(period).toHaveValue('2026-10-01'));
+    expect(
+      within(period)
+        .getAllByRole('option')
+        .map(o => o.textContent),
+    ).toEqual(['October 2026 (current)', 'November 2026 (next)']);
+    expect(screen.getByText(/The first regular run sets the billing start/)).toBeInTheDocument();
+  });
+
+  it('never offers a period before the billing start and ignores cancelled runs', async () => {
+    const api = renderIt({
+      'GET /billing/runs': page([
+        octoberRun(),
+        runRaw({ id: 60, runLabel: 'BR-2026-09', periodStart: '2026-09-01', status: 'ISSUED' }),
+        runRaw({ id: 50, runLabel: 'BR-2026-08', periodStart: '2026-08-01', status: 'CANCELLED' }),
+      ]),
+    });
+    const period = await screen.findByLabelText('Billing period');
+    await waitFor(() =>
+      expect(
+        within(period)
+          .getAllByRole('option')
+          .map(o => o.textContent),
+      ).toEqual(['September 2026', 'October 2026 (current)', 'November 2026 (next)']),
+    );
+    expect(period).toHaveValue('2026-11-01');
+    expect(screen.getByText(/Billing started with September 2026/)).toBeInTheDocument();
+    expect(api.calls.some(c => c.method === 'GET' && c.path === '/billing/runs')).toBe(true);
+  });
+
   it('offers quarterly periods for a quarterly society', async () => {
     renderIt({ 'GET /society/settings': ok(cycleSettings('QUARTERLY')) });
     const period = await screen.findByLabelText('Billing period');
@@ -108,7 +153,7 @@ describe('New run wizard: step 1, heads', () => {
   it('keeps going when the rates cannot be loaded, and warns when there are none', async () => {
     renderIt({ 'GET /billing/rules': err(403, 'PERMISSION_DENIED') });
     expect(await screen.findByText(/The rates could not be loaded/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled());
   });
 
   it('warns when no billing rule exists yet', async () => {
