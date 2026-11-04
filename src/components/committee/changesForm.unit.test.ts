@@ -163,6 +163,21 @@ describe('plan mappers and wording', () => {
     ]);
     expect(committeeError(dates)).toBe('Between 2029-04-01 and today');
     expect(committeeError(new ApiError(422, 'COMMITTEE_TERM_DATES_INVALID', 'raw'))).toContain('5 years');
+    const overlap = new ApiError(
+      422,
+      'COMMITTEE_TERM_DATES_INVALID',
+      'This period overlaps another past committee',
+      [{ field: 'endDate', message: 'This period overlaps another past committee' }],
+    );
+    expect(committeeError(overlap)).toBe('This period overlaps another past committee');
+    const strength = new ApiError(422, 'COMMITTEE_STRENGTH_INVALID', 'There are more winners than seats', [
+      { field: 'strength', message: 'There are more winners than seats' },
+    ]);
+    expect(committeeError(strength)).toBe('There are more winners than seats');
+    const flat = new ApiError(422, 'COMMITTEE_HOLDER_INELIGIBLE', 'The flat is not one the person owns', [
+      { field: 'unitId', message: 'The flat is not one the person owns' },
+    ]);
+    expect(committeeError(flat)).toBe('The flat is not one the person owns');
     const inv = new ApiError(422, 'COMMITTEE_CHANGE_INVALID', 'Pick a different designation', [
       { field: 'changes', message: 'Pick a different designation', seatIds: ['S3'] },
     ]);

@@ -177,6 +177,28 @@ describe('Term editor: new committee', () => {
     );
   });
 
+  it('shows the backend sentence for dates, in the banner and at the end date', async () => {
+    const msg = 'This period overlaps another past committee';
+    renderIt({
+      'POST /committee/terms': err(
+        422,
+        'COMMITTEE_TERM_DATES_INVALID',
+        [{ field: 'endDate', message: msg }],
+        msg,
+      ),
+    });
+    const form = await openNew();
+    await fillTerm(form);
+    const row = within(form).getByTestId('seat-row');
+    await pickHolder(row, 'raj', 'Rajesh Kulkarni');
+    await userEvent.type(within(row).getByLabelText('Search flat'), 'A-5');
+    await waitFor(() => expect(within(row).getByRole('option', { name: 'A-501' })).toBeInTheDocument());
+    await userEvent.selectOptions(within(row).getByLabelText('Flat'), 'A-501');
+    await userEvent.click(within(form).getByRole('button', { name: 'Save draft committee' }));
+    expect((await within(form).findAllByText(msg)).length).toBeGreaterThan(0);
+    expect(within(form).queryByText(/within 5 years/)).toBeNull();
+  });
+
   it('offers the existing draft when one already exists', async () => {
     renderIt({
       'POST /committee/terms': err(409, 'COMMITTEE_DRAFT_EXISTS', [{ field: 'termId', message: '20' }]),

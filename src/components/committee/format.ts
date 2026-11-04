@@ -65,7 +65,17 @@ const TEXT: Record<string, string> = {
 };
 
 /** Fields whose backend message is more exact than the generic text (dates of taking charge, mid-term change sets). */
-const MESSAGE_FIELDS = new Set(['tookChargeOn', 'effectiveDate', 'changes']);
+const MESSAGE_FIELDS = new Set([
+  'tookChargeOn',
+  'effectiveDate',
+  'changes',
+  'startDate',
+  'endDate',
+  'strength',
+  'seats',
+  'unitId',
+  'showOnResidentPage',
+]);
 /** Codes whose own text is always the better wording, even on those fields. */
 const KEEP_TEXT = new Set(['COMMITTEE_CHAIRMAN_REQUIRED', 'COMMITTEE_COOPTION_NOT_ALLOWED']);
 
