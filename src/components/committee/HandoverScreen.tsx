@@ -16,7 +16,13 @@ import { shortDate } from '@/lib/money';
 import { committeeService } from '@/services/committee.service';
 import { societySetupService } from '@/services/society-setup.service';
 import type { Designation, Handover, HandoverItem, HandoverStatus } from '@/types/committee';
-import { DESIGNATION_LABEL, DESIGNATION_ORDER, committeeError, designationLabel } from './format';
+import {
+  DESIGNATION_LABEL,
+  DESIGNATION_ORDER,
+  committeeError,
+  designationLabel,
+  handoverProgress,
+} from './format';
 
 const M = PERMISSIONS.settings.members;
 const MAX_EVIDENCE = 5;
@@ -81,14 +87,12 @@ function Checklist({ h, termId, onChanged }: { h: Handover; termId: number; onCh
   const canAdd = usePermission(M.edit);
   const [adding, setAdding] = useState(false);
   const p = h.progress;
-  const resolved = p.done + p.notApplicable;
-  const pct = p.total ? Math.round((resolved / p.total) * 100) : 0;
+  const { finished: resolved, pct, text } = handoverProgress(p);
   return (
     <div>
       <Card className="mb-3">
         <p className="mb-1 text-[14px] font-semibold" data-testid="handover-progress-text">
-          {resolved} of {p.total} done
-          {p.notApplicable > 0 ? ` (${p.notApplicable} not applicable)` : ''}
+          {text}
         </p>
         <div
           role="progressbar"

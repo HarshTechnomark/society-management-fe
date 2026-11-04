@@ -30,6 +30,7 @@ import {
   bannerText,
   committeeError,
   designationLabel,
+  handoverProgress,
 } from './format';
 import type { EditorMode } from './termForm';
 
@@ -259,8 +260,9 @@ function CurrentCard({
   const [changing, setChanging] = useState<{ fill: Designation | null } | null>(null);
   const t = detail.data;
   const seated = (t?.seats ?? []).filter(s => s.status === 'SEATED');
-  const h = current.handover;
-  const pct = h.total ? Math.round((h.done / h.total) * 100) : 0;
+  // The list summary has no not-applicable count, so the full term (same numbers as the checklist) is used once loaded.
+  const h = t?.handover ?? current.handover;
+  const hp = handoverProgress(h);
   return (
     <section aria-label="Current committee" className="mb-5">
       <Card className="mb-3">
@@ -327,7 +329,8 @@ function CurrentCard({
           <div className="mt-3">
             <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[13px] text-muted">
-                Hand-over checklist: {h.done} of {h.total} done{h.completedAt ? ' (complete)' : ''}
+                Hand-over checklist: {hp.text}
+                {h.completedAt ? ' (complete)' : ''}
               </p>
               <Button size="xs" variant="glass" onClick={onHandover}>
                 Open checklist
@@ -338,10 +341,10 @@ function CurrentCard({
               aria-label="Hand-over checklist progress"
               aria-valuemin={0}
               aria-valuemax={h.total}
-              aria-valuenow={h.done}
+              aria-valuenow={hp.finished}
               className="h-2 w-full overflow-hidden rounded-full bg-[rgba(20,35,44,0.1)]"
             >
-              <div className="h-full bg-navy" style={{ width: `${pct}%` }} />
+              <div className="h-full bg-navy" style={{ width: `${hp.pct}%` }} />
             </div>
           </div>
         )}

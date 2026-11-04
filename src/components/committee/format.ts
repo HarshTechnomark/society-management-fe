@@ -300,3 +300,16 @@ export const opts = <T extends string>(map: Record<T, string>) =>
 export function readableDates(text: string): string {
   return text.replace(/\b\d{4}-\d{2}-\d{2}\b/g, d => shortDate(d));
 }
+
+/** One definition of hand-over progress: an item is finished when it is DONE or NOT_APPLICABLE. */
+export function handoverProgress(h: { total: number; done: number; notApplicable?: number }) {
+  const notApplicable = h.notApplicable ?? 0;
+  const finished = h.done + notApplicable;
+  return {
+    total: h.total,
+    finished,
+    notApplicable,
+    pct: h.total ? Math.round((finished / h.total) * 100) : 0,
+    text: `${finished} of ${h.total} done${notApplicable > 0 ? ` (${notApplicable} not applicable)` : ''}`,
+  };
+}

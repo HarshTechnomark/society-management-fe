@@ -97,8 +97,8 @@ describe('Committee tab: states and gates', () => {
     expect(screen.getByText('3 of 5 seats filled')).toBeInTheDocument();
     expect(screen.getByText('882 days left')).toBeInTheDocument();
     expect(screen.getByText('CM/2024-25/01')).toBeInTheDocument();
-    expect(screen.getByText(/9 of 10 done/)).toBeInTheDocument();
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '9');
+    expect(screen.getByText(/8 of 10 done \(2 not applicable\)/)).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '8');
     const names = screen.getAllByTestId('seat-card').map(c => c.textContent ?? '');
     expect(names[0]).toContain('Rajesh Kulkarni');
     expect(names[1]).toContain('Arjun Shah');

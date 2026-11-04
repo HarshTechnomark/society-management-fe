@@ -73,6 +73,28 @@ describe('Hand-over checklist (11.6)', () => {
     expect(api.calls.filter(c => c.path === '/committee/terms/12/handover')).toHaveLength(2);
   });
 
+  it('counts progress the same way on the card and in the checklist header', async () => {
+    setMe(sampleMe({ permissions: COMMITTEE_PERMS, features: COMMITTEE_FEATURES }));
+    mockApi({
+      'GET /committee': ok(overviewRaw()),
+      'GET /committee/terms/12': ok(termRaw()),
+      'GET /committee/terms/12/handover': ok(
+        handoverRaw({ progress: { total: 10, done: 6, notApplicable: 2, pending: 2 } }),
+      ),
+    });
+    render(
+      <ToastProvider>
+        <CommitteeTab />
+      </ToastProvider>,
+    );
+    const card = await screen.findByText(/Hand-over checklist: 8 of 10 done/);
+    expect(card).toHaveTextContent('Hand-over checklist: 8 of 10 done (2 not applicable)');
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '8');
+    await userEvent.click(screen.getByRole('button', { name: 'Open checklist' }));
+    await screen.findByText('Insurance papers');
+    expect(screen.getByTestId('handover-progress-text')).toHaveTextContent('8 of 10 done (2 not applicable)');
+  });
+
   it('shows progress, owners and status in words', async () => {
     await openChecklist();
     await screen.findByText('Insurance papers');
