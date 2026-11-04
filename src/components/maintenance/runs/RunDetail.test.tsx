@@ -219,6 +219,15 @@ describe('Run detail: statuses', () => {
     expect(screen.getByText(/Issued.*65 bills/)).toBeInTheDocument();
   });
 
+  it('keeps a stable total while issuing although the ready count stays at its start value', async () => {
+    renderIt({ 'GET /billing/runs/88': ok(withCounts({ issued: 24, ready: 71 }, { status: 'ISSUING' })) });
+    const bar = await screen.findByRole('progressbar', { name: 'Issuing bills' });
+    expect(bar).toHaveAttribute('aria-valuetext', '24 of 71 bills issued.');
+    const counts = screen.getByRole('list', { name: 'Bill counts' });
+    expect(within(counts).getByText('24 issued')).toBeInTheDocument();
+    expect(within(counts).getByText('47 ready')).toBeInTheDocument();
+  });
+
   it('has no Resume button while issuing without an error', async () => {
     renderIt({ 'GET /billing/runs/88': ok(withCounts({ issued: 3, ready: 68 }, { status: 'ISSUING' })) });
     await screen.findByRole('progressbar', { name: 'Issuing bills' });

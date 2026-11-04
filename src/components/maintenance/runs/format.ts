@@ -281,12 +281,21 @@ export function rupeesToPaise(text: string): number | null {
 export const pctText = (p: number | null | undefined) =>
   p === null || p === undefined ? '-' : `${p > 0 ? '+' : ''}${p.toFixed(1)} %`;
 
+type CountsOf = { ready: number; issued: number; items?: number; exceptions?: number; excluded?: number };
 /**
- * The number of bills of a run (one item is one bill: a flat can get an owner bill and a tenant bill). Once issued it is
- * the issued count (the ready count drops to 0); while issuing, the bills issued plus the ones still to issue.
+ * The number of bills of a run (one item is one bill: a flat can get an owner bill and a tenant bill). Before issue it
+ * is the ready count; once issued it is the issued count (the ready count drops to 0). While issuing, the backend keeps
+ * the ready count at its value from the start until the end, so ready + issued would grow: the stable total is every
+ * item that is neither an exception nor excluded (READY and ISSUED items), never less than the bills already issued.
  */
-export const billCount = (r: { status: RunStatus; counts: { ready: number; issued: number } }) =>
-  r.status === 'ISSUED' ? r.counts.issued : r.counts.ready + r.counts.issued;
+export const billCount = (r: { status: RunStatus; counts: CountsOf }) => {
+  const c = r.counts;
+  if (r.status === 'ISSUED') return c.issued;
+  if (r.status !== 'ISSUING') return c.ready + c.issued;
+  const total =
+    c.items !== undefined ? c.items - (c.exceptions ?? 0) - (c.excluded ?? 0) : Math.max(c.ready, c.issued);
+  return Math.max(total, c.issued);
+};
 export const billsText = (n: number) => `${n} ${n === 1 ? 'bill' : 'bills'}`;
 
 /** Statuses in which the run is still being worked on in the background, so the screen polls. */

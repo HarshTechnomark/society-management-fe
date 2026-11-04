@@ -9,6 +9,7 @@ import {
   RUN_STATUS_LABEL,
   RUN_STATUS_MARK,
   RUN_STATUS_TONE,
+  billCount,
   pctText,
 } from './format';
 
@@ -110,6 +111,8 @@ function Stat({ label, value, strong }: { label: string; value: string; strong?:
 export function RunSummary({ run }: { run: Run }) {
   const diffOn = useFeature('billing.bill_change_diff');
   const c = run.counts;
+  // While issuing the backend's ready count stays at its starting value: show the bills still to issue instead.
+  const ready = run.status === 'ISSUING' ? Math.max(0, billCount(run) - c.issued) : c.ready;
   const prev = run.previousRunTotalPaise;
   return (
     <div data-testid="run-summary">
@@ -161,9 +164,9 @@ export function RunSummary({ run }: { run: Run }) {
             <Chip tone="info">{c.issued} issued</Chip>
           </li>
         )}
-        {(c.ready > 0 || c.issued === 0) && (
+        {(ready > 0 || c.issued === 0) && (
           <li>
-            <Chip tone="ok">{c.ready} ready</Chip>
+            <Chip tone="ok">{ready} ready</Chip>
           </li>
         )}
         <li>

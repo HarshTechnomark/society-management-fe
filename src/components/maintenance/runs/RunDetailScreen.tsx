@@ -14,7 +14,7 @@ import { inr, shortDate } from '@/lib/money';
 import { approvalsPageHref } from '@/services/residents.service';
 import { billingRunsService } from '@/services/billingRuns.service';
 import type { Run } from '@/types/billingRuns';
-import { billingRunError, computeErrorText, periodLabel, plainError, rangeText } from './format';
+import { billCount, billingRunError, computeErrorText, periodLabel, plainError, rangeText } from './format';
 import { PublishForm, PublishResult } from './PublishForm';
 import { ReasonDialog } from './ReasonDialog';
 import { ProgressBar, RunStatusChip, RunSummary, RunTimeline } from './RunBits';
@@ -93,10 +93,8 @@ function Inner({ id }: { id: number }) {
 
   const s = run.status;
   const canWork = s === 'PREVIEW' || s === 'FAILED';
-  const issuedPct =
-    run.counts.ready + run.counts.issued > 0
-      ? (run.counts.issued / (run.counts.ready + run.counts.issued)) * 100
-      : 0;
+  const toIssue = billCount(run);
+  const issuedPct = toIssue > 0 ? Math.min(100, (run.counts.issued / toIssue) * 100) : 0;
   const actions = (
     <>
       {canCreate && canWork && (
@@ -182,7 +180,7 @@ function Inner({ id }: { id: number }) {
           <ProgressBar
             label="Issuing bills"
             value={issuedPct}
-            text={`${run.counts.issued} of ${run.counts.ready + run.counts.issued} bills issued.`}
+            text={`${run.counts.issued} of ${toIssue} bills issued.`}
           />
           {run.lastError && (
             <Alert tone="bad" className="mt-3">

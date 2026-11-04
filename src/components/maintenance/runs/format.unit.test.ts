@@ -134,8 +134,23 @@ describe('bill counts', () => {
   it('counts bills: ready before issue, issued after', () => {
     const c = (ready: number, issued: number) => ({ ready, issued });
     expect(billCount({ status: 'PREVIEW', counts: c(71, 0) })).toBe(71);
-    expect(billCount({ status: 'ISSUING', counts: c(41, 30) })).toBe(71);
+    expect(billCount({ status: 'ISSUING', counts: c(71, 30) })).toBe(71);
     expect(billCount({ status: 'ISSUED', counts: c(0, 65) })).toBe(65);
+    // while issuing the backend keeps ready at the start value; the total is items minus exceptions and excluded
+    const issuing = (ready: number, issued: number) => ({
+      status: 'ISSUING' as const,
+      counts: { ready, issued, items: 73, exceptions: 0, excluded: 2 },
+    });
+    expect(billCount(issuing(71, 0))).toBe(71);
+    expect(billCount(issuing(71, 24))).toBe(71);
+    expect(billCount(issuing(71, 71))).toBe(71);
+    // an item excluded mid-issue (unit archived) lowers the total and the backend recounts ready
+    expect(
+      billCount({
+        status: 'ISSUING',
+        counts: { ready: 40, issued: 30, items: 73, exceptions: 0, excluded: 3 },
+      }),
+    ).toBe(70);
     expect(billsText(1)).toBe('1 bill');
   });
 });
