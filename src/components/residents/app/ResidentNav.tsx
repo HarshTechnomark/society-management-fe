@@ -2,10 +2,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { SwitchAppButton } from '@/components/auth/SwitchAppButton';
+import { Button } from '@/components/ui/Button';
 import { cx } from '@/components/ui/cx';
 import { PERMISSIONS, type PermissionKey } from '@/constants/permissions';
 import { hasPermission } from '@/hooks/usePermission';
-import { useMe } from '@/lib/auth';
+import { signOut, useMe } from '@/lib/auth';
 import type { Me } from '@/types/auth';
 
 const RES = PERMISSIONS.resident;
@@ -36,6 +38,7 @@ export function visibleResidentNav(me: Me | null): Item[] {
   return RESIDENT_NAV.filter(i => i.keys.length === 0 || (!!me && i.keys.some(k => hasPermission(me, k))));
 }
 
+/** The resident frame: name, "Open <other app>" (single sign-in address) and Sign out, above the section links. */
 export function ResidentNav({ children }: { children: ReactNode }) {
   const { me } = useMe();
   const path = usePathname() ?? '';
@@ -46,6 +49,15 @@ export function ResidentNav({ children }: { children: ReactNode }) {
         aria-label="Resident sections"
         className="sticky top-0 z-30 border-b border-[var(--line)] bg-[rgba(251,247,240,0.95)]"
       >
+        <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-2 px-4 pt-2.5">
+          <p className="text-[16px] font-bold">SocietyApp</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <SwitchAppButton />
+            <Button variant="glass" size="sm" onClick={() => void signOut()}>
+              Sign out
+            </Button>
+          </div>
+        </div>
         <ul className="mx-auto flex max-w-[1100px] gap-1 overflow-x-auto px-3 py-2">
           {items.map(i => (
             <li key={i.href} className="shrink-0">

@@ -170,6 +170,33 @@ export function loginUrl(reason?: string, next?: string) {
   return `/login${s ? '?' + s : ''}`;
 }
 
+const SIGNED_IN_KEY = 'sa_signed_in';
+
+/**
+ * Whether this browser has had a session (a flag, no personal data). It lets the sign-in page tell "your session expired" apart
+ * from a first visit through a deep link: both reach the API without a valid session.
+ */
+export function markSignedIn(on: boolean) {
+  try {
+    if (on) localStorage.setItem(SIGNED_IN_KEY, '1');
+    else localStorage.removeItem(SIGNED_IN_KEY);
+  } catch {
+    /* storage may be blocked */
+  }
+}
+export function wasSignedIn(): boolean {
+  try {
+    return localStorage.getItem(SIGNED_IN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** The sign-in page after finding no session: "expired" only when there was one, a plain sign-in page otherwise. */
+export function noSessionUrl(next?: string) {
+  return loginUrl(wasSignedIn() ? 'expired' : undefined, next);
+}
+
 function currentPath() {
   return typeof window === 'undefined' ? '/' : window.location.pathname + window.location.search;
 }
@@ -199,9 +226,9 @@ function refreshSession(): Promise<boolean> {
   return refreshing;
 }
 
-function goToLogin(reason: string): never {
+function goToLogin(reason: string | null): never {
   hooks.sessionLost?.();
-  hooks.redirect(loginUrl(reason, currentPath()));
+  hooks.redirect(reason ? loginUrl(reason, currentPath()) : noSessionUrl(currentPath()));
   throw new ApiError(401, reason === 'idle' ? 'SESSION_EXPIRED' : 'UNAUTHENTICATED', 'Please sign in again.');
 }
 
@@ -230,7 +257,8 @@ async function request(path: string, options: Options): Promise<Envelope | null>
           epoch = refreshEpoch;
           continue;
         }
-        goToLogin('expired');
+        // no valid session and none to refresh: expired if this browser had one, a first visit otherwise
+        goToLogin(null);
       }
       if (e.status === 401 && (e.code === 'SESSION_EXPIRED' || e.code === 'SESSION_REVOKED')) {
         goToLogin(e.code === 'SESSION_EXPIRED' && e.meta('reason') === 'IDLE' ? 'idle' : 'expired');

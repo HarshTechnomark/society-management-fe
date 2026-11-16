@@ -66,6 +66,7 @@ export interface OtpChallenge {
 
 export type SignInResult =
   | { status: 'SIGNED_IN'; me: Me; recoveryCodes?: string[] }
+  | { status: 'APP_CHOICE_REQUIRED'; challengeToken: string; apps: ClientApp[]; expiresAt: string }
   | {
       status: 'MFA_REQUIRED' | 'MFA_ENROLL_REQUIRED';
       challengeToken: string;

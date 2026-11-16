@@ -12,6 +12,7 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
     // jsdom has no page origin for relative URLs, so tests call the API through an absolute base.
-    env: { NEXT_PUBLIC_API_URL: 'http://localhost:4000/api/v1' },
+    // NEXT_PUBLIC_CLIENT_APP keeps the per-app screens on localhost; the single sign-in tests switch it off with vi.stubEnv.
+    env: { NEXT_PUBLIC_API_URL: 'http://localhost:4000/api/v1', NEXT_PUBLIC_CLIENT_APP: 'ADMIN' },
   },
 });

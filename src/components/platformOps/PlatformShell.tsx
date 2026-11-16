@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
+import { SwitchAppButton } from '@/components/auth/SwitchAppButton';
 import { Drawer } from '@/components/ui/Drawer';
 import { Button } from '@/components/ui/Button';
 import { cx } from '@/components/ui/cx';
@@ -102,9 +103,12 @@ export function PlatformShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const groups = visibleNav(me);
   const signOutButton = (
-    <Button variant="glass" size="sm" onClick={() => void signOut()}>
-      Sign out
-    </Button>
+    <>
+      <SwitchAppButton />
+      <Button variant="glass" size="sm" onClick={() => void signOut()}>
+        Sign out
+      </Button>
+    </>
   );
   return (
     <div className="min-[900px]:flex">

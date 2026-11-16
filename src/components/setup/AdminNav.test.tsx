@@ -5,7 +5,10 @@ import { resetAll } from '@/test/helpers';
 import { signIn } from '@/test/setupHelpers';
 import { AdminNav, activeHref } from './AdminNav';
 
-vi.mock('next/navigation', () => ({ usePathname: () => '/admin/settings/subscription' }));
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/admin/settings/subscription',
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), // the switch-app button navigates after switching
+}));
 
 describe('Admin navigation', () => {
   beforeEach(resetAll);

@@ -1,4 +1,4 @@
-import type { OtpChannel } from '@/types/auth';
+import type { ClientApp, OtpChannel } from '@/types/auth';
 
 /**
  * Short-lived sign-in state kept only in memory (never in localStorage or sessionStorage): the OTP challenge, the
@@ -15,6 +15,8 @@ export interface FlowState {
     mobile: string;
   };
   mfa?: { challengeToken: string; methods: string[]; expiresAt: string };
+  /** Single sign-in address: the apps the person may open, waiting for their pick. */
+  appChoice?: { challengeToken: string; apps: ClientApp[]; expiresAt: string };
   signup?: { signupToken: string; mobile: string; expiresAt: string };
   recoveryCodes?: string[];
 }
@@ -34,7 +36,7 @@ export const flow = {
 
 export const REMEMBER_KEY = 'sa_remember_email';
 
-/** "Remember my email" is the only thing this app keeps in localStorage. */
+/** "Remember my email" and the "has been signed in" flag (`markSignedIn`) are all this app keeps in localStorage. */
 export function readRememberedEmail(): string {
   try {
     return localStorage.getItem(REMEMBER_KEY) ?? '';

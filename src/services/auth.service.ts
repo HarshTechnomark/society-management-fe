@@ -1,6 +1,7 @@
 /** Every module 02 network call (spec section 8). Screens import from here and never call `fetch` themselves. */
 import { api, apiList } from '@/lib/apiClient';
 import type {
+  ClientApp,
   LinkStatus,
   Me,
   OtpChannel,
@@ -31,6 +32,8 @@ export const authService = {
     post<{ challengeId: string; publicKey: PublicKeyOptionsJSON }>('/auth/passkey/options', {}),
   passkeyVerify: (challengeId: string, credential: Record<string, unknown>) =>
     post<SignInResult>('/auth/passkey/verify', { challengeId, credential }),
+  appChoose: (challengeToken: string, app: ClientApp) =>
+    post<SignInResult>('/auth/app/choose', { challengeToken, app }),
   mfaVerify: (challengeToken: string, method: 'TOTP' | 'RECOVERY_CODE', code: string) =>
     post<SignInResult>('/auth/mfa/verify', { challengeToken, method, code }),
   mfaEnrollStart: (challengeToken: string) => post<TotpSetup>('/auth/mfa/enroll/start', { challengeToken }),
@@ -47,6 +50,8 @@ export const authService = {
   me: (opts: { recover?: boolean; activity?: boolean } = {}) => api<Me>('/auth/me', opts),
   logout: () => api<null>('/auth/logout', { method: 'POST', body: {}, recover: false }),
   switchSociety: (societyId: number) => post<Me>('/auth/switch-society', { societyId }),
+  apps: () => api<{ current: ClientApp; available: ClientApp[] }>('/auth/apps'),
+  switchApp: (app: ClientApp) => post<Me>('/auth/switch-app', { app }),
   updateProfile: (body: { version: number; name?: string; locale?: string }) =>
     api<Me['user']>('/auth/me', { method: 'PATCH', body }),
 

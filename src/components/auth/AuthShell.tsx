@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { APP_LABEL, useClientApp } from '@/lib/clientApp';
+import { APP_LABEL, useClientApp, useIsUnified, useSessionApp } from '@/lib/clientApp';
 import { cx } from '@/components/ui/cx';
 
 export const linkClass =
@@ -45,6 +45,16 @@ const COPY: Record<string, { title: string; text: string; points: string[] }> = 
     text: 'See your jobs, update their status and stay in touch with the society office.',
     points: ['One list of tasks', 'Update from your phone', 'Clear instructions for every visit'],
   },
+  // the single sign-in address, before anybody has signed in: it does not know the role yet
+  ANY: {
+    title: 'One sign-in for everyone.',
+    text: 'Sign in once. We open the right app for your role: society admin, resident, gate, staff or the platform console.',
+    points: [
+      'Use your mobile number or your email',
+      'Two-step sign-in where your role needs it',
+      'Switch between your apps without signing in again',
+    ],
+  },
 };
 
 function Logo({ className }: { className?: string }) {
@@ -67,7 +77,11 @@ function Logo({ className }: { className?: string }) {
 /** The shared brand panel (desktop) and small brand header (phone) around every public screen. */
 export function AuthShell({ children, wide }: { children: ReactNode; wide?: boolean }) {
   const app = useClientApp();
-  const copy = COPY[app];
+  const unified = useIsUnified();
+  const signedApp = useSessionApp();
+  const neutral = unified && !signedApp;
+  const copy = neutral ? COPY.ANY : COPY[app];
+  const label = neutral ? 'SIGN IN' : APP_LABEL[app];
   return (
     <div className="grid min-h-screen grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] p-5 max-[1000px]:grid-cols-1 max-[1000px]:p-3">
       <section className="relative mr-5 flex flex-col justify-between overflow-hidden rounded-[30px] bg-[radial-gradient(90%_70%_at_20%_0%,rgba(201,169,97,0.45),rgba(201,169,97,0)_60%),linear-gradient(160deg,#1D4358_0%,#0E2533_70%)] p-11 text-[#F6EEDC] max-[1000px]:hidden">
@@ -77,7 +91,7 @@ export function AuthShell({ children, wide }: { children: ReactNode; wide?: bool
           </span>
           <div className="leading-tight">
             <b className="block text-[#FDF8EE]">SocietyApp</b>
-            <span className="text-[11px] tracking-widest text-[#B9B29E]">{APP_LABEL[app]}</span>
+            <span className="text-[11px] tracking-widest text-[#B9B29E]">{label}</span>
           </div>
         </div>
         <div className="relative z-10">
@@ -109,7 +123,7 @@ export function AuthShell({ children, wide }: { children: ReactNode; wide?: bool
             </span>
             <div className="leading-tight">
               <b className="block">SocietyApp</b>
-              <span className="text-[11px] tracking-widest text-muted">{APP_LABEL[app]}</span>
+              <span className="text-[11px] tracking-widest text-muted">{label}</span>
             </div>
           </div>
           {children}

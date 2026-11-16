@@ -4,6 +4,37 @@ import { config, proxy } from './proxy';
 
 const at = (url: string) => proxy(new NextRequest(url, { headers: { host: new URL(url).host } }));
 
+describe('the single sign-in address', () => {
+  it('serves every app by its path prefix and the login page, without rewriting', () => {
+    for (const path of [
+      '/login',
+      '/login/app',
+      '/admin/billing/dues',
+      '/platform/societies',
+      '/resident/bills',
+      '/gate',
+      '/work',
+    ]) {
+      const res = at(`https://app.societyapp.in${path}`);
+      expect(res.headers.get('x-middleware-rewrite'), path).toBeNull();
+      expect(res.status, path).toBe(200);
+    }
+  });
+
+  it('leaves the role hosts as they were', () => {
+    expect(at('https://admin.societyapp.in/billing/dues').headers.get('x-middleware-rewrite')).toContain(
+      '/admin/billing/dues',
+    );
+    expect(at('https://platform.societyapp.in/societies').headers.get('x-middleware-rewrite')).toContain(
+      '/platform/societies',
+    );
+  });
+
+  it('still refuses an unknown host', () => {
+    expect(at('https://other.societyapp.in/admin').status).toBe(404);
+  });
+});
+
 describe('proxy host routing', () => {
   it('serves the support hand-off page on the admin host without rewriting it (module 05 P-09)', () => {
     const res = at('https://admin.societyapp.in/support-handoff');
