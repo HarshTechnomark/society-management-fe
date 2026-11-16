@@ -40,6 +40,15 @@ describe('mappers', () => {
     expect(mapCheckout({ keyId: 'rzp', gatewayOrderId: 'o1', upiIntentUrl: 'upi://pay?x=1' }).isFake).toBe(
       false,
     );
+    // the real API sends a key, a UPI link and a QR even for the development gateway: the provider decides
+    expect(
+      mapCheckout({
+        provider: 'FAKE',
+        keyId: 'key_fake_1',
+        gatewayOrderId: 'o1',
+        upiIntentUrl: 'upi://pay?x=1',
+      }).isFake,
+    ).toBe(true);
     expect(mapCheckout({ gatewayOrderId: 'o1', redirect_url: 'https://pay.example/h' })).toMatchObject({
       isFake: false,
       redirectUrl: 'https://pay.example/h',

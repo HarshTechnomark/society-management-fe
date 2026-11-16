@@ -85,7 +85,8 @@ export function mapCheckout(raw: unknown): Checkout {
     upiIntentUrl: upi,
     qrPayload: strOrNull(c.qrPayload),
     redirectUrl: redirect,
-    isFake: !keyId && !upi && !redirect && !c.qrPayload,
+    // the development gateway (provider FAKE) has no real checkout: show the Test payment panel instead
+    isFake: str(c.provider).toUpperCase() === 'FAKE' || (!keyId && !upi && !redirect && !c.qrPayload),
     raw: c,
   };
 }
