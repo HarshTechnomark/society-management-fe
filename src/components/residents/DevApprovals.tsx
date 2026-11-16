@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, PageHead } from '@/components/common/PageHead';
 import { useLoad } from '@/hooks/useLoad';
 import { api } from '@/lib/apiClient';
+import { inr } from '@/lib/money';
 import { residentsService } from '@/services/residents.service';
 
 interface Pending {
@@ -14,6 +15,43 @@ interface Pending {
   societyId: number;
   status: string;
   source?: string;
+  title?: string;
+  amountPaise?: number;
+  categoryKey?: string;
+  /** What the request carries (payments source): flat, amount and mode may sit here or at the top level. */
+  payload?: Record<string, unknown> | null;
+  unitLabel?: string;
+  mode?: string;
+}
+
+const ENTITY_LABEL: Record<string, string> = {
+  OFFLINE_PAYMENT: 'payment',
+  PAYMENT_REFUND: 'refund',
+  COLLECTION_PUBLISH: 'collection',
+};
+const MODE_LABEL: Record<string, string> = {
+  GATEWAY: 'back to the payer',
+  BANK_TRANSFER: 'bank transfer',
+  CHEQUE: 'cheque',
+  CASH: 'cash',
+  UPI: 'UPI',
+  NEFT: 'NEFT',
+};
+
+/** One line about what is asked: the title, the amount and the mode when the request carries them. */
+export function approvalSummary(r: Pending): string {
+  const p = r.payload ?? {};
+  const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
+  const amount = [r.amountPaise, p.amountPaise].find(v => typeof v === 'number' && v > 0) as
+    number | undefined;
+  const mode = text(r.mode) ?? text(r.categoryKey) ?? text(p.mode) ?? text(p.method);
+  const flat = text(r.unitLabel) ?? text(p.unitLabel) ?? text(p.flat);
+  const parts: string[] = [];
+  if (r.title) parts.push(r.title);
+  if (flat) parts.push(`Flat ${flat}`);
+  if (amount) parts.push(inr(amount));
+  if (mode) parts.push(MODE_LABEL[mode] ?? mode);
+  return parts.join(' · ');
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -28,6 +66,9 @@ const TYPE_LABEL: Record<string, string> = {
   WRITE_OFF: 'Write-off',
   INVOICE_CANCEL: 'Invoice cancellation',
   BILLING_RUN_PUBLISH: 'Billing run publish',
+  OFFLINE_PAYMENT: 'Offline payment',
+  PAYMENT_REFUND: 'Payment refund',
+  COLLECTION_PUBLISH: 'Collection publish',
 };
 
 /**
@@ -54,7 +95,7 @@ export function DevApprovals() {
   }
 
   return (
-    <>
+    <main>
       <PageHead
         title="Approvals (development)"
         sub="Requests waiting for a decision. The real approvals inbox arrives with module 14."
@@ -73,7 +114,11 @@ export function DevApprovals() {
               className="flex flex-wrap items-center justify-between gap-3"
             >
               <span className="text-[14.5px]">
-                <strong>{TYPE_LABEL[r.type] ?? r.type}</strong> · request {r.id} · record {r.entityId}
+                <strong>{TYPE_LABEL[r.type] ?? r.type}</strong> · request {r.id} ·{' '}
+                {ENTITY_LABEL[r.type] ?? 'record'} {r.entityId}
+                {approvalSummary(r) && (
+                  <span className="block text-[13px] text-muted">{approvalSummary(r)}</span>
+                )}
               </span>
               <span className="flex gap-2">
                 <Button size="sm" disabled={busy === r.id} onClick={() => decide(r.id, true, r.source)}>
@@ -92,6 +137,6 @@ export function DevApprovals() {
           ))}
         </ul>
       </Card>
-    </>
+    </main>
   );
 }

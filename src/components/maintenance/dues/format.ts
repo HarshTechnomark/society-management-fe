@@ -160,7 +160,7 @@ export function friendlyInputs(inputs: { key: string; value: string }[]): { labe
   return out;
 }
 
-/** Link to the module 12 pay route (placeholder until module 12 ships), like the module 09 screens. */
+/** Link to the resident Pay tab (module 12): the Pay list of a flat, or one bill ticked. */
 export function payHref(unitId: number, invoiceId?: number): string {
-  return `/pay?unitId=${unitId}${invoiceId ? `&invoiceId=${invoiceId}` : ''}`;
+  return `/resident/pay?unitId=${unitId}${invoiceId ? `&invoiceId=${invoiceId}` : ''}`;
 }

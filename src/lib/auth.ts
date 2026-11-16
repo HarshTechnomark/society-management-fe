@@ -47,11 +47,11 @@ export function loadMe(force = false): Promise<Me | null> {
   return loading;
 }
 
-export function useMe(): { me: Me | null; ready: boolean } {
+export function useMe(load = true): { me: Me | null; ready: boolean } {
   const me = useSyncExternalStore(sessionStore.subscribe, sessionStore.get, () => null);
   useEffect(() => {
-    if (!me) void loadMe();
-  }, [me]);
+    if (load && !me) void loadMe();
+  }, [me, load]);
   return { me, ready: me !== null };
 }
 

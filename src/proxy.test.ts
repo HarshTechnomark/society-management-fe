@@ -77,3 +77,17 @@ describe('proxy host routing', () => {
     expect(re.test('/billing/runs')).toBe(true);
   });
 });
+
+describe('the pay-by-link page (module 12)', () => {
+  it('opens on every host without rewriting it into an app group', () => {
+    for (const host of ['app', 'admin', 'platform', 'my', 'gate', 'work']) {
+      const res = at(`https://${host}.societyapp.in/pay/AB12CD34EF`);
+      expect(res.headers.get('x-middleware-rewrite'), host).toBeNull();
+      expect(res.status, host).toBe(200);
+    }
+  });
+
+  it('is also reachable on the bare domain', () => {
+    expect(at('https://societyapp.in/pay/AB12CD34EF').status).toBe(200);
+  });
+});
