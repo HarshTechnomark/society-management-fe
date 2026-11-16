@@ -36,7 +36,7 @@ export const flow = {
 
 export const REMEMBER_KEY = 'sa_remember_email';
 
-/** "Remember my email" is the only thing this app keeps in localStorage. */
+/** "Remember my email" and the "has been signed in" flag (`markSignedIn`) are all this app keeps in localStorage. */
 export function readRememberedEmail(): string {
   try {
     return localStorage.getItem(REMEMBER_KEY) ?? '';

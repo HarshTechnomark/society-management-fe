@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { api, apiList, ApiError, configureApiClient } from './apiClient';
+import { api, apiList, ApiError, configureApiClient, markSignedIn } from './apiClient';
 
 type Reply = { status?: number; body?: unknown; headers?: Record<string, string> };
 const ok = (data: unknown, extra: object = {}): Reply => ({
@@ -125,6 +125,7 @@ describe('apiClient', () => {
   });
 
   it('redirects to login with next when the refresh fails', async () => {
+    markSignedIn(true);
     const lost = vi.fn();
     configureApiClient({ sessionLost: lost });
     mockFetch([fail(401, 'UNAUTHENTICATED'), fail(401, 'REFRESH_TOKEN_INVALID')]);
@@ -135,6 +136,15 @@ describe('apiClient', () => {
     expect(url).toContain('r=expired');
     expect(url).toContain('next=');
     expect(lost).toHaveBeenCalled();
+  });
+
+  it('a first visit (never signed in on this browser) goes to a plain sign-in page, keeping next', async () => {
+    markSignedIn(false);
+    mockFetch([fail(401, 'UNAUTHENTICATED'), fail(401, 'REFRESH_TOKEN_INVALID')]);
+    await expect(api('/me/security')).rejects.toBeInstanceOf(ApiError);
+    const url = String(redirect.mock.calls[0][0]);
+    expect(url).not.toContain('r=expired');
+    expect(url).toMatch(/^\/login\?next=/);
   });
 
   it('does not loop: a second 401 after refresh is returned as an error', async () => {

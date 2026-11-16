@@ -1,7 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { err, mockApi, navigationMock, ok, resetAll, router, sampleMe } from '@/test/helpers';
 import { setMe } from '@/lib/auth';
+import { markSignedIn } from '@/lib/apiClient';
 import { AppGate } from './AppGate';
 
 vi.mock('next/navigation', () => navigationMock());
@@ -52,11 +54,32 @@ describe('AppGate on the single sign-in address', () => {
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/admin'));
   });
 
-  it('sends a person who is not signed in to the sign-in page, remembering where they wanted to go', async () => {
+  it('sends a person whose session ended to the sign-in page saying so, remembering where they wanted to go', async () => {
+    markSignedIn(true);
     mockApi({ 'GET /auth/me': err(401, 'UNAUTHENTICATED') });
     render(page('ADMIN'));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/login?r=expired&next=%2F'));
     expect(screen.queryByText('inside')).toBeNull();
+  });
+
+  it('sends a first-time visitor of a deep link to a plain sign-in page (no "session expired"), keeping next', async () => {
+    window.history.replaceState(null, '', '/admin/billing?tab=dues');
+    mockApi({ 'GET /auth/me': err(401, 'UNAUTHENTICATED') });
+    render(page('ADMIN'));
+    await waitFor(() =>
+      expect(router.replace).toHaveBeenCalledWith('/login?next=%2Fadmin%2Fbilling%3Ftab%3Ddues'),
+    );
+  });
+
+  it('remembers a sign-in until the person signs out', () => {
+    setMe(sessionOf('ADMIN'));
+    expect(localStorage.getItem('sa_signed_in')).toBe('1');
+  });
+
+  it('renders nothing of the page before hydration, so a page of the wrong app never calls the API', () => {
+    const api = mockApi({});
+    expect(renderToString(page('PLATFORM'))).not.toContain('inside');
+    expect(api.fn).not.toHaveBeenCalled();
   });
 
   it('shows nothing until the session is known', async () => {
