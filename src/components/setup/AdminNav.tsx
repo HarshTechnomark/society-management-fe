@@ -64,6 +64,18 @@ export const ADMIN_NAV: NavGroup[] = [
     ],
   },
   {
+    title: 'Money',
+    items: [
+      { href: '/admin/payments', label: 'Payments', keys: [F.payments.view] },
+      { href: '/admin/payments/cheques', label: 'Cheques', keys: [F.payments.view] },
+      { href: '/admin/collections', label: 'Collections', keys: [F.collections.view] },
+      { href: '/admin/payments/refunds', label: 'Refunds', keys: [F.payments.view] },
+      { href: '/admin/payments/orders', label: 'Payment orders', keys: [F.payments.view] },
+      { href: '/admin/payments/links', label: 'Payment links', keys: [F.payments.view] },
+      { href: '/admin/payments/autopay', label: 'AutoPay', keys: [F.payments.view] },
+    ],
+  },
+  {
     title: 'Account',
     items: [
       { href: '/admin/settings/subscription', label: 'Subscription', keys: [S.subscription.view] },
