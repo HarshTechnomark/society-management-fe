@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { EmptyState } from '@/components/common/EmptyState';
-import { PayLater } from '@/components/common/PayLater';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Card, Page, PageHead } from '@/components/common/PageHead';
 import { Segments } from '@/components/residents/common';
@@ -16,7 +15,7 @@ import { useLoad } from '@/hooks/useLoad';
 import { inr, shortDate } from '@/lib/money';
 import { billingResidentService } from '@/services/billingResident.service';
 import type { MyDuesUnit } from '@/types/billingDues';
-import { invoiceStatus, plainError } from './format';
+import { invoiceStatus, payHref, plainError } from './format';
 
 const PAGE = 20;
 type StatusFilter = 'ALL' | 'OPEN' | 'PAID';
@@ -95,9 +94,13 @@ function Inner() {
               )}
               <div className="mt-3 flex flex-wrap gap-2">
                 {u.outstandingPaise > 0 && (
-                  <PayLater size="sm" label={`Pay dues of ${u.unitLabel}`}>
+                  <Link
+                    href={payHref(u.unitId)}
+                    aria-label={`Pay dues of ${u.unitLabel}`}
+                    className={buttonClasses('primary', 'sm')}
+                  >
                     Pay dues
-                  </PayLater>
+                  </Link>
                 )}
                 {statementOn && isOwner(u) && (
                   <Link
