@@ -48,7 +48,10 @@ export function plainError(e: unknown): unknown {
     ? new ApiError(e.status, e.code, opsError(e), e.errors, e.requestId, e.retryAfterSeconds)
     : e;
 }
-export const isPlan402 = (e: unknown) => e instanceof ApiError && e.status === 402;
+/** The plan or the flag does not offer this (402, or 422 AUTOPAY_NOT_AVAILABLE): a state to show, not an error. */
+export const isPlan402 = (e: unknown) =>
+  e instanceof ApiError &&
+  (e.status === 402 || e.code === 'AUTOPAY_NOT_AVAILABLE' || e.code === 'FEATURE_NOT_IN_PLAN');
 
 export const REFUND_STATUS_LABEL: Record<RefundStatus, string> = {
   PENDING_APPROVAL: 'Waiting for approval',
@@ -112,13 +115,34 @@ export const MANDATE_STATUS_TONE: Record<MandateStatus, Tone> = {
 };
 export const MANDATE_TYPE_LABEL: Record<string, string> = { UPI_AUTOPAY: 'UPI AutoPay', ENACH: 'e-NACH' };
 export const ADVANCE_ENTRY_LABEL: Record<string, string> = {
-  PAYMENT_EXCESS: 'Paid in advance',
+  PAYMENT_EXCESS: 'Excess of a payment',
   OPENING: 'Opening balance',
-  APPLIED: 'Used for a bill',
+  OPENING_BALANCE: 'Opening balance',
+  APPLIED: 'Used on a bill',
+  DEBIT: 'Used on a bill',
+  CREDIT: 'Money added',
   ALLOCATION_RELEASED: 'Released from a bill',
   EXCESS_REVERSED: 'Advance reversed',
-  REFUND_HOLD: 'Held for a refund',
+  REFUND_HOLD: 'Refund held',
   REFUND_RELEASE: 'Refund hold released',
+  REFUND_REVERSED: 'Refund not paid, money back',
+  REFUND: 'Refunded to you',
+  ADJUST_IN: 'Added by the society',
+  ADJUST_OUT: 'Taken by the society',
+  ADJUSTMENT: 'Adjusted by the society',
+};
+/** Words for an advance entry code; an unknown code is shown as plain lower-case words, never as the raw code. */
+export const advanceEntryLabel = (code: string): string => {
+  const known = ADVANCE_ENTRY_LABEL[code];
+  if (known) return known;
+  const words = code.toLowerCase().replace(/_/g, ' ').trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Entry';
+};
+/** The server's "Advance from payment #45" repeats the label and shows an internal number: drop or tidy it. */
+export const advanceNarration = (text: string | null | undefined): string => {
+  const t = (text ?? '').trim();
+  if (/^Advance from payment\s+#\d+$/i.test(t)) return '';
+  return t.replace(/^Advance from payment\s+/i, 'From receipt ');
 };
 export const isOpenRefund = (s: RefundStatus) => s === 'PENDING_APPROVAL' || s === 'PROCESSING';
 /** Today as YYYY-MM-DD in local time. */

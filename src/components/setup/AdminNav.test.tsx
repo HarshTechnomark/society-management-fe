@@ -102,9 +102,19 @@ describe('Admin navigation', () => {
     expect(nav().getByRole('link', { name: 'Collections' })).toHaveAttribute('href', '/admin/collections');
     expect(nav().queryByRole('link', { name: 'Payments' })).not.toBeInTheDocument();
     second.unmount();
-    signIn(['finance.payments.view']);
+    signIn(['finance.payments.view'], ['payments.payment_links', 'payments.upi_autopay_mandates']);
     render(<AdminNav>x</AdminNav>);
     expect(nav().getByRole('link', { name: 'Payments' })).toHaveAttribute('href', '/admin/payments');
     expect(nav().getByRole('link', { name: 'Payment links' })).toBeInTheDocument();
+    expect(nav().getByRole('link', { name: 'AutoPay' })).toBeInTheDocument();
+  });
+
+  it('hides (not greys) Payment links and AutoPay on a plan without them', () => {
+    signIn(['finance.payments.view'], ['payments.receipts']);
+    render(<AdminNav>x</AdminNav>);
+    const nav = within(screen.getByRole('navigation', { name: 'Admin' }));
+    expect(nav.getByRole('link', { name: 'Payments' })).toBeInTheDocument();
+    expect(nav.queryByRole('link', { name: 'Payment links' })).toBeNull();
+    expect(nav.queryByRole('link', { name: 'AutoPay' })).toBeNull();
   });
 });

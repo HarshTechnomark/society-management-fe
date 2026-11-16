@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Card, Page } from '@/components/common/PageHead';
@@ -41,7 +42,12 @@ function Inner({ orderId, pollMs, maxPollMs }: { orderId: number; pollMs: number
   const [receiptBusy, setReceiptBusy] = useState(false);
   const [receiptProblem, setReceiptProblem] = useState<string | null>(null);
   const [cancelBusy, setCancelBusy] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
   const started = useRef(0);
+  const router = useRouter();
+  // The checkout sends ?failed=1 right after the bank said the attempt failed.
+  const failedHint = useSearchParams()?.get('failed') === '1';
 
   const load = useCallback(
     async (background: boolean) => {
@@ -59,7 +65,8 @@ function Inner({ orderId, pollMs, maxPollMs }: { orderId: number; pollMs: number
     [orderId],
   );
 
-  const waiting = order !== null && WAITING.has(order.status);
+  const attemptFailed = order?.status === 'ATTEMPTED' && (order.attemptFailed || failedHint);
+  const waiting = order !== null && WAITING.has(order.status) && !attemptFailed;
   useEffect(() => {
     started.current = Date.now();
     let live = true;
@@ -98,6 +105,29 @@ function Inner({ orderId, pollMs, maxPollMs }: { orderId: number; pollMs: number
     }
   };
 
+  const check = async () => {
+    setChecking(true);
+    setNote(null);
+    const o = await load(false);
+    setChecking(false);
+    if (o && WAITING.has(o.status)) setNote('Checked just now. The bank has not confirmed this payment yet.');
+  };
+
+  /** Failed attempt: free the live order (it blocks a new payment), then go back to the Pay list. */
+  const again = async () => {
+    setCancelBusy(true);
+    try {
+      await svc.cancelOrder(orderId);
+      router.push('/resident/pay');
+    } catch (e) {
+      // INVALID_STATE means the money arrived meanwhile: show what the server says now.
+      if (e instanceof ApiError && e.code === 'INVALID_STATE') await load(false);
+      else setError(e);
+    } finally {
+      setCancelBusy(false);
+    }
+  };
+
   const cancel = async () => {
     setCancelBusy(true);
     try {
@@ -118,6 +148,11 @@ function Inner({ orderId, pollMs, maxPollMs }: { orderId: number; pollMs: number
         {error != null && !order ? (
           <ErrorState
             error={plainPayError(error)}
+            notFoundAction={
+              <Link href="/resident/pay" className={buttonClasses('glass')}>
+                Back to Pay
+              </Link>
+            }
             action={
               <Button size="sm" onClick={() => void load(false)}>
                 Try again
@@ -179,6 +214,35 @@ function Inner({ orderId, pollMs, maxPollMs }: { orderId: number; pollMs: number
               </Link>
             </div>
           </div>
+        ) : attemptFailed ? (
+          <div role="alert">
+            <h1 className="text-[22px] font-bold">Payment failed</h1>
+            <p className="mt-1 text-[14.5px]">
+              {order.failureReason ?? 'The bank did not complete this payment.'} Nothing was added to your
+              account. If the bank took money, it is returned to you automatically.
+            </p>
+            {error != null && (
+              <Alert tone="warn" className="mt-3">
+                {payError(error)}
+              </Alert>
+            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button loading={cancelBusy} onClick={again}>
+                Try again
+              </Button>
+              <Button variant="glass" disabled={cancelBusy} onClick={again}>
+                Choose another method
+              </Button>
+              <Button variant="ghost" loading={checking} onClick={check}>
+                Check again
+              </Button>
+            </div>
+            {note && (
+              <p className="mt-2 text-[13px] text-muted" role="status">
+                {note}
+              </p>
+            )}
+          </div>
         ) : WAITING.has(order.status) ? (
           <div role="status" aria-live="polite">
             <div className="flex items-center gap-3">
@@ -199,8 +263,13 @@ function Inner({ orderId, pollMs, maxPollMs }: { orderId: number; pollMs: number
                 {payError(error)}
               </Alert>
             )}
+            {note && (
+              <p className="mt-2 text-[13px] text-muted" role="status">
+                {note}
+              </p>
+            )}
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button variant="glass" onClick={() => void load(false)}>
+              <Button variant="glass" loading={checking} onClick={check}>
                 Check again
               </Button>
               <Button variant="ghost" loading={cancelBusy} onClick={cancel}>

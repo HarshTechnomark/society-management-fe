@@ -31,6 +31,16 @@ import type {
 const post = <T>(path: string, body: unknown = {}, idempotent = false) =>
   api<T>(path, { method: 'POST', body, idempotent });
 
+/** The API sends `society: { id, name }`; the screens read `societyId` and `societyName`. */
+function normaliseFlagOverride(raw: FlagOverride): FlagOverride {
+  const o = raw as FlagOverride & { society?: { id?: number; name?: string | null } };
+  return {
+    ...o,
+    societyId: o.societyId ?? o.society?.id ?? 0,
+    societyName: o.societyName ?? o.society?.name ?? undefined,
+  };
+}
+
 export const subscriptionsService = {
   // platform: plans and versions
   plans: () => api<PlanSummary[]>('/platform/plans'),
@@ -145,7 +155,11 @@ export const subscriptionsService = {
   flags: (
     query: { type?: string; q?: string; includeArchived?: boolean; page?: number; limit?: number } = {},
   ) => apiList<FeatureFlag>('/platform/feature-flags', { query: { limit: 100, ...query } }),
-  flag: (id: number) => api<FlagDetail>(`/platform/feature-flags/${id}`),
+  flag: (id: number) =>
+    api<FlagDetail>(`/platform/feature-flags/${id}`).then(d => ({
+      ...d,
+      overrides: (d.overrides ?? []).map(normaliseFlagOverride),
+    })),
   createFlag: (body: FlagCreateInput) => post<FeatureFlag>('/platform/feature-flags', body, true),
   updateFlag: (
     id: number,
@@ -169,7 +183,7 @@ export const subscriptionsService = {
   addFlagOverride: (
     id: number,
     body: { societyId: number; value: boolean; reason: string; expiresAt?: string },
-  ) => post<FlagOverride>(`/platform/feature-flags/${id}/overrides`, body),
+  ) => post<FlagOverride>(`/platform/feature-flags/${id}/overrides`, body).then(normaliseFlagOverride),
   removeFlagOverride: (id: number, overrideId: number, reason: string) =>
     api<null>(`/platform/feature-flags/${id}/overrides/${overrideId}`, {
       method: 'DELETE',

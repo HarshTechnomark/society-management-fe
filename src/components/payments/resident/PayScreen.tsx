@@ -161,7 +161,9 @@ function PayList({
     Object.fromEntries(
       items.map(p => [
         key(p),
-        paiseToText(p.type === 'INVOICE' ? (p.outstandingPaise ?? 0) : (p.suggestedPaise ?? 0)),
+        (p.type === 'INVOICE' ? (p.outstandingPaise ?? 0) : (p.suggestedPaise ?? 0)) > 0
+          ? paiseToText(p.type === 'INVOICE' ? (p.outstandingPaise ?? 0) : (p.suggestedPaise ?? 0))
+          : '',
       ]),
     ),
   );
@@ -243,7 +245,7 @@ function PayList({
                     <span className="block text-[13px] text-muted">
                       {r.p.type === 'INVOICE'
                         ? `${inr(r.p.outstandingPaise)} due${r.p.dueDate ? ` by ${shortDate(r.p.dueDate)}` : ''}`
-                        : `Suggested ${inr(r.p.suggestedPaise)}${r.p.dueDate ? ` · by ${shortDate(r.p.dueDate)}` : ''}`}
+                        : `${r.p.suggestedPaise ? `Suggested ${inr(r.p.suggestedPaise)}` : 'Any amount'}${r.p.dueDate ? ` · by ${shortDate(r.p.dueDate)}` : ''}`}
                     </span>
                     <span className="mt-0.5 flex flex-wrap gap-1">
                       {r.p.isOverdue && <Chip tone="bad">Overdue</Chip>}

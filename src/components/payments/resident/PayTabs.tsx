@@ -8,7 +8,7 @@ import { paymentsResidentService } from '@/services/paymentsResident.service';
 /** The pay section's own links; AutoPay shows only when the AutoPay route says it is available. */
 export function PayTabs() {
   const path = usePathname() ?? '';
-  const autopay = useLoad(() => paymentsResidentService.mandates(), 'autopay');
+  const autopay = useLoad(() => paymentsResidentService.autopayAvailable(), 'autopay');
   const items = [
     { href: '/resident/pay', label: 'Pay', exact: true },
     { href: '/resident/pay/collections', label: 'Collections' },

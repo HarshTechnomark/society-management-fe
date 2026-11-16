@@ -105,11 +105,11 @@ export const STATUS_TONE: Record<CollectionStatus, Tone> = {
   CLOSED: 'neutral',
   CANCELLED: 'neutral',
 };
-export const REQUEST_LABEL = (s: RequestStatus, mandatory: boolean): string =>
+export const REQUEST_LABEL = (s: RequestStatus): string =>
   ({
     PAID: 'Paid',
     PART_PAID: 'Part paid',
-    OPEN: mandatory ? 'Due' : 'Not yet',
+    OPEN: 'Not paid yet',
     WAIVED: 'Waived',
     CANCELLED: 'Cancelled',
   })[s];
@@ -126,7 +126,8 @@ export const FILTERS: { key: CollectionFilter; label: string; status?: string }[
   { key: 'LIVE', label: 'Live', status: 'PUBLISHED' },
   { key: 'AWAITING', label: 'Awaiting approval', status: 'PENDING_APPROVAL,CHANGES_REQUESTED,APPROVED' },
   { key: 'DRAFTS', label: 'Drafts', status: 'DRAFT,REJECTED' },
-  { key: 'CLOSED', label: 'Closed', status: 'CLOSED,CANCELLED' },
+  { key: 'CLOSED', label: 'Closed', status: 'CLOSED' },
+  { key: 'CANCELLED', label: 'Cancelled', status: 'CANCELLED' },
 ];
 
 export const clip = (s: string, n = 90) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);

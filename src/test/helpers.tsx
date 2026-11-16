@@ -1,3 +1,5 @@
+import { resetResidentSession } from '@/services/paymentsResident.service';
+import { resetCollectionsSession } from '@/services/collections.service';
 import { vi } from 'vitest';
 import { configureApiClient } from '@/lib/apiClient';
 import { flow } from '@/lib/authFlow';
@@ -89,6 +91,8 @@ export function mockApi(routes: Record<string, Reply | ((body: unknown) => Reply
 }
 
 export function resetAll() {
+  resetResidentSession();
+  resetCollectionsSession();
   router.push.mockReset();
   router.replace.mockReset();
   search.current = new URLSearchParams();

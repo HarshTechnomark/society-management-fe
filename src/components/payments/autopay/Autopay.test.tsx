@@ -74,6 +74,12 @@ describe('AutoPay mandates', () => {
     expect(await screen.findByText('AutoPay is not available')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
   });
+  it('says the same for a 422 AUTOPAY_NOT_AVAILABLE (flag off) and never opens the plan popup', async () => {
+    renderIt({ 'GET /autopay-mandates': err(422, 'AUTOPAY_NOT_AVAILABLE') });
+    expect(await screen.findByText('AutoPay is not available')).toBeInTheDocument();
+    expect(screen.queryByText('Something went wrong')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
   it('filters by status and shows the empty state', async () => {
     const api = renderIt({ 'GET /autopay-mandates': listOf([]) });
     expect(await screen.findByText('No AutoPay mandates yet')).toBeInTheDocument();

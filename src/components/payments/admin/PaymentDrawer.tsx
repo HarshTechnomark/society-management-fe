@@ -139,7 +139,7 @@ export function PaymentDrawer({
     </>
   );
 
-  const st = p ? statusInfo(p.status) : null;
+  const st = p ? statusInfo(p.status, p.refundedPaise, p.amountPaise) : null;
   const cq = p?.cheque;
   return (
     <>
@@ -153,6 +153,11 @@ export function PaymentDrawer({
         {load.error != null ? (
           <ErrorState
             error={plainError(load.error)}
+            notFoundAction={
+              <Button size="sm" onClick={onClose}>
+                Close
+              </Button>
+            }
             action={
               <Button size="sm" onClick={load.reload}>
                 Try again
@@ -195,12 +200,16 @@ export function PaymentDrawer({
             )}
             <dl className="mb-5">
               <KV label="Received from">
-                {p.payerName || '-'} ({p.unitLabel})
+                {!p.payerName || p.payerName.includes(p.unitLabel) || p.unitLabel.includes(p.payerName)
+                  ? p.payerName || p.unitLabel || '-'
+                  : `${p.payerName} (${p.unitLabel})`}
               </KV>
               <KV label="Method">{methodLabel(p.method)}</KV>
               <KV label="Reference">{p.referenceNo ?? '-'}</KV>
               <KV label="Date">{shortDate(p.paymentDate)}</KV>
-              <KV label="Recorded by">{p.recordedBy ?? (p.source === 'ONLINE' ? 'Online payment' : '-')}</KV>
+              {(p.recordedBy || p.source === 'ONLINE') && (
+                <KV label="Recorded by">{p.recordedBy ?? 'Online payment'}</KV>
+              )}
               <KV label="Lands in">{landsIn(p)}</KV>
               {p.convenienceFeePaise > 0 && <KV label="Convenience fee">{inr(p.convenienceFeePaise)}</KV>}
               {p.refundedPaise > 0 && <KV label="Refunded">{inr(p.refundedPaise)}</KV>}

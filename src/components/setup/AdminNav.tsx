@@ -8,6 +8,7 @@ import { Drawer } from '@/components/ui/Drawer';
 import { cx } from '@/components/ui/cx';
 import { PERMISSIONS, type PermissionKey } from '@/constants/permissions';
 import { hasPermission } from '@/hooks/usePermission';
+import { hasFeature, useEntitlements } from '@/lib/entitlements';
 import { signOut, useMe } from '@/lib/auth';
 import type { Me } from '@/types/auth';
 
@@ -16,6 +17,8 @@ interface NavItem {
   label: string;
   /** Any one of these keys shows the link; empty means everyone. */
   keys: PermissionKey[];
+  /** Hidden (not greyed) when the plan of the society lacks this entitlement. */
+  feature?: string;
 }
 interface NavGroup {
   title: string;
@@ -71,8 +74,18 @@ export const ADMIN_NAV: NavGroup[] = [
       { href: '/admin/collections', label: 'Collections', keys: [F.collections.view] },
       { href: '/admin/payments/refunds', label: 'Refunds', keys: [F.payments.view] },
       { href: '/admin/payments/orders', label: 'Payment orders', keys: [F.payments.view] },
-      { href: '/admin/payments/links', label: 'Payment links', keys: [F.payments.view] },
-      { href: '/admin/payments/autopay', label: 'AutoPay', keys: [F.payments.view] },
+      {
+        href: '/admin/payments/links',
+        label: 'Payment links',
+        keys: [F.payments.view],
+        feature: 'payments.payment_links',
+      },
+      {
+        href: '/admin/payments/autopay',
+        label: 'AutoPay',
+        keys: [F.payments.view],
+        feature: 'payments.upi_autopay_mandates',
+      },
     ],
   },
   {
@@ -91,7 +104,11 @@ export function visibleAdminNav(me: Me | null): NavGroup[] {
   if (!me) return [];
   return ADMIN_NAV.map(g => ({
     ...g,
-    items: g.items.filter(i => i.keys.length === 0 || i.keys.some(k => hasPermission(me, k))),
+    items: g.items.filter(
+      i =>
+        (i.keys.length === 0 || i.keys.some(k => hasPermission(me, k))) &&
+        (!i.feature || hasFeature(i.feature)),
+    ),
   })).filter(g => g.items.length > 0);
 }
 
@@ -136,6 +153,7 @@ function NavLinks({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () 
 /** Sidebar on desktop; top bar with a menu sheet on phones. */
 export function AdminNav({ children }: { children: ReactNode }) {
   const { me } = useMe();
+  useEntitlements(); // the menu follows the plan
   const [open, setOpen] = useState(false);
   const groups = visibleAdminNav(me);
   const signOutButton = (

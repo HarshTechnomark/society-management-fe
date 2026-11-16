@@ -67,7 +67,7 @@ describe('Collection detail', () => {
     const api = renderIt();
     const rows = await screen.findAllByTestId('request-row');
     expect(rows).toHaveLength(3);
-    expect(rows[0]).toHaveTextContent('Not yet');
+    expect(rows[0]).toHaveTextContent('Not paid yet');
     expect(rows[1]).toHaveTextContent('Paid');
     expect(rows[2]).toHaveTextContent('Part paid');
     await userEvent.click(screen.getByRole('button', { name: 'Part paid' }));
@@ -76,10 +76,50 @@ describe('Collection detail', () => {
     await waitFor(() => expect(String(api.fn.mock.calls.at(-1)?.[0])).toContain('q=B-1'));
   });
 
-  it('a mandatory collection calls an open flat Due', async () => {
-    renderIt({ isMandatory: true });
-    const rows = await screen.findAllByTestId('request-row');
-    expect(rows[0]).toHaveTextContent('Due');
+  it.each([true, false])(
+    'an open flat says the same words in the row and the chip (mandatory %s)',
+    async isMandatory => {
+      renderIt({ isMandatory });
+      const rows = await screen.findAllByTestId('request-row');
+      expect(rows[0]).toHaveTextContent('Not paid yet');
+      expect(screen.getByRole('button', { name: 'Not paid yet' })).toBeInTheDocument();
+    },
+  );
+
+  it('says 1 flat, not 1 flats, and not-found without a retry', async () => {
+    renderIt({ requestCount: 1, paidCount: 1 });
+    await screen.findByRole('heading', { name: 'Ganesh Utsav 2026' });
+    expect(screen.getByText(/1 of 1 flat ·/)).toBeInTheDocument();
+    expect(screen.queryByText(/1 of 1 flats/)).toBeNull();
+  });
+
+  it('a missing collection says it was not found, with a link back and no Try again', async () => {
+    signInAs(COL_PERMS, COL_FEATURES);
+    mockApi({ 'GET /collections/12': err(404, 'COLLECTION_NOT_FOUND') });
+    render(<CollectionDetailScreen id={12} />);
+    expect(await screen.findByText('Not found')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'All collections' })).toBeInTheDocument();
+  });
+
+  it('record contribution: more than the remaining amount says how much is left', async () => {
+    renderIt(
+      { amountMode: 'FIXED_PER_UNIT' },
+      {
+        'GET /collections/12/requests': [list(REQS), list([REQS[0]])],
+      },
+    );
+    await userEvent.click(await button('Record contribution'));
+    const dlg = await screen.findByRole('dialog');
+    await within(dlg).findAllByRole('option', { name: /A-1203/ });
+    await userEvent.selectOptions(within(dlg).getByLabelText(/^Flat/), '301');
+    const amount = within(dlg).getByLabelText(/Amount/);
+    await userEvent.clear(amount);
+    await userEvent.type(amount, '5000');
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Record and send for approval' }));
+    expect(
+      await within(dlg).findByText('At most ₹1,000 can still be recorded for this flat.'),
+    ).toBeInTheDocument();
   });
 
   it('live collection: actions, with the reminder count', async () => {

@@ -90,6 +90,7 @@ export const feeFor = (basePaise: number, bps: number) => Math.round((basePaise 
 
 export const PAYMENT_STATUS_LABEL: Record<string, string> = {
   CAPTURED: 'Received',
+  CONFIRMED: 'Paid',
   PENDING_APPROVAL: 'Waiting for approval',
   PENDING: 'Waiting',
   REVERSED: 'Reversed',

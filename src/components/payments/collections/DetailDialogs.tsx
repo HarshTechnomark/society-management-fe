@@ -1,4 +1,5 @@
 'use client';
+import { plural } from '@/lib/plural';
 import { collectionsService } from '@/services/collections.service';
 import type { CollectionDetail } from '@/types/collections';
 import { AddFlatsDialog } from './AddFlatsDialog';
@@ -114,7 +115,7 @@ export function ActionDialogs({
           version={c.version}
           onCancel={close}
           onDone={(added, skipped) =>
-            void done(`${added} flats added${skipped ? `, ${skipped} already had a request` : ''}`)
+            void done(`${plural(added, 'flat')} added${skipped ? `, ${skipped} already had a request` : ''}`)
           }
         />
       );

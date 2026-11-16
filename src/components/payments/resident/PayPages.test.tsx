@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { err, mockApi, navigationMock, ok, resetAll } from '@/test/helpers';
+import { err, mockApi, navigationMock, ok, resetAll, router, search } from '@/test/helpers';
 import { visibleResidentNav } from '@/components/residents/app/ResidentNav';
 import { ToastProvider } from '@/components/ui/Toast';
 import { getMe } from '@/lib/auth';
@@ -47,6 +47,47 @@ describe('Status page', () => {
     expect(await screen.findByRole('heading', { name: 'Confirming your payment' })).toBeInTheDocument();
     expect(screen.queryByText(/did not go through/i)).toBeNull();
     expect(await screen.findByRole('heading', { name: 'Payment received' })).toBeInTheDocument();
+  });
+
+  it('says the payment failed (not Confirming) when the server reports a failed attempt, and Try again frees the order', async () => {
+    const api = show(<PayStatusScreen orderId={4412} {...fast} />, {
+      'GET /me/payment-orders/4412': ok({
+        orderId: 4412,
+        status: 'ATTEMPTED',
+        payment: null,
+        failureReason: 'The bank declined the payment.',
+      }),
+      'POST /me/payment-orders/4412/cancel': ok({ orderId: 4412, status: 'CANCELLED', payment: null }),
+    });
+    expect(await screen.findByRole('heading', { name: 'Payment failed' })).toBeInTheDocument();
+    expect(screen.getByText(/The bank declined the payment/)).toBeInTheDocument();
+    expect(screen.queryByText(/You do not need to pay again/)).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Confirming your payment' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(api.last('POST', '/me/payment-orders/4412/cancel')).toBeTruthy());
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/resident/pay'));
+  });
+
+  it('shows the failed state right after the checkout said so (?failed=1) and offers another method', async () => {
+    search.current = new URLSearchParams('failed=1');
+    show(<PayStatusScreen orderId={4412} {...fast} />, {
+      'GET /me/payment-orders/4412': ok({ orderId: 4412, status: 'ATTEMPTED', payment: null }),
+      'POST /me/payment-orders/4412/cancel': ok({ orderId: 4412, status: 'CANCELLED', payment: null }),
+    });
+    expect(await screen.findByRole('heading', { name: 'Payment failed' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Choose another method' }));
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/resident/pay'));
+  });
+
+  it('Check again fetches the order again and says what it found', async () => {
+    const api = show(<PayStatusScreen orderId={4412} pollMs={100000} maxPollMs={500000} />, {
+      'GET /me/payment-orders/4412': ok({ orderId: 4412, status: 'CREATED', payment: null }),
+    });
+    await screen.findByRole('heading', { name: 'Confirming your payment' });
+    const before = api.fn.mock.calls.length;
+    await userEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    expect(await screen.findByText(/Checked just now/)).toBeInTheDocument();
+    expect(api.fn.mock.calls.length).toBeGreaterThan(before);
   });
 
   it('shows success with the receipt number, lines and a receipt download', async () => {
@@ -159,6 +200,40 @@ describe('Receipts', () => {
 });
 
 describe('Advance', () => {
+  it('shows codes as words and hides the internal payment number', async () => {
+    show(<AdvanceScreen />, {
+      'GET /me/dues': ok(duesRaw()),
+      'GET /me/advances': ok({
+        unitId: 312,
+        balancePaise: 100,
+        entries: [
+          {
+            id: 3,
+            entryType: 'PAYMENT_EXCESS',
+            amountPaise: 100,
+            balanceAfterPaise: 100,
+            narration: 'Advance from payment #45',
+            createdAt: '2026-11-10',
+          },
+          {
+            id: 2,
+            entryType: 'REFUND_HOLD',
+            amountPaise: -50,
+            balanceAfterPaise: 0,
+            narration: '',
+            createdAt: '2026-11-09',
+          },
+        ],
+      }),
+    });
+    await screen.findByTestId('advance-balance');
+    const list = screen.getByRole('list', { name: 'Advance history' });
+    expect(list).toHaveTextContent('Excess of a payment');
+    expect(list).toHaveTextContent('Refund held');
+    expect(list).not.toHaveTextContent('PAYMENT_EXCESS');
+    expect(list).not.toHaveTextContent('Advance from payment #45');
+  });
+
   it('shows the balance and the history newest first', async () => {
     show(<AdvanceScreen />, {
       'GET /me/dues': ok(duesRaw()),
@@ -187,7 +262,7 @@ describe('Advance', () => {
     });
     expect(await screen.findByTestId('advance-balance')).toHaveTextContent('₹2,500');
     const items = within(screen.getByRole('list', { name: 'Advance history' })).getAllByRole('listitem');
-    expect(items[0]).toHaveTextContent('Used for a bill');
+    expect(items[0]).toHaveTextContent('Used on a bill');
     expect(items[1]).toHaveTextContent('Money added');
   });
 });
@@ -210,6 +285,23 @@ describe('Collections', () => {
     expect(pay).toHaveAttribute('href', '/resident/pay?unitId=312&requestId=2201');
     expect(within(cards[1]).getByText('Closed')).toBeInTheDocument();
     expect(within(cards[1]).queryByRole('link', { name: /^Pay/ })).toBeNull();
+  });
+
+  it('asks about AutoPay once per session', async () => {
+    const api = show(<CollectionsScreen />, {
+      'GET /me/autopay-mandates': err(422, 'AUTOPAY_NOT_AVAILABLE'),
+      'GET /me/collections': ok([]),
+    });
+    await screen.findByText('No collections');
+    const asked = () => api.fn.mock.calls.filter(c => String(c[0]).includes('/me/autopay-mandates')).length;
+    expect(asked()).toBe(1);
+    render(
+      <ToastProvider>
+        <ReceiptsScreen />
+      </ToastProvider>,
+    );
+    await waitFor(() => expect(api.fn.mock.calls.length).toBeGreaterThan(2));
+    expect(asked()).toBe(1);
   });
 
   it('shows an empty state', async () => {
@@ -254,8 +346,34 @@ describe('Collections', () => {
     expect(who.queryByText(/₹/)).toBeNull();
   });
 
-  it('detail shows COLLECTION_NOT_FOUND in plain words', async () => {
+  it('detail shows COLLECTION_NOT_FOUND in plain words, with a way back and no retry', async () => {
     show(<CollectionDetailScreen id={9} />, { 'GET /me/collections/9': err(404, 'COLLECTION_NOT_FOUND') });
     expect(await screen.findByText('This collection was not found.')).toBeInTheDocument();
+    expect(screen.queryByText('Something went wrong')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'All collections' })).toHaveAttribute(
+      'href',
+      '/resident/pay/collections',
+    );
+  });
+
+  it('says Any amount (not ₹0) for a voluntary request and keeps the Pay link', async () => {
+    show(<CollectionDetailScreen id={9} />, {
+      'GET /me/collections/9': ok(
+        collectionRaw({
+          requestCount: 1,
+          contributorCount: 1,
+          myRequests: [
+            { id: 2201, unitId: 312, unitLabel: 'C-0801', status: 'OPEN', amountPaise: 0, paidPaise: 0 },
+          ],
+        }),
+      ),
+    });
+    expect(await screen.findByText('Any amount')).toBeInTheDocument();
+    expect(screen.getByText('1 of 1 flat has paid.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Pay for C-0801' })).toHaveAttribute(
+      'href',
+      '/resident/pay?unitId=312&requestId=2201',
+    );
   });
 });

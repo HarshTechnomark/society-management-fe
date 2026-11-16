@@ -1,4 +1,5 @@
 'use client';
+import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Card, Page, PageHead } from '@/components/common/PageHead';
 import { Gate } from '@/components/setup/Gate';
@@ -9,7 +10,9 @@ import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { inr, shortDate } from '@/lib/money';
 import { paymentsOpsService } from '@/services/paymentsOps.service';
+import { paymentsService } from '@/services/payments.service';
 import type { Refund } from '@/types/paymentsOps';
+import { RefundDrawer } from './RefundDrawer';
 import { ListBody, NoRows, StatusChip } from '../ops/Bits';
 import { REFUND_MODE_LABEL, REFUND_STATUS_LABEL, REFUND_STATUS_TONE } from '../ops/format';
 import { CompleteRefundDialog } from './CompleteRefundDialog';
@@ -37,7 +40,14 @@ function Inner() {
   const [status, setStatus] = useState('');
   const [mode, setMode] = useState('');
   const [page, setPage] = useState(1);
-  const [asking, setAsking] = useState(false);
+  const fromPayment = Number(useSearchParams()?.get('paymentId')) || 0;
+  const [asking, setAsking] = useState(fromPayment > 0);
+  const [viewing, setViewing] = useState<Refund | null>(null);
+  // The payment drawer links here with ?paymentId=: the dialog opens for that payment with what can still be refunded.
+  const source = useLoad(
+    () => (fromPayment ? paymentsService.get(fromPayment) : Promise.resolve(null)),
+    `pay-${fromPayment}`,
+  );
   const [paying, setPaying] = useState<Refund | null>(null);
   const load = useLoad(
     () =>
@@ -93,7 +103,14 @@ function Inner() {
                 data-testid="refund-row"
                 className="grid gap-x-3 gap-y-1 py-3 min-[900px]:grid-cols-[9rem_6rem_1fr_9rem_8rem_9rem] min-[900px]:items-center"
               >
-                <span className="text-[14.5px] font-bold">{r.refundNo ?? `Request ${r.id}`}</span>
+                <button
+                  type="button"
+                  className="text-left text-[14.5px] font-bold underline-offset-2 hover:underline"
+                  onClick={() => setViewing(r)}
+                  aria-label={`Details of ${r.refundNo ?? `request ${r.id}`}`}
+                >
+                  {r.refundNo ?? `Request ${r.id}`}
+                </button>
                 <span className="text-[14px]">{r.unitLabel}</span>
                 <span className="text-[13.5px] text-muted">
                   {r.receiptNo ? `For ${r.receiptNo}. ` : ''}
@@ -119,7 +136,22 @@ function Inner() {
           }
         </ListBody>
       </Card>
-      {asking && <RequestRefundDialog onClose={() => setAsking(false)} onDone={load.reload} />}
+      {asking && (!fromPayment || !source.loading) && (
+        <RequestRefundDialog
+          key={source.data?.id ?? 'blank'}
+          {...(source.data
+            ? {
+                paymentId: source.data.id,
+                refundablePaise: Math.max(source.data.amountPaise - source.data.refundedPaise, 0),
+              }
+            : fromPayment
+              ? { paymentId: fromPayment }
+              : {})}
+          onClose={() => setAsking(false)}
+          onDone={load.reload}
+        />
+      )}
+      {viewing && <RefundDrawer refund={viewing} onClose={() => setViewing(null)} />}
       {paying && (
         <CompleteRefundDialog
           refund={paying}

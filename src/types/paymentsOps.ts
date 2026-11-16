@@ -79,6 +79,8 @@ export interface PaymentOrder {
   attemptCount: number;
   linkShortCode: string | null;
   failureReason: string | null;
+  /** null: the order has no gateway order yet (a payment link nobody opened); undefined: not reported. */
+  gatewayOrderId?: string | null;
   paymentId: number | null;
   items: OrderItem[];
   createdAt: string;

@@ -12,6 +12,7 @@ import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { inr, shortDate } from '@/lib/money';
+import { plural } from '@/lib/plural';
 import { collectionsService } from '@/services/collections.service';
 import { approvalsPageHref } from '@/services/residents.service';
 import type { CollectionRequest } from '@/types/collections';
@@ -73,6 +74,11 @@ function Inner({ id }: { id: number }) {
       <Page>
         <ErrorState
           error={plainError(error)}
+          notFoundAction={
+            <Link className="text-[14px] underline" href="/admin/collections">
+              All collections
+            </Link>
+          }
           action={
             <>
               <Button size="sm" onClick={() => void load()}>
@@ -125,7 +131,7 @@ function Inner({ id }: { id: number }) {
       ? 'All flats'
       : c.audienceType === 'BUILDINGS'
         ? `${c.audienceIds.length} tower${c.audienceIds.length === 1 ? '' : 's'}`
-        : `${c.audienceIds.length} chosen flats`;
+        : `${plural(c.audienceIds.length, 'chosen flat', 'chosen flats')}`;
   const amountText =
     c.amountMode === 'VOLUNTARY'
       ? c.amountPerUnitPaise
@@ -192,7 +198,7 @@ function Inner({ id }: { id: number }) {
               'remind',
               async () => {
                 const r = await collectionsService.remind(c.id, c.version);
-                toast.show(`Reminder sent to ${r.sentTo} flats`);
+                toast.show(`Reminder sent to ${plural(r.sentTo, 'flat')}`);
               },
               'Reminder sent',
             )
@@ -236,7 +242,7 @@ function Inner({ id }: { id: number }) {
 
   const rowAction = (r: CollectionRequest) =>
     status === 'PUBLISHED' && !c.isMandatory ? (
-      <span className="flex justify-end gap-1">
+      <span className="flex flex-wrap justify-end gap-1">
         {canRecord && (r.status === 'OPEN' || r.status === 'PART_PAID') && (
           <Button size="xs" variant="glass" onClick={() => setDialog({ kind: 'recordFor', request: r })}>
             Record
@@ -286,7 +292,7 @@ function Inner({ id }: { id: number }) {
           <Meter percent={c.percent} label="Collected" />
           <p className="mt-1.5 text-[14px] font-semibold tabular-nums">{progress}</p>
           <p className="text-[13px] text-muted">
-            {c.paidCount} of {c.requestCount} flats · Due {shortDate(c.dueDate)}
+            {c.paidCount} of {plural(c.requestCount, 'flat')} · Due {shortDate(c.dueDate)}
           </p>
         </div>
       </Card>
@@ -353,7 +359,7 @@ function Inner({ id }: { id: number }) {
 
       {!['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'CHANGES_REQUESTED'].includes(status) && (
         <Card className="mb-4">
-          <RequestsTable id={c.id} mandatory={c.isMandatory} reloadKey={tick} rowAction={rowAction} />
+          <RequestsTable id={c.id} reloadKey={tick} rowAction={rowAction} />
         </Card>
       )}
 

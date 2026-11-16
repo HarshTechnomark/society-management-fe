@@ -16,7 +16,7 @@ const CHIPS = [
   { key: '', label: 'All' },
   { key: 'PAID', label: 'Paid' },
   { key: 'PART_PAID', label: 'Part paid' },
-  { key: 'OPEN', label: 'Due' },
+  { key: 'OPEN', label: 'Not paid yet' },
   { key: 'WAIVED', label: 'Waived' },
 ];
 const PAGE = 25;
@@ -24,12 +24,10 @@ const PAGE = 25;
 /** Per flat table (spec 11.1): search by flat, status chips, and a row action for each flat the state allows. */
 export function RequestsTable({
   id,
-  mandatory,
   reloadKey,
   rowAction,
 }: {
   id: number;
-  mandatory: boolean;
   reloadKey: number;
   rowAction?: (r: CollectionRequest) => React.ReactNode;
 }) {
@@ -109,7 +107,7 @@ export function RequestsTable({
                 <th className="py-2 pr-3 text-right font-semibold">Asked</th>
                 <th className="py-2 pr-3 text-right font-semibold">Paid</th>
                 <th className="py-2 pr-3 font-semibold">Status</th>
-                <th className="py-2 pr-3 font-semibold">Last paid</th>
+                <th className="hidden py-2 pr-3 font-semibold sm:table-cell">Last paid</th>
                 <th className="py-2 font-semibold">
                   <span className="sr-only">Actions</span>
                 </th>
@@ -129,10 +127,10 @@ export function RequestsTable({
                   </td>
                   <td className="py-2 pr-3 text-right tabular-nums">{inr(r.paidPaise)}</td>
                   <td className="py-2 pr-3">
-                    <Chip tone={REQUEST_TONE[r.status]}>{REQUEST_LABEL(r.status, mandatory)}</Chip>
+                    <Chip tone={REQUEST_TONE[r.status]}>{REQUEST_LABEL(r.status)}</Chip>
                   </td>
-                  <td className="py-2 pr-3 text-muted">{shortDate(r.lastPaidAt)}</td>
-                  <td className="py-2 text-right">{rowAction?.(r)}</td>
+                  <td className="hidden py-2 pr-3 text-muted sm:table-cell">{shortDate(r.lastPaidAt)}</td>
+                  <td className="min-w-[96px] py-2 text-right">{rowAction?.(r)}</td>
                 </tr>
               ))}
             </tbody>

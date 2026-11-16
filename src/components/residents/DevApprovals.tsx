@@ -18,6 +18,10 @@ interface Pending {
   title?: string;
   amountPaise?: number;
   categoryKey?: string;
+  /** What the request carries (payments source): flat, amount and mode may sit here or at the top level. */
+  payload?: Record<string, unknown> | null;
+  unitLabel?: string;
+  mode?: string;
 }
 
 const ENTITY_LABEL: Record<string, string> = {
@@ -36,10 +40,17 @@ const MODE_LABEL: Record<string, string> = {
 
 /** One line about what is asked: the title, the amount and the mode when the request carries them. */
 export function approvalSummary(r: Pending): string {
+  const p = r.payload ?? {};
+  const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
+  const amount = [r.amountPaise, p.amountPaise].find(v => typeof v === 'number' && v > 0) as
+    number | undefined;
+  const mode = text(r.mode) ?? text(r.categoryKey) ?? text(p.mode) ?? text(p.method);
+  const flat = text(r.unitLabel) ?? text(p.unitLabel) ?? text(p.flat);
   const parts: string[] = [];
   if (r.title) parts.push(r.title);
-  if (typeof r.amountPaise === 'number' && r.amountPaise > 0) parts.push(inr(r.amountPaise));
-  if (r.categoryKey) parts.push(MODE_LABEL[r.categoryKey] ?? r.categoryKey);
+  if (flat) parts.push(`Flat ${flat}`);
+  if (amount) parts.push(inr(amount));
+  if (mode) parts.push(MODE_LABEL[mode] ?? mode);
   return parts.join(' · ');
 }
 
@@ -84,7 +95,7 @@ export function DevApprovals() {
   }
 
   return (
-    <>
+    <main>
       <PageHead
         title="Approvals (development)"
         sub="Requests waiting for a decision. The real approvals inbox arrives with module 14."
@@ -126,6 +137,6 @@ export function DevApprovals() {
           ))}
         </ul>
       </Card>
-    </>
+    </main>
   );
 }

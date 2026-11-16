@@ -1,7 +1,8 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { err, mockApi, navigationMock, ok, resetAll } from '@/test/helpers';
+import { err, mockApi, navigationMock, ok, resetAll, search } from '@/test/helpers';
+import { paymentRaw } from '@/test/paymentsFixtures';
 import { OPS_FEATURES, OPS_PERMS, OPS_VIEW, listOf, refundRaw } from '@/test/paymentsOpsFixtures';
 import { signInAs } from '@/test/residentsHelpers';
 import { RefundsScreen } from './RefundsScreen';
@@ -40,6 +41,22 @@ describe('Refunds list', () => {
     expect(within(rows[0]).getByRole('button', { name: 'Record payout' })).toBeInTheDocument();
     expect(within(rows[1]).queryByRole('button', { name: 'Record payout' })).toBeNull();
     expect(within(rows[2]).queryByRole('button', { name: 'Record payout' })).toBeNull();
+  });
+  it('opens the request dialog for the payment named in the address, with what can still be refunded', async () => {
+    search.current = new URLSearchParams('paymentId=39');
+    renderIt({
+      'GET /payments/39': ok({ ...paymentRaw({ id: 39, amountPaise: 500000, refundedPaise: 200000 }) }),
+    });
+    const dlg = await screen.findByRole('dialog');
+    expect(within(dlg).queryByLabelText('Payment number')).toBeNull();
+    expect(within(dlg).getByLabelText(/Amount/)).toHaveValue('3000');
+  });
+  it('opens a small detail view of a refund row', async () => {
+    renderIt();
+    await userEvent.click(await screen.findByRole('button', { name: 'Details of request 13' }));
+    const dlg = await screen.findByRole('dialog');
+    expect(within(dlg).getByText('Waiting for a different committee member')).toBeInTheDocument();
+    expect(within(dlg).getByText('Waiting for approval')).toBeInTheDocument();
   });
   it('hides both actions from a viewer', async () => {
     renderIt({}, OPS_VIEW);

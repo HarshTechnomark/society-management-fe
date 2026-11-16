@@ -99,6 +99,10 @@ export interface OrderState {
   expiresAt: string | null;
   lines: OrderLine[];
   grossAmountPaise: number | null;
+  /** Why the last attempt failed, when the server says so (`failureReason`). */
+  failureReason: string | null;
+  /** True when the server reports that the last bank attempt of this live order failed. */
+  attemptFailed: boolean;
 }
 
 export interface DevPayResult {
