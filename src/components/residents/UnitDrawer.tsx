@@ -9,6 +9,7 @@ import { PERMISSIONS } from '@/constants/permissions';
 import { useFeature } from '@/hooks/useFeature';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
+import { AdvancePanel } from '@/components/payments/advances/AdvancePanel';
 import { StatementDrawer } from '@/components/maintenance/ledger/StatementDrawer';
 import { duesView } from '@/components/maintenance/ledger/format';
 import { shortDate } from '@/lib/money';
@@ -61,6 +62,9 @@ export function UnitDrawer({
   const billingView = usePermission(PERMISSIONS.finance.billing.view);
   const statementOn = useFeature('billing.statement_of_account');
   const canStatement = billingView && statementOn;
+  const paymentsView = usePermission(PERMISSIONS.finance.payments.view);
+  const walletOn = useFeature('payments.unit_wallet');
+  const canAdvance = paymentsView && walletOn;
   const [statement, setStatement] = useState(false);
   const run = useRun();
   const [reveal, setReveal] = useState(false);
@@ -195,6 +199,12 @@ export function UnitDrawer({
                 </ul>
               )}
             </Section>
+
+            {canAdvance && (
+              <Section title="Advance">
+                <AdvancePanel unitId={unitId} />
+              </Section>
+            )}
 
             {timelineOn && (
               <Section

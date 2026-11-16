@@ -150,8 +150,8 @@ describe('Residents page: states and gates', () => {
 });
 
 describe('Unit drawer', () => {
-  const open = async (routes: Routes = {}, perms?: string[]) => {
-    const api = renderIt({ 'GET /residents/units/101': ok(panel()), ...routes }, perms);
+  const open = async (routes: Routes = {}, perms?: string[], features?: string[]) => {
+    const api = renderIt({ 'GET /residents/units/101': ok(panel()), ...routes }, perms, features);
     await userEvent.click(await screen.findByRole('button', { name: 'Open A-1203' }));
     return { api, dlg: await screen.findByRole('dialog') };
   };
@@ -165,6 +165,22 @@ describe('Unit drawer', () => {
     expect(within(dlg).getByText('Police verification not submitted')).toBeInTheDocument();
     expect(within(dlg).getByText('Kabir Verma')).toBeInTheDocument();
     expect(within(dlg).getByText('Move-out')).toBeInTheDocument();
+  });
+
+  it('shows the advance balance of the flat when the plan has the wallet and the person can view payments', async () => {
+    const { dlg } = await open(
+      { 'GET /units/101/advances': ok({ unitId: 101, balancePaise: 120000, entries: [] }) },
+      [...ADMIN_PERMS, 'finance.payments.view'],
+      [...RES_FEATURES, 'payments.unit_wallet'],
+    );
+    expect(await within(dlg).findByText('₹1,200')).toBeInTheDocument();
+    expect(within(dlg).getByText('Advance')).toBeInTheDocument();
+  });
+
+  it('does not ask for the advance without the payments permission', async () => {
+    const { api, dlg } = await open();
+    await within(dlg).findByText('₹4,825');
+    expect(urls(api).some(u => u.includes('/advances'))).toBe(false);
   });
 
   it('reveals contacts with the reveal query', async () => {

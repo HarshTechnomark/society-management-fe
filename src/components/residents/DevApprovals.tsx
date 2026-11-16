@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, PageHead } from '@/components/common/PageHead';
 import { useLoad } from '@/hooks/useLoad';
 import { api } from '@/lib/apiClient';
+import { inr } from '@/lib/money';
 import { residentsService } from '@/services/residents.service';
 
 interface Pending {
@@ -14,6 +15,32 @@ interface Pending {
   societyId: number;
   status: string;
   source?: string;
+  title?: string;
+  amountPaise?: number;
+  categoryKey?: string;
+}
+
+const ENTITY_LABEL: Record<string, string> = {
+  OFFLINE_PAYMENT: 'payment',
+  PAYMENT_REFUND: 'refund',
+  COLLECTION_PUBLISH: 'collection',
+};
+const MODE_LABEL: Record<string, string> = {
+  GATEWAY: 'back to the payer',
+  BANK_TRANSFER: 'bank transfer',
+  CHEQUE: 'cheque',
+  CASH: 'cash',
+  UPI: 'UPI',
+  NEFT: 'NEFT',
+};
+
+/** One line about what is asked: the title, the amount and the mode when the request carries them. */
+export function approvalSummary(r: Pending): string {
+  const parts: string[] = [];
+  if (r.title) parts.push(r.title);
+  if (typeof r.amountPaise === 'number' && r.amountPaise > 0) parts.push(inr(r.amountPaise));
+  if (r.categoryKey) parts.push(MODE_LABEL[r.categoryKey] ?? r.categoryKey);
+  return parts.join(' · ');
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -28,6 +55,9 @@ const TYPE_LABEL: Record<string, string> = {
   WRITE_OFF: 'Write-off',
   INVOICE_CANCEL: 'Invoice cancellation',
   BILLING_RUN_PUBLISH: 'Billing run publish',
+  OFFLINE_PAYMENT: 'Offline payment',
+  PAYMENT_REFUND: 'Payment refund',
+  COLLECTION_PUBLISH: 'Collection publish',
 };
 
 /**
@@ -73,7 +103,11 @@ export function DevApprovals() {
               className="flex flex-wrap items-center justify-between gap-3"
             >
               <span className="text-[14.5px]">
-                <strong>{TYPE_LABEL[r.type] ?? r.type}</strong> · request {r.id} · record {r.entityId}
+                <strong>{TYPE_LABEL[r.type] ?? r.type}</strong> · request {r.id} ·{' '}
+                {ENTITY_LABEL[r.type] ?? 'record'} {r.entityId}
+                {approvalSummary(r) && (
+                  <span className="block text-[13px] text-muted">{approvalSummary(r)}</span>
+                )}
               </span>
               <span className="flex gap-2">
                 <Button size="sm" disabled={busy === r.id} onClick={() => decide(r.id, true, r.source)}>
