@@ -1,10 +1,10 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 import { ConfirmReason } from '@/components/common/ConfirmReason';
 import { Card, Page, PageHead } from '@/components/common/PageHead';
-import { PayLater } from '@/components/common/PayLater';
 import { Gate } from '@/components/setup/Gate';
-import { Button } from '@/components/ui/Button';
+import { Button, buttonClasses } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useFeature } from '@/hooks/useFeature';
@@ -26,6 +26,18 @@ import {
   docLabel,
 } from '../format';
 import { MoveForm, PermitForm, TransferForm } from '../RequestForms';
+
+/** A link into the Pay tab of the flat (module 12). */
+function PayLink({ unitId, children }: { unitId?: number; children: string }) {
+  return (
+    <Link
+      href={unitId ? `/resident/pay?unitId=${unitId}` : '/resident/pay'}
+      className={buttonClasses('primary')}
+    >
+      {children}
+    </Link>
+  );
+}
 
 const RQ = PERMISSIONS.resident.requests;
 type Sub = 'moves' | 'renovation' | 'transfers';
@@ -136,7 +148,7 @@ function Moves({ units }: { units: Units }) {
                     <div className="mt-3 flex flex-wrap gap-2">
                       {m.status === 'BLOCKED_DUES' && (
                         <>
-                          <PayLater>Pay dues</PayLater>
+                          <PayLink unitId={m.unitId}>Pay dues</PayLink>
                           <Button
                             variant="glass"
                             onClick={async () => {
@@ -156,7 +168,7 @@ function Moves({ units }: { units: Units }) {
                           </Button>
                         </>
                       )}
-                      {m.status === 'PENDING_DEPOSIT' && <PayLater>Pay deposit</PayLater>}
+                      {m.status === 'PENDING_DEPOSIT' && <PayLink unitId={m.unitId}>Pay deposit</PayLink>}
                       {!['COMPLETED', 'REJECTED', 'CANCELLED', 'IN_PROGRESS'].includes(m.status) &&
                         canCreate && (
                           <Button variant="danger-soft" onClick={() => setCancel(m)}>
@@ -276,7 +288,7 @@ function Permits({ units }: { units: Units }) {
                         </p>
                       )}
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {p.status === 'PENDING_DEPOSIT' && <PayLater>Pay deposit</PayLater>}
+                        {p.status === 'PENDING_DEPOSIT' && <PayLink>Pay deposit</PayLink>}
                         {p.status === 'IN_PROGRESS' && canCreate && (
                           <Button
                             onClick={async () => {

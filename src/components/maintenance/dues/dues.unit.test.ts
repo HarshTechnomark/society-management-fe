@@ -149,7 +149,7 @@ describe('format', () => {
   });
 
   it('builds the pay link for module 12', () => {
-    expect(payHref(312)).toBe('/pay?unitId=312');
-    expect(payHref(312, 5)).toBe('/pay?unitId=312&invoiceId=5');
+    expect(payHref(312)).toBe('/resident/pay?unitId=312');
+    expect(payHref(312, 5)).toBe('/resident/pay?unitId=312&invoiceId=5');
   });
 });

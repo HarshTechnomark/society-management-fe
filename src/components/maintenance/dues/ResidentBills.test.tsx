@@ -97,12 +97,11 @@ describe('My bills', () => {
     expect(await screen.findByText('Overdue ₹1,000')).toBeInTheDocument();
   });
 
-  it('shows Pay as disabled until online payment ships, and the statement for owners only', async () => {
+  it('links Pay dues into the Pay tab, and shows the statement for owners only', async () => {
     show(<ResidentBillsScreen />, listRoutes());
-    const pay = await screen.findByRole('button', { name: 'Pay dues of C-0801' });
-    expect(pay).toBeDisabled();
-    expect(pay).toHaveAccessibleDescription('Online payment comes with the payments update.');
-    expect(screen.queryByRole('link', { name: /^Pay/ })).toBeNull();
+    const pay = await screen.findByRole('link', { name: 'Pay dues of C-0801' });
+    expect(pay).toHaveAttribute('href', '/resident/pay?unitId=312');
+    expect(screen.queryByRole('button', { name: /^Pay/ })).toBeNull();
     expect(screen.getByRole('link', { name: 'Statement of C-0801' })).toHaveAttribute(
       'href',
       '/resident/bills/statement/312',
@@ -232,12 +231,10 @@ describe('Bill detail', () => {
     expect(screen.queryByRole('button', { name: 'Explain this bill' })).toBeNull();
   });
 
-  it('shows Pay as disabled with a note for an open bill until online payment ships', async () => {
+  it('links Pay on an open bill to the Pay tab with that bill ticked', async () => {
     show(<ResidentBillDetail id={5123} />, detail());
-    const pay = await screen.findByRole('button', { name: 'Pay ₹5,061' });
-    expect(pay).toBeDisabled();
-    expect(screen.getByText('Online payment comes with the payments update.')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /^Pay/ })).toBeNull();
+    const pay = await screen.findByRole('link', { name: 'Pay ₹5,061' });
+    expect(pay.getAttribute('href')).toMatch(/^\/resident\/pay\?unitId=\d+&invoiceId=5123$/);
   });
 
   it('shows no Pay link on a paid bill', async () => {

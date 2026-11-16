@@ -519,9 +519,14 @@ describe('Requests', () => {
   it('shows move cards with the dues, deposit buttons and the gate pass code card', async () => {
     show(<MyRequestsScreen />, routes);
     expect(await screen.findByText('Dues to pay: ₹4,825')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Pay dues' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Pay deposit' })).toBeDisabled();
-    expect(screen.getAllByText('Online payment comes with the payments update.').length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: 'Pay dues' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/resident/pay'),
+    );
+    expect(screen.getByRole('link', { name: 'Pay deposit' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/resident/pay'),
+    );
     expect(screen.getByText('AB12CD34')).toBeInTheDocument();
     expect(screen.getByText('Gate pass code')).toBeInTheDocument();
   });

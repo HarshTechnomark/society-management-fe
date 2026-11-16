@@ -27,6 +27,8 @@ const PUBLIC_PATHS = [
   '/support',
   '/support-handoff',
   '/status',
+  // the pay-by-link page (module 12, 11.4) opens without sign-in on every host
+  '/pay',
   '/_next',
   // files of `public/` (CSV templates of the imports, modules 08 and 11)
   '/templates',
