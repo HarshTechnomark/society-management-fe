@@ -54,4 +54,8 @@ describe('paymentsOpsMappers', () => {
     expect(rows(null)).toEqual([]);
     expect(normalisePagination(undefined, 3)).toMatchObject({ total: 3, totalPages: 1 });
   });
+  it('takes the payment id of an order detail from its payments list', () => {
+    expect(normaliseOrder({ id: 4, payments: [{ id: 91 }] }).paymentId).toBe(91);
+    expect(normaliseOrder({ id: 4 }).paymentId).toBeNull();
+  });
 });

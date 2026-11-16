@@ -109,15 +109,26 @@ function Inner() {
         />
         {batch && (
           <div className="mb-4 grid gap-x-4 sm:grid-cols-3" data-testid="deposit-form">
-            <Select
-              label="Bank account"
-              value={bankId}
-              onChange={e => setBankId(e.target.value)}
-              options={[
-                { value: '', label: banks.loading ? 'Loading...' : 'Choose a bank account' },
-                ...(banks.data ?? []).map(b => ({ value: String(b.id), label: b.label })),
-              ]}
-            />
+            {banks.error != null || (!banks.loading && (banks.data ?? []).length === 0) ? (
+              // the bank list (module 13) is not available: type the account number as it is known to the books
+              <Input
+                label="Bank account ID"
+                inputMode="numeric"
+                value={bankId}
+                onChange={e => setBankId(e.target.value.replace(/\D/g, ''))}
+                hint="The bank account list is not available yet."
+              />
+            ) : (
+              <Select
+                label="Bank account"
+                value={bankId}
+                onChange={e => setBankId(e.target.value)}
+                options={[
+                  { value: '', label: banks.loading ? 'Loading...' : 'Choose a bank account' },
+                  ...(banks.data ?? []).map(b => ({ value: String(b.id), label: b.label })),
+                ]}
+              />
+            )}
             <Input
               label="Deposit date"
               type="date"

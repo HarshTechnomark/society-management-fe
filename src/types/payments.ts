@@ -86,6 +86,10 @@ export interface PaymentDetail extends PaymentItem {
   notes: string | null;
   reviewReason: string | null;
   recordedBy: string | null;
+  /** Journal account the money sits in (`BANK`, `CASH_IN_HAND`, `CHEQUES_IN_CLEARING`, `GATEWAY_CLEARING`); detail only. */
+  landsIn: string | null;
+  reversalReason: string | null;
+  reversedAt: string | null;
 }
 
 export interface PaymentQuery {

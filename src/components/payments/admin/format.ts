@@ -126,8 +126,29 @@ export const RECEIVED_STATUSES = 'CAPTURED,CONFIRMED,RECEIVED,DEPOSITED,CLEARED'
 export const EFFECTIVE = ['CAPTURED', 'CONFIRMED', 'CLEARED'];
 export const isEffective = (p: Pick<PaymentItem, 'status'>) => EFFECTIVE.includes(p.status);
 
-/** Where the money lands (spec 11.1). */
-export function landsIn(p: Pick<PaymentItem, 'status' | 'method'>): string {
+/** The audit action of a timeline entry (`payments.payment.recorded`) as words ("Payment recorded"). */
+export function eventLabel(action: string): string {
+  if (!action.includes('.')) return action;
+  const [, ...rest] = action.split('.');
+  const words = rest.join(' ').replace(/[_-]+/g, ' ').trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : action;
+}
+
+const LANDS_IN_LABEL: Record<string, string> = {
+  BANK: 'Bank',
+  CASH_IN_HAND: 'Cash in hand',
+  CHEQUES_IN_CLEARING: 'Cheques in clearing',
+  GATEWAY_CLEARING: 'Reaching bank',
+};
+
+/** Where the money lands (spec 11.1): the `landsIn` account of the detail when it is there, else worked out from the method. */
+export function landsIn(p: Pick<PaymentItem, 'status' | 'method'> & { landsIn?: string | null }): string {
+  if (
+    p.landsIn &&
+    LANDS_IN_LABEL[p.landsIn] &&
+    !['PENDING_APPROVAL', 'REJECTED', 'FAILED', 'REVERSED', 'BOUNCED', 'RETURNED'].includes(p.status)
+  )
+    return LANDS_IN_LABEL[p.landsIn];
   if (['PENDING_APPROVAL', 'REJECTED', 'FAILED', 'REVERSED', 'BOUNCED', 'RETURNED'].includes(p.status))
     return '-';
   if (p.method === 'CASH') return 'Cash in hand';

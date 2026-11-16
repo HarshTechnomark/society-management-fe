@@ -117,7 +117,12 @@ export function RecordPaymentModal({
     if (paise === null || paise < 100) e.amount = 'Enter an amount of at least ₹1.';
     if (payingFor !== 'DUES' && !request) e.payingFor = 'This flat has no open request in that collection.';
     if (!isoDay(date)) e.date = 'Enter the payment date.';
-    if (needsReference && reference.trim().length < 4) e.reference = 'Enter the UTR or reference.';
+    if (needsReference) {
+      const ref = reference.trim();
+      if (method === 'UPI_TO_BANK') {
+        if (!/^\d{12}$/.test(ref)) e.reference = 'Use the 12-digit UPI reference.';
+      } else if (!/^[A-Za-z0-9]{12,22}$/.test(ref)) e.reference = 'Use the UTR: 12 to 22 letters and digits.';
+    }
     if (method === 'CHEQUE') {
       if (bank.trim().length < 2) e.bank = 'Enter the cheque bank.';
       if (!/^\d{6}$/.test(chequeNo)) e.chequeNo = 'The cheque number has 6 digits.';

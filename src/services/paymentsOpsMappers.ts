@@ -84,7 +84,7 @@ export function normaliseOrder(raw: unknown): PaymentOrder {
     attemptCount: num(o.attemptCount),
     linkShortCode: strN(o.linkShortCode),
     failureReason: strN(o.failureReason),
-    paymentId: numN(o.paymentId),
+    paymentId: numN(o.paymentId) ?? numN(obj((Array.isArray(o.payments) ? o.payments : [])[0]).id),
     items: (Array.isArray(o.items) ? o.items : []).map(orderItem),
     createdAt: str(o.createdAt),
   };

@@ -44,6 +44,18 @@ describe('Cheques', () => {
     expect(screen.getByText('C-301')).toBeInTheDocument();
   });
 
+  it('falls back to a typed bank account id when the bank list route does not exist', async () => {
+    const api = renderIt({ 'GET /accounts/bank-accounts': err(404, 'NOT_FOUND') });
+    await screen.findAllByTestId('cheque-row');
+    await userEvent.click(screen.getByLabelText('Select all cheques'));
+    await userEvent.type(await screen.findByLabelText('Bank account ID'), '4');
+    await userEvent.click(screen.getByRole('button', { name: 'Deposit 2 cheques (₹9,809)' }));
+    await waitFor(() => expect(api.calls.some(c => c.path === '/payments/cheques/deposit')).toBe(true));
+    expect(
+      (api.last('POST', '/payments/cheques/deposit')!.body as Record<string, unknown>).bankAccountId,
+    ).toBe(4);
+  });
+
   it('keeps the deposit button off until a cheque is selected', async () => {
     renderIt();
     await screen.findAllByTestId('cheque-row');

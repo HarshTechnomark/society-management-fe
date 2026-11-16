@@ -23,7 +23,15 @@ import {
   ReverseDialog,
   ReviewDialog,
 } from './PaymentDialogs';
-import { isEffective, landsIn, methodLabel, paymentError, plainError, statusInfo } from './format';
+import {
+  eventLabel,
+  isEffective,
+  landsIn,
+  methodLabel,
+  paymentError,
+  plainError,
+  statusInfo,
+} from './format';
 
 const P = PERMISSIONS.finance.payments;
 type Dialog = 'clear' | 'bounce' | 'return' | 'reverse' | 'reallocate' | 'resend' | 'review';
@@ -197,6 +205,7 @@ export function PaymentDrawer({
               {p.convenienceFeePaise > 0 && <KV label="Convenience fee">{inr(p.convenienceFeePaise)}</KV>}
               {p.refundedPaise > 0 && <KV label="Refunded">{inr(p.refundedPaise)}</KV>}
               {p.notes && <KV label="Note">{p.notes}</KV>}
+              {p.reversalReason && <KV label="Reversal reason">{p.reversalReason}</KV>}
             </dl>
             <Section title="For">
               {p.allocations.length === 0 ? (
@@ -242,7 +251,7 @@ export function PaymentDrawer({
                 <ol className="grid gap-1.5 text-[13.5px]">
                   {p.timeline.map((t, i) => (
                     <li key={i}>
-                      <span className="text-muted">{shortDate(t.at)}</span> {t.event}
+                      <span className="text-muted">{shortDate(t.at)}</span> {eventLabel(t.event)}
                       {t.by ? ` by ${t.by}` : ''}
                     </li>
                   ))}
