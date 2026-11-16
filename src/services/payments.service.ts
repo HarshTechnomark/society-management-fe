@@ -56,12 +56,12 @@ export const paymentsService = {
   reverse: (id: number, body: { reasonCode: ReverseReasonCode; reason: string; version: number }) =>
     api<unknown>(`/payments/${id}/reverse`, { method: 'POST', body, idempotent: true }),
   reallocate: (id: number, body: { targets: ReallocationTarget[]; reason: string; version: number }) =>
-    api<unknown>(`/payments/${id}/reallocate`, { method: 'POST', body }),
+    api<unknown>(`/payments/${id}/reallocate`, { method: 'POST', body, idempotent: true }),
   reviewDone: (id: number, body: { note: string; version: number }) =>
-    api<unknown>(`/payments/${id}/review-done`, { method: 'POST', body }),
+    api<unknown>(`/payments/${id}/review-done`, { method: 'POST', body, idempotent: true }),
   receiptUrl: (id: number) => api<{ url: string }>(`/payments/${id}/receipt-url`),
   resendReceipt: (id: number, channels: ReceiptChannel[]) =>
-    api<unknown>(`/payments/${id}/receipt/resend`, { method: 'POST', body: { channels } }),
+    api<unknown>(`/payments/${id}/receipt/resend`, { method: 'POST', body: { channels }, idempotent: true }),
 
   // helpers for the Record payment modal and the deposit screen
   /** Published optional collections (module 12 8.21). */

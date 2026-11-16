@@ -117,6 +117,13 @@ describe('paymentsService', () => {
     expect(api.mock.calls[3]![0]).toBe('/payments/5/reverse');
     expect(api.mock.calls[3]![1].idempotent).toBe(true);
   });
+  it('sends an Idempotency-Key on reallocate, review-done and resend (the API refuses them without one)', async () => {
+    api.mockResolvedValue({});
+    await paymentsService.reallocate(5, { targets: [], reason: 'Wrong invoice', version: 1 });
+    await paymentsService.reviewDone(5, { note: 'Checked with the bank', version: 1 });
+    await paymentsService.resendReceipt(5, ['EMAIL']);
+    expect(api.mock.calls.map(c => c[1].idempotent)).toEqual([true, true, true]);
+  });
   it('calls clear, return, reallocate, review-done, receipt and resend on the spec routes', async () => {
     api.mockResolvedValue({});
     await paymentsService.clearCheque(5, { clearedOn: '2026-11-21', version: 3 });
