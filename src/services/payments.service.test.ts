@@ -19,7 +19,8 @@ import {
   summaryRaw,
 } from '@/test/paymentsFixtures';
 import { paymentsService } from './payments.service';
-import { mapPayment, mapSummary } from './paymentsMappers';
+import { eventLabel, landsIn } from '@/components/payments/admin/format';
+import { mapPayment, mapPaymentDetail, mapSummary } from './paymentsMappers';
 
 beforeEach(() => {
   api.mockReset();
@@ -164,5 +165,15 @@ describe('paymentsService', () => {
     });
     const r = await paymentsService.openInvoices(51);
     expect(r.map(i => i.id)).toEqual([2]);
+  });
+  it('keeps the landsIn account of the detail and words the audit actions', () => {
+    const d = mapPaymentDetail(
+      detailRaw({ landsIn: 'CHEQUES_IN_CLEARING', method: 'CHEQUE', status: 'RECEIVED' }),
+    );
+    expect(d.landsIn).toBe('CHEQUES_IN_CLEARING');
+    expect(landsIn(d)).toBe('Cheques in clearing');
+    expect(landsIn({ status: 'REVERSED', method: 'NEFT', landsIn: 'BANK' })).toBe('-');
+    expect(eventLabel('payments.payment.recorded')).toBe('Payment recorded');
+    expect(eventLabel('Payment received')).toBe('Payment received');
   });
 });

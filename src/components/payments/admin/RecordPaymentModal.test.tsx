@@ -139,13 +139,13 @@ describe('Record a payment', () => {
     await pickFlat();
     await userEvent.selectOptions(screen.getByLabelText('Method'), 'NEFT');
     await userEvent.click(screen.getByRole('button', { name: 'Record and send for approval' }));
-    expect(await screen.findByText('Enter the UTR or reference.')).toBeInTheDocument();
-    await userEvent.type(screen.getByLabelText(/^Reference/), 'UTR123456');
+    expect(await screen.findByText('Use the UTR: 12 to 22 letters and digits.')).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(/^Reference/), 'UTR123456789A');
     await userEvent.click(screen.getByRole('button', { name: 'Record and send for approval' }));
     await screen.findByText('Sent for approval');
     expect(api.last('POST', '/payments/offline')!.body).toMatchObject({
       method: 'NEFT',
-      referenceNo: 'UTR123456',
+      referenceNo: 'UTR123456789A',
     });
   });
 

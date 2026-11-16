@@ -95,7 +95,9 @@ export const detailRaw = (over: Record<string, unknown> = {}) => ({
   refunds: [],
   proofFiles: [],
   approval: null,
-  timeline: [{ at: '2026-11-20T05:41:12.000Z', event: 'Payment received', by: 'Gateway' }],
+  landsIn: 'GATEWAY_CLEARING',
+  reversalReason: null,
+  timeline: [{ at: '2026-11-20T05:41:12.000Z', event: 'payments.payment.recorded', by: 'Gateway' }],
   receiptRevision: 1,
   notes: 'Paid at the gate',
   recordedBy: null,
@@ -119,6 +121,7 @@ export const chequeDetailRaw = (over: Record<string, unknown> = {}) =>
     ...chequeRaw(),
     allocations: [],
     cheque: chequeBlock,
+    landsIn: 'CHEQUES_IN_CLEARING',
     recordedBy: 'Asha Kulkarni',
     ...over,
   });

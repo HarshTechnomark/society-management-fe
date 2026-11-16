@@ -116,6 +116,9 @@ export function mapPaymentDetail(raw: unknown): PaymentDetail {
     notes: strOrNull(r.notes),
     reviewReason: strOrNull(r.reviewReason),
     recordedBy: strOrNull(r.recordedBy ?? r.createdByName),
+    landsIn: strOrNull(r.landsIn),
+    reversalReason: strOrNull(r.reversalReason),
+    reversedAt: strOrNull(r.reversedAt),
   };
 }
 
