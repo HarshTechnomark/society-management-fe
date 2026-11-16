@@ -1,4 +1,5 @@
 'use client';
+import { ApiError } from '@/lib/apiClient';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
@@ -63,6 +64,11 @@ function ActionModal({
       wide
       footer={
         <>
+          {error && (
+            <div className="w-full">
+              <Alert tone="bad">{error}</Alert>
+            </div>
+          )}
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
@@ -72,7 +78,6 @@ function ActionModal({
         </>
       }
     >
-      {error && <Alert tone="bad">{error}</Alert>}
       {children}
     </Modal>
   );
@@ -217,11 +222,17 @@ export function ReverseDialog({ payment, onClose, onDone }: DialogProps) {
       onDone={onDone}
       run={async () => {
         if (!minTrim(reason, 10)) return '!Enter a reason of at least 10 characters.';
-        await paymentsService.reverse(payment.id, {
-          reasonCode: code,
-          reason: reason.trim(),
-          version: payment.version,
-        });
+        try {
+          await paymentsService.reverse(payment.id, {
+            reasonCode: code,
+            reason: reason.trim(),
+            version: payment.version,
+          });
+        } catch (e) {
+          if (e instanceof ApiError && e.code === 'MAKER_CHECKER_VIOLATION')
+            return '!The person who recorded this payment cannot reverse it. Ask another committee member.';
+          throw e;
+        }
         return 'Payment reversed';
       }}
     >
@@ -256,8 +267,8 @@ export function ResendDialog({ payment, onClose, onDone }: DialogProps) {
       onDone={onDone}
       run={async () => {
         if (picked.length === 0) return '!Choose at least one channel.';
-        await paymentsService.resendReceipt(payment.id, picked);
-        return 'Receipt sent again';
+        const sent = await paymentsService.resendReceipt(payment.id, picked);
+        return sent > 0 ? `Receipt sent on ${sent} channel${sent === 1 ? '' : 's'}` : 'Receipt queued';
       }}
     >
       <fieldset>

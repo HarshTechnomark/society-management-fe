@@ -123,6 +123,8 @@ export const STATUS_FILTERS = [
   { key: 'RECEIVED', label: 'Received' },
   { key: 'RETURNED', label: 'Returned' },
   { key: 'REVERSED', label: 'Reversed' },
+  { key: 'REJECTED', label: 'Rejected' },
+  { key: 'FAILED', label: 'Failed' },
   { key: 'REVIEW', label: 'Needs review' },
 ] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number]['key'];

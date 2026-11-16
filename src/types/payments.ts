@@ -88,6 +88,8 @@ export interface PaymentDetail extends PaymentItem {
   recordedBy: string | null;
   /** Journal account the money sits in (`BANK`, `CASH_IN_HAND`, `CHEQUES_IN_CLEARING`, `GATEWAY_CLEARING`); detail only. */
   landsIn: string | null;
+  /** The bank account the money lands in, when the API names it. */
+  landsInAccount?: string | null;
   reversalReason: string | null;
   reversedAt: string | null;
 }

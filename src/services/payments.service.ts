@@ -1,5 +1,5 @@
 /** Module 12 admin payment calls (spec 8.10 to 8.17 and the cheque routes). Money and create calls send an Idempotency-Key. */
-import { api, apiBlob, apiList } from '@/lib/apiClient';
+import { api, apiBlob, apiList, ApiError } from '@/lib/apiClient';
 import {
   mapBankAccount,
   mapCollectionOption,
@@ -21,6 +21,12 @@ import type {
   ReceiptChannel,
   ReverseReasonCode,
 } from '@/types/payments';
+
+let banksMissing: ApiError | null = null;
+/** Forgets what the session learned about optional routes (used by tests). */
+export const resetPaymentsSession = () => {
+  banksMissing = null;
+};
 
 export const paymentsService = {
   list: async (q: PaymentQuery) => {
@@ -61,7 +67,14 @@ export const paymentsService = {
     api<unknown>(`/payments/${id}/review-done`, { method: 'POST', body, idempotent: true }),
   receiptUrl: (id: number) => api<{ url: string }>(`/payments/${id}/receipt-url`),
   resendReceipt: (id: number, channels: ReceiptChannel[]) =>
-    api<unknown>(`/payments/${id}/receipt/resend`, { method: 'POST', body: { channels }, idempotent: true }),
+    api<unknown>(`/payments/${id}/receipt/resend`, {
+      method: 'POST',
+      body: { channels },
+      idempotent: true,
+    }).then(r => {
+      const n = (r as { sent?: unknown } | null)?.sent;
+      return typeof n === 'number' ? n : 0;
+    }),
 
   // helpers for the Record payment modal and the deposit screen
   /** Published optional collections (module 12 8.21). */
@@ -86,10 +99,17 @@ export const paymentsService = {
       .filter(i => ['ISSUED', 'PARTIALLY_PAID', 'OVERDUE'].includes(i.status));
   },
   /** Society bank accounts (module 13 `GET /accounts/bank-accounts`). */
-  bankAccounts: () =>
-    api<unknown>('/accounts/bank-accounts').then(r =>
-      (Array.isArray(r) ? r : rowsOf(r, 'bankAccounts').length ? rowsOf(r, 'bankAccounts') : rowsOf(r)).map(
-        mapBankAccount,
-      ),
-    ),
+  bankAccounts: async () => {
+    // Module 13 may not exist yet: a 404 is remembered for the session and not asked again.
+    if (banksMissing) throw banksMissing;
+    try {
+      const r = await api<unknown>('/accounts/bank-accounts');
+      return (
+        Array.isArray(r) ? r : rowsOf(r, 'bankAccounts').length ? rowsOf(r, 'bankAccounts') : rowsOf(r)
+      ).map(mapBankAccount);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) banksMissing = e;
+      throw e;
+    }
+  },
 };

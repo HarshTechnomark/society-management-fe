@@ -150,7 +150,15 @@ export function RecordPaymentModal({
   const submit = async (confirmDuplicate = false) => {
     setFormError(null);
     const body = build(confirmDuplicate);
-    if (!body) return;
+    if (!body) {
+      // the first field with a message is brought into view (the form scrolls inside the modal)
+      setTimeout(() => {
+        document
+          .querySelector('[role="dialog"] [aria-invalid="true"]')
+          ?.scrollIntoView?.({ block: 'center' });
+      }, 0);
+      return;
+    }
     setBusy(true);
     try {
       const r = await paymentsService.recordOffline(body);
@@ -203,6 +211,29 @@ export function RecordPaymentModal({
       description="Cash, cheque or bank transfer received outside the app."
       footer={
         <>
+          {/* messages sit above the buttons so they are visible when the form is long */}
+          {formError && (
+            <div className="w-full">
+              <Alert tone="bad">{formError}</Alert>
+            </div>
+          )}
+          {duplicate && (
+            <div className="w-full">
+              <Alert tone="warn">
+                <p className="font-semibold">Possible duplicate</p>
+                <p>A payment from this flat with the same method, amount and date is already recorded.</p>
+                <Button
+                  size="sm"
+                  variant="glass"
+                  className="mt-2"
+                  loading={busy}
+                  onClick={() => void submit(true)}
+                >
+                  Record anyway
+                </Button>
+              </Alert>
+            </div>
+          )}
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
@@ -212,16 +243,6 @@ export function RecordPaymentModal({
         </>
       }
     >
-      {formError && <Alert tone="bad">{formError}</Alert>}
-      {duplicate && (
-        <Alert tone="warn">
-          <p className="font-semibold">Possible duplicate</p>
-          <p>A payment from this flat with the same method, amount and date is already recorded.</p>
-          <Button size="sm" variant="glass" className="mt-2" loading={busy} onClick={() => void submit(true)}>
-            Record anyway
-          </Button>
-        </Alert>
-      )}
       {!initialUnit && (
         <Input
           label="Search flat"

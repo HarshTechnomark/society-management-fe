@@ -103,6 +103,20 @@ describe('Clear and return dialogs', () => {
   });
 });
 
+describe('Reverse dialog maker-checker', () => {
+  it('says who cannot reverse it', async () => {
+    mockApi({ 'POST /payments/7781/reverse': err(409, 'MAKER_CHECKER_VIOLATION') });
+    show(p => <ReverseDialog payment={online()} {...p} />);
+    await userEvent.type(screen.getByLabelText('Reason'), 'Bank confirmed a lost chargeback');
+    await userEvent.click(screen.getByRole('button', { name: 'Reverse payment' }));
+    expect(
+      await screen.findByText(
+        'The person who recorded this payment cannot reverse it. Ask another committee member.',
+      ),
+    ).toBeInTheDocument();
+  });
+});
+
 describe('Reverse dialog', () => {
   it('needs a reason of 10 characters, then sends the code, reason and version', async () => {
     const api = mockApi({ 'POST /payments/7781/reverse': ok({}) });
@@ -144,7 +158,9 @@ describe('Reverse dialog', () => {
     await userEvent.type(screen.getByLabelText('Reason'), 'Typed the amount twice');
     await userEvent.click(screen.getByRole('button', { name: 'Reverse payment' }));
     expect(
-      await screen.findByText('You recorded this payment, so someone else must do this.'),
+      await screen.findByText(
+        'The person who recorded this payment cannot reverse it. Ask another committee member.',
+      ),
     ).toBeInTheDocument();
   });
 });
@@ -220,6 +236,18 @@ describe('Reallocate dialog', () => {
       }),
     );
     expect(currentRows(p).map(r => r.label)).toEqual(['Invoice I10']);
+  });
+});
+
+describe('Resend dialog message', () => {
+  it.each([
+    [{ sent: 0 }, 'Receipt queued'],
+    [{ sent: 2 }, 'Receipt sent on 2 channels'],
+  ])('says the truth for %j', async (reply, text) => {
+    mockApi({ 'POST /payments/7781/receipt/resend': ok(reply) });
+    const { onDone } = show(p => <ResendDialog payment={online()} {...p} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Send receipt' }));
+    await waitFor(() => expect(onDone).toHaveBeenCalledWith(text));
   });
 });
 

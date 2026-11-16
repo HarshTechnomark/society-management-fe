@@ -209,6 +209,27 @@ describe('Payment drawer', () => {
     expect(within(dlg).queryByText('Return to payer')).toBeNull();
   });
 
+  it('shows who recorded it, the advance part, and the account it lands in', async () => {
+    await open(
+      detailRaw({
+        toAdvancePaise: 291000,
+        landsInAccount: 'HDFC Current XXXX4821',
+        timeline: [{ at: '2026-11-20T05:41:12.000Z', event: 'payments.payment.recorded', by: 'Meera Iyer' }],
+      }),
+    );
+    const dlg = screen.getByRole('dialog');
+    expect(within(dlg).getByText('Meera Iyer')).toBeInTheDocument();
+    expect(within(dlg).getByText(/HDFC Current XXXX4821/)).toBeInTheDocument();
+    expect(within(dlg).getAllByTestId('allocation')).toHaveLength(3);
+    expect(within(dlg).getByText('₹2,910')).toBeInTheDocument();
+  });
+
+  it('has Rejected and Failed status chips', async () => {
+    renderIt();
+    expect(await screen.findByRole('button', { name: 'Rejected' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Failed' })).toBeInTheDocument();
+  });
+
   it('hides edit and reverse actions without the permissions', async () => {
     await open(detailRaw(), PAY_VIEW_PERMS);
     const dlg = screen.getByRole('dialog');
@@ -235,7 +256,7 @@ describe('Payment drawer', () => {
     await open(chequeDetailRaw(cheque));
     const dlg = screen.getByRole('dialog');
     expect(within(dlg).getByText('Mark cleared')).toBeInTheDocument();
-    expect(within(dlg).getByText('Bounced')).toBeInTheDocument();
+    expect(within(dlg).getByText('Bounce')).toBeInTheDocument();
     expect(within(dlg).getByText(/Deposited on 19 Nov 2026/)).toBeInTheDocument();
   });
 

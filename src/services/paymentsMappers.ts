@@ -115,7 +115,15 @@ export function mapPaymentDetail(raw: unknown): PaymentDetail {
     receiptRevision: num(r.receiptRevision, 1),
     notes: strOrNull(r.notes),
     reviewReason: strOrNull(r.reviewReason),
-    recordedBy: strOrNull(r.recordedBy ?? r.createdByName),
+    recordedBy:
+      strOrNull(r.recordedByName ?? r.recordedBy ?? r.createdByName) ??
+      (arr(r.timeline)
+        .map(t => obj(t))
+        .find(t => /recorded|created/i.test(str(t.event)) && str(t.by))?.by as string | undefined) ??
+      null,
+    landsInAccount: strOrNull(
+      r.landsInAccount ?? r.bankAccountName ?? obj(r.bankAccount).label ?? obj(r.bankAccount).name,
+    ),
     landsIn: strOrNull(r.landsIn),
     reversalReason: strOrNull(r.reversalReason),
     reversedAt: strOrNull(r.reversedAt),
