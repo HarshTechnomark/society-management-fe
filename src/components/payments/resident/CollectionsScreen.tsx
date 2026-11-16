@@ -105,17 +105,21 @@ function Inner() {
                     {r.unitLabel}:{' '}
                     {r.paidPaise >= r.amountPaise && r.amountPaise > 0
                       ? 'Paid'
-                      : `${inr(r.paidPaise)} of ${inr(r.amountPaise)}`}
+                      : r.amountPaise > 0
+                        ? `${inr(r.paidPaise)} of ${inr(r.amountPaise)}`
+                        : `${inr(r.paidPaise)} paid · any amount`}
                   </span>
-                  {canPay && c.status !== 'CLOSED' && r.paidPaise < r.amountPaise && (
-                    <Link
-                      href={payLink(r.unitId, null, r.id)}
-                      aria-label={`Pay ${c.title} for ${r.unitLabel}`}
-                      className={buttonClasses('primary', 'sm')}
-                    >
-                      Pay
-                    </Link>
-                  )}
+                  {canPay &&
+                    c.status !== 'CLOSED' &&
+                    (r.amountPaise === 0 || r.paidPaise < r.amountPaise) && (
+                      <Link
+                        href={payLink(r.unitId, null, r.id)}
+                        aria-label={`Pay ${c.title} for ${r.unitLabel}`}
+                        className={buttonClasses('primary', 'sm')}
+                      >
+                        Pay
+                      </Link>
+                    )}
                 </div>
               ))}
             </li>

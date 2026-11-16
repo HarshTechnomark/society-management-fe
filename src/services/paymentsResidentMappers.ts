@@ -111,6 +111,14 @@ export function mapOrderCreated(raw: unknown): OrderCreated {
   };
 }
 
+/** The server may say the last attempt failed with a flag, the last attempt's status or a failure reason. */
+function attemptFailedOf(r: Record<string, unknown>): boolean {
+  if (r.attemptFailed === true || r.lastAttemptFailed === true) return true;
+  const last = r.lastAttempt ? obj(r.lastAttempt) : null;
+  if (last && /^(failed|failure)$/i.test(str(last.status))) return true;
+  return str(r.status) === 'ATTEMPTED' && strOrNull(r.failureReason) !== null;
+}
+
 export function mapOrderState(raw: unknown): OrderState {
   const r = obj(raw);
   const p = r.payment ? obj(r.payment) : null;
@@ -129,6 +137,8 @@ export function mapOrderState(raw: unknown): OrderState {
     expiresAt: strOrNull(r.expiresAt),
     lines: arr(r.lines).map(mapLine),
     grossAmountPaise: numOrNull(r.grossAmountPaise),
+    failureReason: strOrNull(r.failureReason),
+    attemptFailed: attemptFailedOf(r),
   };
 }
 

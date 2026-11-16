@@ -113,4 +113,22 @@ describe('DevApprovals', () => {
       api.fn.mock.calls.some(c => String(c[0]).includes('/dev/approvals/7/reject?source=payments')),
     ).toBe(true);
   });
+
+  it('shows flat, amount and mode of a payments request when it carries them', async () => {
+    renderIt({
+      'GET /dev/approvals': ok([
+        {
+          id: 45,
+          type: 'OFFLINE_PAYMENT',
+          entityId: 12,
+          societyId: 1,
+          status: 'PENDING',
+          source: 'payments',
+          payload: { unitLabel: 'A-1203', amountPaise: 250000, method: 'CASH' },
+        },
+      ]),
+    });
+    expect(await screen.findByText('Flat A-1203 · ₹2,500 · cash')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toBeInTheDocument();
+  });
 });

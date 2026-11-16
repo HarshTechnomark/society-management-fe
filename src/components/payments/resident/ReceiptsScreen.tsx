@@ -126,7 +126,9 @@ function Inner() {
                         {p.receiptNo ? ` · ${p.receiptNo}` : ''}
                       </span>
                       {p.status !== 'CAPTURED' && (
-                        <Chip tone="warn">{PAYMENT_STATUS_LABEL[p.status] ?? p.status}</Chip>
+                        <Chip tone={p.status === 'CONFIRMED' ? 'ok' : 'warn'}>
+                          {PAYMENT_STATUS_LABEL[p.status] ?? p.status}
+                        </Chip>
                       )}
                     </span>
                     {p.receiptNo && (

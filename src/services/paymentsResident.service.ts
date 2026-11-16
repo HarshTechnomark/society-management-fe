@@ -63,7 +63,25 @@ async function publicCall<T>(
   return json.data as T;
 }
 
+let autopayAvailable: Promise<boolean> | null = null;
+/** Forgets what the session learned about AutoPay (used by tests). */
+export const resetResidentSession = () => {
+  autopayAvailable = null;
+};
+
 export const paymentsResidentService = {
+  /** Whether AutoPay is offered: asked once per session; a "not available" answer is remembered (no repeat 422). */
+  autopayAvailable: (): Promise<boolean> => {
+    autopayAvailable ??= api<unknown>('/me/autopay-mandates', { plan: false }).then(
+      () => true,
+      e => {
+        if (e instanceof ApiError && e.status !== 0 && e.status < 500) return false;
+        autopayAvailable = null; // a network or server error is not an answer
+        return false;
+      },
+    );
+    return autopayAvailable;
+  },
   payables: (unitId: number) => api<unknown>('/me/payables', { query: { unitId } }).then(mapPayables),
   createOrder: (input: CreateOrderInput): Promise<OrderCreated> =>
     api<unknown>('/me/payables/payment-orders', { method: 'POST', body: input, idempotent: true }).then(
@@ -98,7 +116,7 @@ export const paymentsResidentService = {
   advances: (unitId: number, page = 1) =>
     api<unknown>('/me/advances', { query: { unitId, page } }).then(mapAdvances),
 
-  mandates: () => api<unknown>('/me/autopay-mandates').then(r => rows(r).map(mapMandate)),
+  mandates: () => api<unknown>('/me/autopay-mandates', { plan: false }).then(r => rows(r).map(mapMandate)),
   createMandate: (input: CreateMandateInput): Promise<MandateCreated> =>
     api<unknown>('/me/autopay-mandates', { method: 'POST', body: input, idempotent: true }).then(
       mapMandateCreated,

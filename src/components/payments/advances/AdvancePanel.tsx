@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { useLoad } from '@/hooks/useLoad';
 import { inr, shortDate } from '@/lib/money';
 import { paymentsOpsService } from '@/services/paymentsOps.service';
-import { ADVANCE_ENTRY_LABEL, plainError } from '../ops/format';
+import { advanceEntryLabel, advanceNarration, plainError } from '../ops/format';
 
 const SHOWN = 5;
 
@@ -39,9 +39,9 @@ export function AdvancePanel({ unitId }: { unitId: number }) {
           {shown.map(e => (
             <li key={e.id} className="flex flex-wrap justify-between gap-2 py-2">
               <span>
-                {ADVANCE_ENTRY_LABEL[e.entryType] ?? e.entryType}
+                {advanceEntryLabel(e.entryType)}
                 <span className="block text-[12.5px] text-muted">
-                  {e.narration ? `${e.narration}. ` : ''}
+                  {advanceNarration(e.narration) ? `${advanceNarration(e.narration)}. ` : ''}
                   {shortDate(e.createdAt)}
                 </span>
               </span>

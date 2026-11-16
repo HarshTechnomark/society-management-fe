@@ -39,6 +39,7 @@ export function OrderDrawer({
   const [failed, setFailed] = useState<string | null>(null);
   const o = load.data;
   const open = o?.status === 'CREATED' || o?.status === 'ATTEMPTED';
+  const nothingToCheck = o?.gatewayOrderId === null;
 
   const check = async () => {
     setBusy(true);
@@ -62,6 +63,11 @@ export function OrderDrawer({
       {load.error != null ? (
         <ErrorState
           error={plainError(load.error)}
+          notFoundAction={
+            <Button size="sm" onClick={onClose}>
+              Close
+            </Button>
+          }
           action={
             <Button size="sm" onClick={load.reload}>
               Try again
@@ -94,8 +100,12 @@ export function OrderDrawer({
                 <dd>{shortDate(o.paidAt)}</dd>
               </>
             )}
-            <dt className="text-muted">Attempts</dt>
-            <dd>{o.attemptCount}</dd>
+            {o.attemptCount > 0 && (
+              <>
+                <dt className="text-muted">Attempts</dt>
+                <dd>{o.attemptCount}</dd>
+              </>
+            )}
             {o.convenienceFeePaise ? (
               <>
                 <dt className="text-muted">Convenience fee</dt>
@@ -114,11 +124,16 @@ export function OrderDrawer({
               ))}
             </ul>
           )}
+          {canEdit && open && nothingToCheck && (
+            <p className="text-[13px] text-muted">Nothing to check yet: the link has not been opened.</p>
+          )}
           {canEdit && open && (
             <div className="flex flex-wrap gap-2">
-              <Button variant="glass" loading={busy} onClick={() => void check()}>
-                Check with the gateway
-              </Button>
+              {!nothingToCheck && (
+                <Button variant="glass" loading={busy} onClick={() => void check()}>
+                  Check with the gateway
+                </Button>
+              )}
               <Button variant="danger-soft" onClick={() => setCancelling(true)}>
                 Cancel this order
               </Button>

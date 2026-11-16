@@ -45,7 +45,7 @@ function describe(e: unknown, method: 'TOTP' | 'OTP' | 'PASSKEY'): string {
 
 /** "Confirm it is you": a fresh authenticator code, a mobile OTP (when MFA is off) or a passkey. */
 export function StepUpDialog({ open, onSuccess, onCancel }: Props) {
-  const { me } = useMe();
+  const { me } = useMe(open); // closed: never call /auth/me (public pages such as /pay/[code] have no session)
   const [method, setMethod] = useState<'TOTP' | 'OTP' | 'PASSKEY' | null>(null);
   const [code, setCode] = useState('');
   const [challengeId, setChallengeId] = useState<string | null>(null);

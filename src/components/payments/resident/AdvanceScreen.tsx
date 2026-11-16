@@ -11,16 +11,9 @@ import { useLoad } from '@/hooks/useLoad';
 import { inr, shortDate } from '@/lib/money';
 import { billingResidentService } from '@/services/billingResident.service';
 import { paymentsResidentService as svc } from '@/services/paymentsResident.service';
+import { advanceEntryLabel, advanceNarration } from '../ops/format';
 import { PayTabs } from './PayTabs';
 import { plainPayError } from './format';
-
-const ENTRY_LABEL: Record<string, string> = {
-  CREDIT: 'Money added',
-  DEBIT: 'Used for a bill',
-  ADJUST_IN: 'Added by the society',
-  ADJUST_OUT: 'Taken by the society',
-  REFUND: 'Refunded to you',
-};
 
 /** Advance: the balance of a flat and its history, newest first (spec 8.7). */
 export function AdvanceScreen() {
@@ -80,10 +73,10 @@ function Inner() {
                 {adv.data.entries.map(e => (
                   <li key={e.id} className="flex items-start justify-between gap-3 py-2.5 text-[14.5px]">
                     <span>
-                      <span className="block font-semibold">{ENTRY_LABEL[e.entryType] ?? e.entryType}</span>
+                      <span className="block font-semibold">{advanceEntryLabel(e.entryType)}</span>
                       <span className="block text-[13px] text-muted">
                         {shortDate(e.createdAt)}
-                        {e.narration ? ` · ${e.narration}` : ''}
+                        {advanceNarration(e.narration) ? ` · ${advanceNarration(e.narration)}` : ''}
                       </span>
                     </span>
                     <span className="text-right tabular-nums">

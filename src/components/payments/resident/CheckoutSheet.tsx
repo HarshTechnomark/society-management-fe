@@ -48,7 +48,8 @@ export function CheckoutSheet({
   const [problem, setProblem] = useState<{ text: string; orderId?: number } | null>(null);
   const [order, setOrder] = useState<OrderCreated | null>(null);
 
-  const goStatus = (id: number) => router.push(`/resident/pay/status/${id}`);
+  const goStatus = (id: number, failed = false) =>
+    router.push(`/resident/pay/status/${id}${failed ? '?failed=1' : ''}`);
 
   const confirm = async () => {
     setBusy(true);
@@ -79,14 +80,14 @@ export function CheckoutSheet({
     }
   };
 
-  const settle = async (gatewayPaymentId: string) => {
+  const settle = async (gatewayPaymentId: string, failed = false) => {
     if (!order) return;
     try {
       await svc.verify(order.orderId, gatewayPaymentId);
     } catch {
       /* the status page keeps checking; the server settles from the gateway as well */
     }
-    goStatus(order.orderId);
+    goStatus(order.orderId, failed);
   };
 
   const cancel = async () => {
@@ -229,7 +230,7 @@ export function CheckoutSheet({
             <TestPaymentPanel
               gatewayOrderId={order.checkout.gatewayOrderId}
               onPaid={settle}
-              onFailed={settle}
+              onFailed={id => settle(id, true)}
             />
           ) : (
             <CheckoutOptions checkout={order.checkout} expiresAt={order.expiresAt} />

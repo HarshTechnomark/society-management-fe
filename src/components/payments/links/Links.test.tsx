@@ -94,10 +94,11 @@ describe('Payment links', () => {
       expiresInDays: 7,
     });
   });
-  it('locks WhatsApp when the plan has no WhatsApp link', async () => {
+  it('hides WhatsApp when the plan has no WhatsApp link', async () => {
     renderIt();
     await userEvent.click(await screen.findByRole('button', { name: 'New payment link' }));
-    expect(screen.getByLabelText('WhatsApp (Standard plan)')).toBeDisabled();
+    expect(screen.queryByLabelText(/WhatsApp/)).toBeNull();
+    expect(screen.getByLabelText('SMS')).toBeInTheDocument();
   });
   it('allows WhatsApp on a plan that has it', async () => {
     renderIt({}, OPS_PERMS, [...OPS_FEATURES, 'payments.whatsapp_payment_link']);

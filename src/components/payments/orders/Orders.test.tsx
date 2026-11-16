@@ -77,6 +77,13 @@ describe('Payment orders', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Check with the gateway' }));
     await waitFor(() => expect(api.last('POST', '/payment-orders/4412/check')).toBeTruthy());
   });
+  it('hides the gateway check when the order has no gateway order yet (link not opened)', async () => {
+    renderIt({ 'GET /payment-orders/4412': ok({ ...DETAIL, gatewayOrderId: null }) });
+    await userEvent.click((await screen.findAllByTestId('order-row'))[0].querySelector('button')!);
+    expect(await screen.findByText(/Nothing to check yet: the link has not been opened/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Check with the gateway' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancel this order' })).toBeInTheDocument();
+  });
   it('shows the one-a-minute limit of a check in plain words', async () => {
     renderIt({ 'POST /payment-orders/4412/check': err(429, 'RATE_LIMITED') });
     await userEvent.click((await screen.findAllByTestId('order-row'))[0].querySelector('button')!);

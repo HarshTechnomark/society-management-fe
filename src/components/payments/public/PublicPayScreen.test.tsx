@@ -92,6 +92,21 @@ describe('Public pay link', () => {
     expect(await screen.findByText(/This payment link is not valid/)).toBeInTheDocument();
   });
 
+  it('says For this flat when the payer name is fully masked', async () => {
+    mockApi({ [`GET /public/pay/${code}`]: ok(link({ payerNameMasked: '***' })) });
+    render(<PublicPayScreen code={code} token="tok" />);
+    expect(await screen.findByText('For this flat')).toBeInTheDocument();
+    expect(screen.queryByText(/For \*\*\*/)).toBeNull();
+  });
+
+  it('a bad link code has its own heading', async () => {
+    mockApi({ [`GET /public/pay/${code}`]: err(404, 'PAYMENT_LINK_NOT_FOUND') });
+    render(<PublicPayScreen code={code} token="bad" />);
+    expect(
+      await screen.findByRole('heading', { name: 'This payment link is not valid' }),
+    ).toBeInTheDocument();
+  });
+
   it('shows checkout errors in plain words', async () => {
     mockApi({
       [`GET /public/pay/${code}`]: ok(link()),

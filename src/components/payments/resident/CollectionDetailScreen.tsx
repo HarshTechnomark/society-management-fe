@@ -1,4 +1,5 @@
 'use client';
+import { plural } from '@/lib/plural';
 import Link from 'next/link';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Card, Page, PageHead } from '@/components/common/PageHead';
@@ -33,6 +34,11 @@ function Inner({ id }: { id: number }) {
         <Card>
           <ErrorState
             error={plainPayError(d.error)}
+            notFoundAction={
+              <Link href="/resident/pay/collections" className={buttonClasses('glass')}>
+                All collections
+              </Link>
+            }
             action={
               <Button size="sm" onClick={d.reload}>
                 Try again
@@ -52,7 +58,8 @@ function Inner({ id }: { id: number }) {
             <Progress c={c} />
             {c.contributorCount !== null && (
               <p className="mt-1 text-[13.5px]">
-                {c.contributorCount} of {c.requestCount ?? '-'} flats have paid.
+                {c.contributorCount} of {c.requestCount === null ? '-' : plural(c.requestCount, 'flat')}{' '}
+                {c.requestCount === 1 ? 'has' : 'have'} paid.
               </p>
             )}
             {c.myRequests.map(r => (
@@ -61,10 +68,11 @@ function Inner({ id }: { id: number }) {
                 className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[14.5px]"
               >
                 <span>
-                  Your share for {r.unitLabel}: <strong>{inr(r.amountPaise)}</strong> (paid {inr(r.paidPaise)}
-                  )
+                  Your share for {r.unitLabel}:{' '}
+                  <strong>{r.amountPaise > 0 ? inr(r.amountPaise) : 'Any amount'}</strong> (paid{' '}
+                  {inr(r.paidPaise)})
                 </span>
-                {canPay && c.status !== 'CLOSED' && r.paidPaise < r.amountPaise && (
+                {canPay && c.status !== 'CLOSED' && (r.amountPaise === 0 || r.paidPaise < r.amountPaise) && (
                   <Link
                     href={payLink(r.unitId, null, r.id)}
                     aria-label={`Pay for ${r.unitLabel}`}

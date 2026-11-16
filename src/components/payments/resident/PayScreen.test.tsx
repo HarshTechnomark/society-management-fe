@@ -194,7 +194,7 @@ describe('Checkout', () => {
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Pay ₹8,009' }),
     );
     await userEvent.click(await screen.findByRole('button', { name: 'Fail' }));
-    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/resident/pay/status/4412'));
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/resident/pay/status/4412?failed=1'));
     expect(api.last('POST', '/dev/payments/order_fake1/pay')?.body).toEqual({ status: 'failed' });
   });
 
@@ -334,5 +334,29 @@ describe('Pay offline', () => {
     );
     await userEvent.click(within(dlg).getByRole('button', { name: 'Send for approval' }));
     expect(await within(dlg).findByText('This reference number was already recorded.')).toBeInTheDocument();
+  });
+});
+
+describe('Pay list from a collection', () => {
+  it('ticks the collection request named in the address and nothing else', async () => {
+    search.current = new URLSearchParams('unitId=312&requestId=2201');
+    show(base());
+    const rows = await screen.findAllByTestId('pay-row');
+    const ganesh = rows.find(r => r.textContent?.includes('Ganesh'))!;
+    expect(within(ganesh).getByRole('checkbox')).toBeChecked();
+    expect(rows.filter(r => within(r).getByRole('checkbox').hasAttribute('checked'))).toHaveLength(1);
+    expect(screen.getByTestId('pay-total')).toHaveTextContent('₹1,100');
+  });
+
+  it('says Any amount for a voluntary collection with no suggested amount', async () => {
+    const raw = payablesRaw();
+    (raw.items as Record<string, unknown>[])[0] = {
+      ...(raw.items as Record<string, unknown>[])[0],
+      suggestedPaise: 0,
+    };
+    show(base({}, raw));
+    const rows = await screen.findAllByTestId('pay-row');
+    expect(rows.find(r => r.textContent?.includes('Ganesh'))).toHaveTextContent('Any amount');
+    expect(screen.queryByText(/Suggested ₹0/)).toBeNull();
   });
 });

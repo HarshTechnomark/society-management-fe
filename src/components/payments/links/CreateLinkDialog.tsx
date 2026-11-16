@@ -20,7 +20,7 @@ const CHANNELS: { value: LinkChannel; label: string }[] = [
   { value: 'WHATSAPP', label: 'WhatsApp' },
 ];
 
-/** Create a payment link (spec 8.18). The full link is shown once, with a copy button. WhatsApp needs the Standard plan. */
+/** Create a payment link (spec 8.18). The full link is shown once, with a copy button. WhatsApp is offered only when the plan has it. */
 export function CreateLinkDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const toast = useToast();
   const whatsappOn = useFeature('payments.whatsapp_payment_link');
@@ -159,13 +159,11 @@ export function CreateLinkDialog({ onClose, onCreated }: { onClose: () => void; 
         />
         <fieldset>
           <legend className="mb-1 text-[13px] font-semibold">Send the link by</legend>
-          {CHANNELS.map(c => {
-            const locked = c.value === 'WHATSAPP' && !whatsappOn;
+          {CHANNELS.filter(c => c.value !== 'WHATSAPP' || whatsappOn).map(c => {
             return (
               <Checkbox
                 key={c.value}
-                label={locked ? 'WhatsApp (Standard plan)' : c.label}
-                disabled={locked}
+                label={c.label}
                 checked={channels.includes(c.value)}
                 onChange={() => toggle(c.value)}
                 className="mb-1"

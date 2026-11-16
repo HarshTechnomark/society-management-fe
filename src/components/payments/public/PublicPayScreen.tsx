@@ -44,6 +44,8 @@ export function PublicPayScreen({ code, token }: { code: string; token: string }
 
   const d = link.data;
   const err = link.error instanceof ApiError ? link.error : null;
+  const invalid =
+    err !== null && (err.status === 404 || err.status === 401 || err.code === 'PAYMENT_LINK_NOT_FOUND');
   const expired = err?.code === 'PAYMENT_LINK_EXPIRED' || d?.status === 'EXPIRED';
 
   return (
@@ -53,8 +55,14 @@ export function PublicPayScreen({ code, token }: { code: string; token: string }
           <div aria-busy="true" aria-label="Loading payment link" className="skeleton h-40 w-full" />
         ) : link.error != null && !expired ? (
           <div role="alert">
-            <h1 className="text-[20px] font-bold">This link cannot be used</h1>
-            <p className="mt-1 text-[14.5px]">{payError(link.error)}</p>
+            <h1 className="text-[20px] font-bold">
+              {invalid ? 'This payment link is not valid' : 'This link cannot be used'}
+            </h1>
+            <p className="mt-1 text-[14.5px]">
+              {invalid
+                ? 'Check the link you were sent, or ask your society for a new one.'
+                : payError(link.error)}
+            </p>
           </div>
         ) : expired ? (
           <div role="status">
@@ -84,7 +92,9 @@ export function PublicPayScreen({ code, token }: { code: string; token: string }
           <div>
             <p className="text-[13px] font-semibold uppercase text-muted">{d.societyName}</p>
             <h1 className="text-[22px] font-bold">{d.unitLabel}</h1>
-            <p className="text-[14px] text-muted">For {d.payerNameMasked}</p>
+            <p className="text-[14px] text-muted">
+              {/^[\s*•.]*$/.test(d.payerNameMasked) ? 'For this flat' : `For ${d.payerNameMasked}`}
+            </p>
             <p className="mt-3 text-[32px] font-bold tabular-nums" data-testid="link-amount">
               {inr(d.amountPaise)}
             </p>

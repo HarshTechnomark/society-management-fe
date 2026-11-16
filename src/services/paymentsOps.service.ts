@@ -20,8 +20,8 @@ import type {
 
 type Query = Record<string, string | number | boolean | undefined>;
 
-async function list<T>(path: string, q: object, map: (r: unknown) => T) {
-  const r = await apiList<unknown>(path, { query: q as Query });
+async function list<T>(path: string, q: object, map: (r: unknown) => T, plan = true) {
+  const r = await apiList<unknown>(path, { query: q as Query, plan });
   const items = rows(r.data).map(map);
   return { items, pagination: normalisePagination(r.pagination, items.length) };
 }
@@ -41,7 +41,7 @@ export const paymentsOpsService = {
   checkOrder: (id: number) =>
     api<unknown>(`/payment-orders/${id}/check`, { method: 'POST', body: {} }).then(normaliseOrder),
 
-  mandates: (q: MandateQuery = {}) => list('/autopay-mandates', q, normaliseMandate),
+  mandates: (q: MandateQuery = {}) => list('/autopay-mandates', q, normaliseMandate, false),
   cancelMandate: (id: number, body: { reason: string; version: number }) =>
     api<unknown>(`/autopay-mandates/${id}/cancel`, { method: 'POST', body }),
 

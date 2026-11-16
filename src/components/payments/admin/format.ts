@@ -95,7 +95,14 @@ const STATUS: Record<PaymentStatus, { label: string; tone: Tone }> = {
   REJECTED: { label: 'Rejected', tone: 'neutral' },
   FAILED: { label: 'Failed', tone: 'bad' },
 };
-export const statusInfo = (s: string) => STATUS[s as PaymentStatus] ?? { label: s, tone: 'neutral' as Tone };
+/** The server keeps the status as is after a refund: money refunded shows as Refunded / Part refunded. */
+export function statusInfo(s: string, refundedPaise = 0, amountPaise = 0): { label: string; tone: Tone } {
+  if (refundedPaise > 0 && ['CONFIRMED', 'CAPTURED', 'CLEARED'].includes(s))
+    return refundedPaise >= amountPaise
+      ? { label: 'Refunded', tone: 'neutral' }
+      : { label: 'Part refunded', tone: 'warn' };
+  return STATUS[s as PaymentStatus] ?? { label: s, tone: 'neutral' as Tone };
+}
 
 /** Method filter of the Payments tab (the API takes a comma list of methods, or the cheque shortcut). */
 export const METHOD_FILTERS = [

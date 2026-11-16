@@ -6,11 +6,15 @@ export function ErrorState({
   error,
   title = 'Something went wrong',
   action,
+  notFoundAction,
 }: {
   error?: unknown;
   title?: string;
   action?: ReactNode;
+  /** Shown instead of `action` (no retry) when the API answered 404: the thing is gone, trying again will not help. */
+  notFoundAction?: ReactNode;
 }) {
+  const gone = error instanceof ApiError && error.status === 404 && notFoundAction !== undefined;
   const message =
     error instanceof ApiError ? error.message : error instanceof Error ? error.message : undefined;
   const requestId = error instanceof ApiError ? error.requestId : undefined;
@@ -25,14 +29,14 @@ export function ErrorState({
           <path d="M12 7v6M12 16.5v.5" strokeLinecap="round" />
         </svg>
       </div>
-      <h3 className="text-[16px] font-bold">{title}</h3>
+      <h3 className="text-[16px] font-bold">{gone ? 'Not found' : title}</h3>
       {message && <p className="max-w-sm text-[14px] text-muted">{message}</p>}
       {requestId && (
         <p className="text-[12px] text-muted">
           Reference: <code>{requestId}</code>
         </p>
       )}
-      {action && <div className="mt-3">{action}</div>}
+      {(gone ? notFoundAction : action) && <div className="mt-3">{gone ? notFoundAction : action}</div>}
     </div>
   );
 }

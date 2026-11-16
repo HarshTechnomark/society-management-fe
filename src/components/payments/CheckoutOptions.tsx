@@ -4,8 +4,15 @@ import { buttonClasses } from '@/components/ui/Button';
 import { useCountdown } from '@/hooks/useCountdown';
 import type { Checkout } from '@/types/paymentsResident';
 
-/** "9:05" from seconds. */
-export const clockText = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+/** Time left from seconds: "9:05" under an hour, then "47 hours 59 minutes", then "6 days 23 hours". */
+export function clockText(s: number): string {
+  const t = Math.max(0, Math.floor(s));
+  if (t < 3600) return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+  const unit = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  const hours = Math.floor(t / 3600);
+  if (hours >= 48) return `${unit(Math.floor(hours / 24), 'day')} ${unit(hours % 24, 'hour')}`;
+  return `${unit(hours, 'hour')} ${unit(Math.floor((t % 3600) / 60), 'minute')}`;
+}
 
 export function isPhone(): boolean {
   return typeof window !== 'undefined' && window.innerWidth <= 700;

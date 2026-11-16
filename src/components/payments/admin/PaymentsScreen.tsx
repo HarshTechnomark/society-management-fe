@@ -217,7 +217,7 @@ function Inner() {
 }
 
 function Row({ p, onOpen }: { p: PaymentItem; onOpen: () => void }) {
-  const st = statusInfo(p.status);
+  const st = statusInfo(p.status, p.refundedPaise, p.amountPaise);
   return (
     <tr
       className="cursor-pointer border-b border-[var(--line)] last:border-0 hover:bg-white/50"
