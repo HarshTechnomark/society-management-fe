@@ -11,7 +11,8 @@ export type FilePurpose =
   | 'KYC_DOCUMENT'
   | 'RESIDENT_RECORD'
   | 'USER_PHOTO'
-  | 'HANDOVER_EVIDENCE';
+  | 'HANDOVER_EVIDENCE'
+  | 'PAYMENT_PROOF';
 
 export interface FileUploader {
   upload(file: File, purpose: FilePurpose, opts?: UploadOptions): Promise<{ fileId: number }>;
