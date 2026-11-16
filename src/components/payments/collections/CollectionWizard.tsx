@@ -1,4 +1,5 @@
 'use client';
+import { plural } from '@/lib/plural';
 import { useRef, useState } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
@@ -323,8 +324,8 @@ export function CollectionWizard({
           {flats !== null && (
             <p className="mb-4 text-[13.5px] text-muted">
               {d.includeVacant
-                ? `${flats} flats will see this in their Pay list`
-                : `Up to ${flats} flats will see this in their Pay list. Flats with no resident are left out when you publish.`}
+                ? `${plural(flats, 'flat')} will see this in their Pay list`
+                : `Up to ${plural(flats, 'flat')} will see this in their Pay list. Flats with no resident are left out when you publish.`}
             </p>
           )}
           <Input

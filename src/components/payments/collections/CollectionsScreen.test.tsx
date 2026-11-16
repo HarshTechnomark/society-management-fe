@@ -74,7 +74,12 @@ describe('Collections list', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Awaiting approval' }));
     await userEvent.click(screen.getByRole('button', { name: 'Closed' }));
     await waitFor(() =>
-      expect(decodeURIComponent(String(api.fn.mock.calls.at(-1)?.[0]))).toContain('status=CLOSED,CANCELLED'),
+      expect(decodeURIComponent(String(api.fn.mock.calls.at(-1)?.[0]))).toContain('status=CLOSED'),
+    );
+    expect(decodeURIComponent(String(api.fn.mock.calls.at(-1)?.[0]))).not.toContain('CANCELLED');
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelled' }));
+    await waitFor(() =>
+      expect(decodeURIComponent(String(api.fn.mock.calls.at(-1)?.[0]))).toContain('status=CANCELLED'),
     );
   });
 

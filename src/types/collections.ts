@@ -13,7 +13,7 @@ export type CollectionStatus =
   | 'CLOSED'
   | 'CANCELLED';
 export type RequestStatus = 'OPEN' | 'PART_PAID' | 'PAID' | 'WAIVED' | 'CANCELLED';
-export type CollectionFilter = 'ALL' | 'LIVE' | 'AWAITING' | 'DRAFTS' | 'CLOSED';
+export type CollectionFilter = 'ALL' | 'LIVE' | 'AWAITING' | 'DRAFTS' | 'CLOSED' | 'CANCELLED';
 
 export interface Collection {
   id: number;

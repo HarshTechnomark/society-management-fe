@@ -26,6 +26,10 @@ const METHODS = [
  * Record a contribution made offline (spec 11.1, POST /payments/offline with `payingFor` COLLECTION). The payment goes
  * for approval unless the society auto-approves. A flat that already paid in full is not listed.
  */
+/** The remaining amount of a request, in plain words (the server's message does not say how much). */
+const remainingText = (duePaise: number) =>
+  `At most ${inr(Math.max(duePaise, 0))} can still be recorded for this flat.`;
+
 export function RecordContributionDialog({
   collection,
   requestId,
@@ -75,6 +79,7 @@ export function RecordContributionDialog({
     const paise = rupeesToPaise(amount);
     if (!req) e.request = 'Choose the flat.';
     if (paise === null || paise < 100) e.amount = 'Enter an amount of at least ₹1.';
+    else if (collection.amountMode === 'FIXED_PER_UNIT' && paise > due) e.amount = remainingText(due);
     else if (collection.amountMode === 'MIN_PER_UNIT' && paise < collection.minAmountPaise)
       e.amount = `The minimum is ${inr(collection.minAmountPaise)}.`;
     if (!date || date > today) e.date = 'The payment date cannot be in the future.';
@@ -109,6 +114,8 @@ export function RecordContributionDialog({
       );
     } catch (err) {
       if (err instanceof ApiError && err.code === 'DUPLICATE_PAYMENT_SUSPECTED') setDuplicate(true);
+      else if (err instanceof ApiError && err.code === 'AMOUNT_EXCEEDS_DUE' && req)
+        setErrors({ amount: remainingText(due) });
       else if (err instanceof ApiError && err.code === 'VALIDATION_FAILED' && err.errors?.length) {
         const f: Record<string, string> = {};
         const KEY: Record<string, string> = {

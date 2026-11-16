@@ -1,3 +1,4 @@
+import { plural } from '@/lib/plural';
 import Link from 'next/link';
 import { inr, shortDate } from '@/lib/money';
 import type { Collection } from '@/types/collections';
@@ -23,7 +24,7 @@ export function CollectionCard({ c }: { c: Collection }) {
         <span className="text-[13.5px] font-semibold tabular-nums">{progress}</span>
         <span className="flex justify-between text-[13px] text-muted">
           <span>
-            {c.paidCount} of {c.requestCount} flats
+            {c.paidCount} of {plural(c.requestCount, 'flat')}
           </span>
           <span>Due {shortDate(c.dueDate)}</span>
         </span>

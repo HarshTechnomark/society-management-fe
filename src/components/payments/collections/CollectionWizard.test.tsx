@@ -108,11 +108,11 @@ describe('New collection wizard', () => {
     expect(screen.getByRole('list', { name: 'Chosen flats' })).toHaveTextContent('A-1203');
     expect(
       screen.getByText(
-        'Up to 1 flats will see this in their Pay list. Flats with no resident are left out when you publish.',
+        'Up to 1 flat will see this in their Pay list. Flats with no resident are left out when you publish.',
       ),
     ).toBeInTheDocument();
     await userEvent.click(screen.getByLabelText('Also ask flats with no resident'));
-    expect(screen.getByText('1 flats will see this in their Pay list')).toBeInTheDocument();
+    expect(screen.getByText('1 flat will see this in their Pay list')).toBeInTheDocument();
     fireDue('2000-01-01');
     await next();
     expect(screen.getByText('The due date must be from today to one year ahead.')).toBeInTheDocument();

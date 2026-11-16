@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { colRaw, reqRaw } from '@/test/collectionsFixtures';
-import { mockApi, ok, resetAll } from '@/test/helpers';
+import { err, mockApi, ok, resetAll } from '@/test/helpers';
 import { collectionsService } from './collections.service';
 
 beforeEach(resetAll);
@@ -67,6 +67,12 @@ describe('collectionsService', () => {
       collectionRequestId: 301,
       unitId: 51,
     });
+  });
+  it('remembers a 404 of /funds for the session and does not call it again', async () => {
+    const api = mockApi({ 'GET /funds': err(404, 'NOT_FOUND') });
+    await expect(collectionsService.funds()).rejects.toMatchObject({ status: 404 });
+    await expect(collectionsService.funds()).rejects.toMatchObject({ status: 404 });
+    expect(api.fn.mock.calls.filter(c => String(c[0]).includes('/funds'))).toHaveLength(1);
   });
   it('keeps only active funds as options', async () => {
     mockApi({

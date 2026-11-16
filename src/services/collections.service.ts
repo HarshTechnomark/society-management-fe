@@ -1,5 +1,5 @@
 /** Module 12 network calls of the collections screens, admin side (spec 8.11, 8.21 to 8.23). Screens never call `fetch`. */
-import { api, apiBlob, apiList } from '@/lib/apiClient';
+import { api, apiBlob, apiList, ApiError } from '@/lib/apiClient';
 import {
   normaliseBuildingOption,
   normaliseCollection,
@@ -21,6 +21,12 @@ import type {
 
 type Query = Record<string, string | number | boolean | undefined>;
 const base = '/collections';
+
+let fundsMissing: ApiError | null = null;
+/** Forgets what the session learned about optional routes (used by tests). */
+export const resetCollectionsSession = () => {
+  fundsMissing = null;
+};
 
 export const collectionsService = {
   list: async (q: CollectionQuery = {}) => {
@@ -71,7 +77,15 @@ export const collectionsService = {
 
   // read-only inputs of the wizard
   funds: async () => {
-    const r = await apiList<unknown>('/funds', { query: { limit: 100 } });
+    // Module 13 may not exist yet: a 404 is remembered for the session and the route is not called again.
+    if (fundsMissing) throw fundsMissing;
+    let r;
+    try {
+      r = await apiList<unknown>('/funds', { query: { limit: 100 } });
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) fundsMissing = e;
+      throw e;
+    }
     return rows(r.data)
       .map(normaliseFund)
       .filter(f => f.active)
