@@ -5,9 +5,9 @@ import { PublicPayScreen } from './PublicPayScreen';
 
 function Inner({ code }: { code: string }) {
   const params = useSearchParams();
-  // The token is the `t` part of the address; a link may also carry it after `#`.
-  const hash =
-    typeof window === 'undefined' ? '' : window.location.hash.replace(/^#t=?/, '').replace(/^#/, '');
+  // The API builds `/pay/<code>#<token>` (spec 8.5); `?t=` and `#t=<token>` are accepted as well.
+  const raw = typeof window === 'undefined' ? '' : window.location.hash;
+  const hash = raw.startsWith('#t=') ? raw.slice(3) : raw.replace(/^#/, '');
   const token = params.get('t') ?? hash;
   return <PublicPayScreen code={code} token={token} />;
 }

@@ -2,7 +2,7 @@
 
 export type PayableType = 'INVOICE' | 'COLLECTION_REQUEST';
 export type FeeMethod = 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET';
-export type FeeMode = 'PASS_TO_PAYER' | 'ABSORBED' | string;
+export type FeeMode = 'PASS_TO_PAYER' | 'SOCIETY_ABSORBS' | string;
 
 export interface Payable {
   type: PayableType;

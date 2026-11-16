@@ -47,6 +47,16 @@ describe('Pay list', () => {
     expect(screen.getByRole('button', { name: 'Pay ₹8,009' })).toBeEnabled();
   });
 
+  it('a disputed bill (maxPaise 0 from the API) is not ticked at the start', async () => {
+    const raw = payablesRaw();
+    const items = raw.items as Record<string, unknown>[];
+    items[1] = { ...items[1], isDisputed: true, minPaise: 0, maxPaise: 0 };
+    show(base({}, raw));
+    const rows = await screen.findAllByTestId('pay-row');
+    expect(within(rows[0]).getByRole('checkbox')).toBeChecked();
+    expect(within(rows[1]).getByRole('checkbox')).not.toBeChecked();
+  });
+
   it('unticking an item and ticking the optional one updates the total, and a partial amount can be typed', async () => {
     show(base());
     await screen.findAllByTestId('pay-row');

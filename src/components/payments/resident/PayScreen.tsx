@@ -149,7 +149,13 @@ function PayList({
     [payables.items],
   );
   const initial = (p: Payable) =>
-    p.type === 'INVOICE' ? (invoiceId ? p.id === invoiceId : requestId ? false : true) : p.id === requestId;
+    p.type === 'INVOICE'
+      ? invoiceId
+        ? p.id === invoiceId
+        : requestId
+          ? false
+          : !p.isDisputed // a disputed bill cannot be paid online (maxPaise 0)
+      : p.id === requestId;
   const [ticked, setTicked] = useState<Set<string>>(() => new Set(items.filter(initial).map(key)));
   const [amounts, setAmounts] = useState<Record<string, string>>(() =>
     Object.fromEntries(

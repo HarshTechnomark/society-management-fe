@@ -160,7 +160,7 @@ export function targetHint(d: Draft, flats: number | null): string {
   const amount = rupeesToPaise(d.amount);
   if (d.amountMode === 'VOLUNTARY') return 'Residents give any amount. Enter the amount you hope to raise.';
   if (amount === null || flats === null) return 'Leave it empty to use the number of flats times the amount.';
-  return `${flats} flats × ${inr(amount)} = ${inr(flats * amount)}. Leave it empty to use this.`;
+  return `Up to ${flats} flats × ${inr(amount)} = ${inr(flats * amount)}. Leave it empty and the exact number of flats at publish time is used.`;
 }
 
 export function toInput(d: Draft): CollectionInput {
