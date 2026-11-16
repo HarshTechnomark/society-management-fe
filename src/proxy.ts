@@ -13,6 +13,8 @@ const AUDIENCES: Record<string, string> = {
   work: '/work',
 };
 const PREFIXES = Object.values(AUDIENCES);
+/** The single sign-in address (app.societyapp.in): every app by its path prefix, no rewriting. */
+const UNIFIED_LABELS = new Set(['app']);
 /** Public pages (module 02) are shared by every host and are never rewritten into an audience group. */
 const PUBLIC_PATHS = [
   '/login',
@@ -40,6 +42,8 @@ export function proxy(req: NextRequest) {
   // Local development and preview deployments: no rewriting.
   if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.vercel.app'))
     return NextResponse.next();
+
+  if (UNIFIED_LABELS.has(sub)) return NextResponse.next();
 
   // status.societyapp.in serves only the public status page (module 07, 11.4).
   if (sub === 'status' && host !== (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'societyapp.in')) {

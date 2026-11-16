@@ -5,7 +5,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { authService } from '@/services/auth.service';
 import { configureApiClient, loginUrl } from '@/lib/apiClient';
-import { APP_HOME } from '@/lib/clientApp';
+import { APP_HOME, setSessionApp } from '@/lib/clientApp';
 import { flow } from '@/lib/authFlow';
 import type { ClientApp, Me } from '@/types/auth';
 
@@ -18,6 +18,7 @@ export const sessionStore = {
   get: () => current,
   set(me: Me | null) {
     current = me;
+    setSessionApp(me?.session?.clientApp ?? null);
     emit();
   },
   subscribe(fn: () => void) {

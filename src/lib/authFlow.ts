@@ -1,4 +1,4 @@
-import type { OtpChannel } from '@/types/auth';
+import type { ClientApp, OtpChannel } from '@/types/auth';
 
 /**
  * Short-lived sign-in state kept only in memory (never in localStorage or sessionStorage): the OTP challenge, the
@@ -15,6 +15,8 @@ export interface FlowState {
     mobile: string;
   };
   mfa?: { challengeToken: string; methods: string[]; expiresAt: string };
+  /** Single sign-in address: the apps the person may open, waiting for their pick. */
+  appChoice?: { challengeToken: string; apps: ClientApp[]; expiresAt: string };
   signup?: { signupToken: string; mobile: string; expiresAt: string };
   recoveryCodes?: string[];
 }

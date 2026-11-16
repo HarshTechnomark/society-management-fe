@@ -16,9 +16,10 @@ import { authErrorMessage, lockMessage, lockSeconds } from '@/lib/authErrors';
 import { flow, readRememberedEmail, writeRememberedEmail } from '@/lib/authFlow';
 import { allowsMobileLogin, allowsPasskey, allowsPasswordLogin, useClientApp } from '@/lib/clientApp';
 import { getAssertion, passkeysSupported } from '@/lib/webauthn';
-import { useHydrated } from '@/lib/clientApp';
+import { useHydrated, useIsUnified } from '@/lib/clientApp';
 import { isValidEmail, isValidMobile, normaliseMobile } from '@/lib/validation';
 import { authService } from '@/services/auth.service';
+import { UnifiedLoginForm } from './UnifiedLoginForm';
 
 const NOTICES: Record<string, ['info' | 'warn' | 'ok', string]> = {
   signedout: ['info', 'You have been signed out.'],
@@ -34,12 +35,19 @@ export function LoginScreen() {
   const hydrated = useHydrated();
   // The form reads localStorage and browser support, so it renders on the client only.
   return hydrated ? (
-    <LoginForm />
+    <LoginChoice />
   ) : (
     <AuthShell>
       <div className="min-h-[320px]" aria-busy="true" />
     </AuthShell>
   );
+}
+
+/** One page for every role on the single sign-in address, the per-app page on a role host. */
+function LoginChoice() {
+  const unified = useIsUnified();
+  const params = useSearchParams();
+  return unified ? <UnifiedLoginForm notice={NOTICES[params.get('r') ?? '']} /> : <LoginForm />;
 }
 
 function LoginForm() {
