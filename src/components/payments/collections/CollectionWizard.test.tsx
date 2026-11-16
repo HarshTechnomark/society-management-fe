@@ -86,19 +86,31 @@ describe('New collection wizard', () => {
   it('who pays: all flats, a tower, chosen flats, with the flat count and the due date rule', async () => {
     setup({ 'GET /units': ok([{ id: 51, label: 'A-1203' }]) });
     await gotoStep(3);
-    expect(await screen.findByText('73 occupied flats will see this in their Pay list')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Up to 73 flats will see this in their Pay list. Flats with no resident are left out when you publish.',
+      ),
+    ).toBeInTheDocument();
     await userEvent.selectOptions(screen.getByLabelText('Who pays'), 'BUILDINGS');
     await next();
     expect(screen.getByText('Choose at least one tower.')).toBeInTheDocument();
     await userEvent.click(screen.getByLabelText('Tower B'));
-    expect(screen.getByText('33 occupied flats will see this in their Pay list')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Up to 33 flats will see this in their Pay list. Flats with no resident are left out when you publish.',
+      ),
+    ).toBeInTheDocument();
     await userEvent.selectOptions(screen.getByLabelText('Who pays'), 'UNITS');
     await next();
     expect(screen.getByText('Choose at least one flat.')).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('Find flats'), 'A-12');
     await userEvent.click(await screen.findByRole('button', { name: 'Add A-1203' }));
     expect(screen.getByRole('list', { name: 'Chosen flats' })).toHaveTextContent('A-1203');
-    expect(screen.getByText('1 occupied flats will see this in their Pay list')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Up to 1 flats will see this in their Pay list. Flats with no resident are left out when you publish.',
+      ),
+    ).toBeInTheDocument();
     await userEvent.click(screen.getByLabelText('Also ask flats with no resident'));
     expect(screen.getByText('1 flats will see this in their Pay list')).toBeInTheDocument();
     fireDue('2000-01-01');
@@ -109,7 +121,7 @@ describe('New collection wizard', () => {
   it('fund step: hint with flats times amount, notice, privacy and the approval note', async () => {
     setup();
     await gotoStep(4);
-    expect(await screen.findByText(/73 flats × ₹1,000 = ₹73,000/)).toBeInTheDocument();
+    expect(await screen.findByText(/Up to 73 flats × ₹1,000 = ₹73,000/)).toBeInTheDocument();
     expect(screen.getByLabelText('Also send a notice with a Pay button')).toBeChecked();
     expect(screen.getByLabelText('Who paid list')).toHaveValue('COUNT_ONLY');
     expect(
@@ -118,6 +130,14 @@ describe('New collection wizard', () => {
     expect(screen.getByRole('button', { name: 'Submit for approval' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Submit for approval' }));
     expect(screen.getByText('Choose the fund this money goes to.')).toBeInTheDocument();
+  });
+
+  it('fund step: when the list of funds is not available the fund number is typed', async () => {
+    setup({ 'GET /funds': err(404, 'NOT_FOUND') });
+    await gotoStep(4);
+    const input = await screen.findByLabelText(/^Fund number/);
+    await userEvent.type(input, '4x');
+    expect(input).toHaveValue('4');
   });
 
   it('submits for approval: creates the draft, then submits it, and reports it', async () => {

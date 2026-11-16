@@ -1,9 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { err, mockApi, ok, resetAll } from '@/test/helpers';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { err, mockApi, navigationMock, ok, resetAll } from '@/test/helpers';
 import { paidOrderRaw } from '@/test/paymentsResidentFixtures';
+import { PublicPayLink } from './PublicPayLink';
 import { PublicPayScreen } from './PublicPayScreen';
+
+vi.mock('next/navigation', () => navigationMock());
 
 const link = (over: Record<string, unknown> = {}) => ({
   societyName: 'Sky Heights CHS',
@@ -97,5 +100,17 @@ describe('Public pay link', () => {
     render(<PublicPayScreen code={code} token="tok" />);
     await userEvent.click(await screen.findByRole('button', { name: 'Pay securely' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/not set up/));
+  });
+});
+
+describe('Public pay link address', () => {
+  it('reads the token the API puts after # (spec 8.24), even when it starts with a t', async () => {
+    const api = mockApi({ [`GET /public/pay/${code}`]: ok(link()) });
+    window.location.hash = '#tTokenValue123';
+    render(<PublicPayLink code={code} />);
+    expect(await screen.findByText('Sky Heights CHS')).toBeInTheDocument();
+    const init = api.fn.mock.calls[0]![1] as RequestInit;
+    expect((init.headers as Record<string, string>)['X-Pay-Token']).toBe('tTokenValue123');
+    window.location.hash = '';
   });
 });

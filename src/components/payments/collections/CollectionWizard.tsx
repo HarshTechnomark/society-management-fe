@@ -66,6 +66,7 @@ export function CollectionWizard({
     setD(prev => ({ ...prev, [k]: v }));
     setErrors(prev => ({ ...prev, [k]: undefined }));
   };
+  const fundList = funds.data ?? [];
   const flats = flatCount(d, buildings.data ?? []);
 
   const next = () => {
@@ -321,7 +322,9 @@ export function CollectionWizard({
           />
           {flats !== null && (
             <p className="mb-4 text-[13.5px] text-muted">
-              {flats} {d.includeVacant ? '' : 'occupied '}flats will see this in their Pay list
+              {d.includeVacant
+                ? `${flats} flats will see this in their Pay list`
+                : `Up to ${flats} flats will see this in their Pay list. Flats with no resident are left out when you publish.`}
             </p>
           )}
           <Input
@@ -338,18 +341,39 @@ export function CollectionWizard({
 
       {step === 3 && (
         <>
-          <Select
-            label="Fund"
-            value={d.fundId}
-            error={errors.fundId}
-            hint="The money collected lands in this fund."
-            onChange={e => set('fundId', e.target.value)}
-            options={[
-              { value: '', label: funds.loading ? 'Loading funds' : 'Choose a fund' },
-              ...(funds.data ?? []).map(f => ({ value: String(f.id), label: f.label })),
-            ]}
-            required
-          />
+          {fundList.length > 0 ? (
+            <Select
+              label="Fund"
+              value={d.fundId}
+              error={errors.fundId}
+              hint="The money collected lands in this fund."
+              onChange={e => set('fundId', e.target.value)}
+              options={[
+                { value: '', label: funds.loading ? 'Loading funds' : 'Choose a fund' },
+                ...fundList.map(f => ({ value: String(f.id), label: f.label })),
+              ]}
+              required
+            />
+          ) : funds.loading ? (
+            <Select
+              label="Fund"
+              value=""
+              onChange={() => {}}
+              options={[{ value: '', label: 'Loading funds' }]}
+              disabled
+            />
+          ) : (
+            // the list of funds comes from the accounts module; until it answers the number of the fund is typed
+            <Input
+              label="Fund number"
+              inputMode="numeric"
+              value={d.fundId}
+              error={errors.fundId}
+              hint="The list of funds is not available yet. Enter the number of the fund the money goes to."
+              onChange={e => set('fundId', e.target.value.replace(/\D/g, ''))}
+              required
+            />
+          )}
           <Input
             label="Target (₹)"
             inputMode="decimal"

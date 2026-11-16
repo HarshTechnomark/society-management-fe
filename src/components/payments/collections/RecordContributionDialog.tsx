@@ -111,7 +111,17 @@ export function RecordContributionDialog({
       if (err instanceof ApiError && err.code === 'DUPLICATE_PAYMENT_SUSPECTED') setDuplicate(true);
       else if (err instanceof ApiError && err.code === 'VALIDATION_FAILED' && err.errors?.length) {
         const f: Record<string, string> = {};
-        for (const x of err.errors) f[x.field === 'amountPaise' ? 'amount' : x.field] = x.message;
+        const KEY: Record<string, string> = {
+          amountPaise: 'amount',
+          referenceNo: 'reference',
+          paymentDate: 'date',
+          collectionRequestId: 'request',
+          unitId: 'request',
+          'cheque.bankName': 'bank',
+          'cheque.chequeNo': 'chequeNo',
+          'cheque.chequeDate': 'chequeDate',
+        };
+        for (const x of err.errors) f[KEY[x.field] ?? x.field] = x.message;
         setErrors(f);
       } else setProblem(collectionError(err));
       setBusy(false);

@@ -32,9 +32,11 @@ export function AddFlatsDialog({
     try {
       const r = (await collectionsService.addUnits(id, { unitIds: units.map(u => u.id), version })) as {
         skippedUnitIds?: unknown;
+        addedCount?: unknown;
       } | null;
       const skipped = Array.isArray(r?.skippedUnitIds) ? r.skippedUnitIds.length : 0;
-      onDone(units.length - skipped, skipped);
+      const added = typeof r?.addedCount === 'number' ? r.addedCount : units.length - skipped;
+      onDone(added, skipped);
     } catch (e) {
       setError(collectionError(e));
       setBusy(false);
