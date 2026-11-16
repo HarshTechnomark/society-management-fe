@@ -185,6 +185,21 @@ describe('Record a payment', () => {
     expect(screen.getByRole('button', { name: 'Record and send for approval' })).toBeInTheDocument();
   });
 
+  it('brings the first invalid field into view and keeps the duplicate warning next to the buttons', async () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    renderIt({ 'POST /payments/offline': err(409, 'DUPLICATE_PAYMENT_SUSPECTED') });
+    await screen.findByLabelText(/^Flat/);
+    await userEvent.click(screen.getByRole('button', { name: 'Record and send for approval' }));
+    await waitFor(() => expect(scroll).toHaveBeenCalled());
+    await pickFlat();
+    await userEvent.click(screen.getByRole('button', { name: 'Record and send for approval' }));
+    const warn = await screen.findByText('Possible duplicate');
+    const submit = screen.getByRole('button', { name: 'Record and send for approval' });
+    expect(warn.closest('div[class*="border-t"]')).toBe(submit.closest('div[class*="border-t"]'));
+    delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+  });
+
   it('checks the flat and the amount before calling the API', async () => {
     const { api } = renderIt();
     await screen.findByLabelText(/^Flat/);

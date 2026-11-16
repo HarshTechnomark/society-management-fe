@@ -105,7 +105,7 @@ export function PaymentDrawer({
       )}
       {canEdit && chequesOn && isCheque && ['DEPOSITED', 'CLEARED'].includes(p.status) && (
         <Button size="sm" variant="danger-soft" onClick={() => setDialog('bounce')}>
-          Bounced
+          Bounce
         </Button>
       )}
       {canEdit && chequesOn && isCheque && p.status === 'RECEIVED' && (
@@ -210,14 +210,17 @@ export function PaymentDrawer({
               {(p.recordedBy || p.source === 'ONLINE') && (
                 <KV label="Recorded by">{p.recordedBy ?? 'Online payment'}</KV>
               )}
-              <KV label="Lands in">{landsIn(p)}</KV>
+              <KV label="Lands in">
+                {landsIn(p)}
+                {p.landsInAccount ? ` (${p.landsInAccount})` : ''}
+              </KV>
               {p.convenienceFeePaise > 0 && <KV label="Convenience fee">{inr(p.convenienceFeePaise)}</KV>}
               {p.refundedPaise > 0 && <KV label="Refunded">{inr(p.refundedPaise)}</KV>}
               {p.notes && <KV label="Note">{p.notes}</KV>}
               {p.reversalReason && <KV label="Reversal reason">{p.reversalReason}</KV>}
             </dl>
             <Section title="For">
-              {p.allocations.length === 0 ? (
+              {p.allocations.length === 0 && p.toAdvancePaise === 0 ? (
                 <p className="text-[14px] text-muted">Nothing is allocated yet.</p>
               ) : (
                 <ul className="grid gap-1 text-[14px]">
@@ -236,6 +239,12 @@ export function PaymentDrawer({
                       <strong className="tabular-nums">{inr(a.amountPaise)}</strong>
                     </li>
                   ))}
+                  {p.toAdvancePaise > 0 && !p.allocations.some(a => a.targetType === 'ADVANCE') && (
+                    <li className="flex justify-between gap-3" data-testid="allocation">
+                      <span>Advance</span>
+                      <strong className="tabular-nums">{inr(p.toAdvancePaise)}</strong>
+                    </li>
+                  )}
                 </ul>
               )}
             </Section>
