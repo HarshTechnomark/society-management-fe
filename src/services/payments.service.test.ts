@@ -48,7 +48,7 @@ describe('paymentsService', () => {
   it('lists with the query and maps items and pagination', async () => {
     apiList.mockResolvedValue({
       data: [paymentRaw(), chequeRaw()],
-      pagination: pagination({ total: 41, totalPages: 3 }),
+      pagination: pagination({ total: 41, totalPages: 3 }).pagination,
     });
     const r = await paymentsService.list({ page: 2, method: 'CASH', chequeStatus: 'PENDING' });
     expect(apiList.mock.calls[0]![0]).toBe('/payments');
@@ -160,7 +160,7 @@ describe('paymentsService', () => {
         { id: 1, invoiceNo: 'A', status: 'PAID' },
         { id: 2, invoiceNo: 'B', status: 'OVERDUE', outstandingPaise: 500 },
       ],
-      pagination: pagination(),
+      pagination: pagination().pagination,
     });
     const r = await paymentsService.openInvoices(51);
     expect(r.map(i => i.id)).toEqual([2]);

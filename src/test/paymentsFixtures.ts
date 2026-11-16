@@ -102,21 +102,23 @@ export const detailRaw = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
+export const chequeBlock = {
+  bankName: 'HDFC Bank',
+  chequeNo: '123456',
+  chequeDate: '2026-11-18',
+  depositedOn: null as string | null,
+  depositBankAccountId: null,
+  clearedOn: null,
+  bouncedOn: null,
+  bounceReason: null,
+  bounceChargeInvoiceId: null,
+};
+
 export const chequeDetailRaw = (over: Record<string, unknown> = {}) =>
   detailRaw({
     ...chequeRaw(),
     allocations: [],
-    cheque: {
-      bankName: 'HDFC Bank',
-      chequeNo: '123456',
-      chequeDate: '2026-11-18',
-      depositedOn: null,
-      depositBankAccountId: null,
-      clearedOn: null,
-      bouncedOn: null,
-      bounceReason: null,
-      bounceChargeInvoiceId: null,
-    },
+    cheque: chequeBlock,
     recordedBy: 'Asha Kulkarni',
     ...over,
   });
@@ -137,14 +139,16 @@ export const summaryRaw = (over: Record<string, unknown> = {}) => ({
 });
 
 export const liveItemRaw = (over: Record<string, unknown> = {}) => ({
-  id: 7781,
+  id: 7800,
   unitLabel: 'A-1203',
   amountPaise: 680900,
   method: 'UPI',
   what: 'maintenance',
-  receiptNo: 'RCT/2026-27/000046',
+  receiptNo: 'RCT/2026-27/000050',
   at: '2026-11-20T05:41:12.000Z',
   ...over,
 });
 
-export const pagination = (over: object = {}) => ({ page: 1, limit: 20, total: 2, totalPages: 1, ...over });
+export const pagination = (over: object = {}) => ({
+  pagination: { page: 1, limit: 20, total: 2, totalPages: 1, ...over },
+});
