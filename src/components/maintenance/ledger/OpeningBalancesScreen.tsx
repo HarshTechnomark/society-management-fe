@@ -19,7 +19,8 @@ import { inr, shortDate } from '@/lib/money';
 import { billingRunsService } from '@/services/billingRuns.service';
 import { ledgerService } from '@/services/ledger.service';
 import type { OpeningBalanceRow, OpeningImportResult, OpeningStatus } from '@/types/ledger';
-import { OPENING_LABEL, OPENING_TONE, defaultAsOfDate, isoDate, ledgerError, rupeesToPaise } from './format';
+import { OPENING_LABEL, OPENING_TONE, defaultAsOfDate, ledgerError, rupeesToPaise } from './format';
+import { todayIST } from '@/lib/indiaDate';
 
 const B = PERMISSIONS.finance.billing;
 const FILTERS: { key: OpeningStatus | 'ALL'; label: string }[] = [
@@ -80,7 +81,7 @@ function Inner() {
   /** Step 1: uploads the file and checks it with `dryRun: true` (nothing is written). */
   const check = async () => {
     if (!file) return;
-    if (asOfValue > isoDate(new Date())) return setError('The as-of date cannot be in the future.');
+    if (asOfValue > todayIST()) return setError('The as-of date cannot be in the future.');
     setBusy(true);
     setError(null);
     setSummary(null);
@@ -221,7 +222,7 @@ function Inner() {
             <Input
               label="Balances as of"
               type="date"
-              max={isoDate(new Date())}
+              max={todayIST()}
               value={asOfValue}
               disabled={start.loading && asOf === null}
               onChange={e => setAsOf(e.target.value)}

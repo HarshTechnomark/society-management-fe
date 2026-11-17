@@ -21,6 +21,7 @@ import { paymentsResidentService as svc } from '@/services/paymentsResident.serv
 import type { Mandate, MandateCreated } from '@/types/paymentsResident';
 import { PayTabs } from './PayTabs';
 import { payError, plainPayError, rupeesToPaise } from './format';
+import { addDaysIST, todayIST } from '@/lib/indiaDate';
 
 const STATUS: Record<string, { label: string; tone: Tone }> = {
   PENDING_AUTH: { label: 'Waiting for your approval', tone: 'warn' },
@@ -31,8 +32,7 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
   FAILED: { label: 'Failed', tone: 'bad' },
 };
 const LIVE = new Set(['PENDING_AUTH', 'ACTIVE', 'PAUSED']);
-const iso = (d: Date) => d.toISOString().slice(0, 10);
-const plusDays = (n: number) => iso(new Date(Date.now() + n * 86_400_000));
+const plusDays = (n: number) => addDaysIST(todayIST(), n);
 
 export function notAvailable(e: unknown): boolean {
   return e instanceof ApiError && (e.code === 'AUTOPAY_NOT_AVAILABLE' || e.code === 'FEATURE_NOT_IN_PLAN');

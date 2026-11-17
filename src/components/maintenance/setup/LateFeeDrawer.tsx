@@ -11,6 +11,7 @@ import { billingSetupService } from '@/services/billingSetup.service';
 import type { InterestFrom, LateFeePolicy, PolicyType } from '@/types/billingSetup';
 import { POLICY_TYPE_LABEL, billingSetupError, fieldErrors, nextMonthStart, opts } from './format';
 import { MAX_INTEREST, buildLateFee, lateFeeFormFrom, type LateFeeErrors, type LateFeeForm } from './lateFee';
+import { firstOfMonthIST } from '@/lib/indiaDate';
 
 /** "Change policy" form (spec 8.4, 11.5): interest per year (max 21), flat fee or none, grace days, start month, reason. */
 export function LateFeeDrawer({
@@ -32,7 +33,7 @@ export function LateFeeDrawer({
   const submit = async (ev: React.FormEvent) => {
     ev.preventDefault();
     setFormError(null);
-    const { input, errors: e } = buildLateFee(f, new Date().toISOString().slice(0, 8) + '01');
+    const { input, errors: e } = buildLateFee(f, firstOfMonthIST());
     setErrors(e);
     if (!input) return;
     setBusy(true);

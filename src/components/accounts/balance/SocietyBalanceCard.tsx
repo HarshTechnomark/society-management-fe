@@ -10,7 +10,8 @@ import { inr, shortDate } from '@/lib/money';
 import { accountsBalanceService as svc } from '@/services/accountsBalance.service';
 import type { SocietyBalance } from '@/types/accountsBalance';
 import { BalanceChart } from './BalanceChart';
-import { plainBalanceError, timeOf, ymd } from './format';
+import { plainBalanceError, timeOf } from './format';
+import { addDaysIST, todayIST } from '@/lib/indiaDate';
 
 /** Today card "Society balance" (spec 11.1). Hidden without `finance.accounts.view`. Looks again every 30 seconds (no socket client yet). */
 export function SocietyBalanceCard({
@@ -147,10 +148,8 @@ function Body({
 
 function Details({ b }: { b: SocietyBalance }) {
   const range = useMemo(() => {
-    const to = new Date();
-    const from = new Date();
-    from.setDate(from.getDate() - 29);
-    return { from: ymd(from), to: ymd(to) };
+    const to = todayIST();
+    return { from: addDaysIST(to, -29), to };
   }, []);
   const hist = useLoad(() => svc.history(range.from, range.to));
   return (

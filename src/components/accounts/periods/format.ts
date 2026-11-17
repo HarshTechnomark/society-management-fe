@@ -1,4 +1,5 @@
 import { ApiError } from '@/lib/apiClient';
+import { todayIST } from '@/lib/indiaDate';
 
 /** Words for the section 12 error codes of the periods, reports and export routes. */
 const TEXT: Record<string, string> = {
@@ -30,10 +31,7 @@ export function periodsError(e: unknown): string {
 export const isPlanError = (e: unknown) =>
   e instanceof ApiError && (e.status === 402 || e.code === 'FEATURE_NOT_IN_PLAN');
 
-export const todayIso = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+export const todayIso = () => todayIST();
 /** Last day of the month of "YYYY-MM". */
 export function monthEnd(month: string): string | null {
   const m = /^(\d{4})-(\d{2})$/.exec(month);

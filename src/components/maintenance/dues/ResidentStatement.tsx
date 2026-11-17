@@ -11,8 +11,9 @@ import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
 import { inr, shortDate } from '@/lib/money';
 import { billingResidentService } from '@/services/billingResident.service';
-import { ENTRY_LABEL, balanceText, daysBetween, financialYearStart, isoDate } from '../ledger/format';
+import { ENTRY_LABEL, balanceText, daysBetween, financialYearStart } from '../ledger/format';
 import { plainError } from './format';
+import { todayIST } from '@/lib/indiaDate';
 
 const MAX_DAYS = 1100;
 
@@ -27,7 +28,7 @@ export function ResidentStatement({ unitId }: { unitId: number }) {
 
 function Inner({ unitId }: { unitId: number }) {
   const [from, setFrom] = useState(financialYearStart());
-  const [to, setTo] = useState(isoDate(new Date()));
+  const [to, setTo] = useState(todayIST());
   const [applied, setApplied] = useState({ from, to });
   const [problem, setProblem] = useState<string | null>(null);
   const load = useLoad(

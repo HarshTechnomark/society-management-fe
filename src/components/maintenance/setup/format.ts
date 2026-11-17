@@ -14,6 +14,7 @@ import type {
   SplitBasis,
   VersionStatus,
 } from '@/types/billingSetup';
+import { addDaysIST, firstOfMonthIST, todayIST } from '@/lib/indiaDate';
 
 /** Words for every module 11 error code these routes can return (spec section 12). */
 const TEXT: Record<string, string> = {
@@ -314,9 +315,8 @@ export function versionNote(v: RuleVersion, fmt: (iso: string | null) => string)
   return `${VERSION_LABEL[v.status]} · from ${fmt(v.effectiveFrom)}${v.effectiveTo ? ` to ${fmt(v.effectiveTo)}` : ''}`;
 }
 
-export const today = () => new Date().toISOString().slice(0, 10);
+export const today = () => todayIST();
 /** The first day of the next month, as the default "effective from" of a new rate. */
 export function nextMonthStart(now = new Date()): string {
-  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1));
-  return d.toISOString().slice(0, 10);
+  return addDaysIST(firstOfMonthIST(now), 31).slice(0, 8) + '01';
 }
