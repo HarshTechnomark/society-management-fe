@@ -275,6 +275,9 @@ function Inner({ orderId, pollMs, maxPollMs }: { orderId: number; pollMs: number
               <Button variant="ghost" loading={cancelBusy} onClick={cancel}>
                 Cancel this payment
               </Button>
+              <Link href="/resident/pay" className={buttonClasses('ghost')}>
+                Back to Pay
+              </Link>
             </div>
           </div>
         ) : (

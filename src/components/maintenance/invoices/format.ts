@@ -8,6 +8,7 @@ import type {
   InvoiceStatus,
   NoteStatus,
 } from '@/types/billingInvoices';
+import { addDaysIST, todayIST } from '@/lib/indiaDate';
 
 export { rupeesToPaise, periodOptions, RELATION_LABEL } from '../runs/format';
 export { downloadBlob } from '../ledger/format';
@@ -246,10 +247,5 @@ export function estimateCreditTax(
   return 2 * Math.round((taxableCreditedPaise * d.cgstPaise) / d.taxableValuePaise);
 }
 
-export const todayIso = (now = new Date()) =>
-  `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-export const addDaysIso = (iso: string, days: number) => {
-  const d = new Date(`${iso}T00:00:00`);
-  d.setDate(d.getDate() + days);
-  return todayIso(d);
-};
+export const todayIso = (now = new Date()) => todayIST(now);
+export const addDaysIso = (iso: string, days: number) => addDaysIST(iso, days);

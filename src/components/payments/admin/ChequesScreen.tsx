@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
+import { BankAccountPicker } from '@/components/accounts/pickers/BankAccountPicker';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Card, Page, PageHead } from '@/components/common/PageHead';
@@ -10,7 +11,6 @@ import { Alert } from '@/components/ui/Alert';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
@@ -50,7 +50,6 @@ function Inner() {
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
   const list = useLoad(() => paymentsService.list({ method: 'CHEQUE', status: state, limit: 100 }), state);
-  const banks = useLoad(() => paymentsService.bankAccounts(), 'banks');
   const items = list.data?.items ?? [];
   const batch = canEdit && state === 'RECEIVED';
   const total = items.filter(i => picked.has(i.id)).reduce((s, i) => s + i.amountPaise, 0);
@@ -109,26 +108,7 @@ function Inner() {
         />
         {batch && (
           <div className="mb-4 grid gap-x-4 sm:grid-cols-3" data-testid="deposit-form">
-            {banks.error != null || (!banks.loading && (banks.data ?? []).length === 0) ? (
-              // the bank list (module 13) is not available: type the account number as it is known to the books
-              <Input
-                label="Bank account ID"
-                inputMode="numeric"
-                value={bankId}
-                onChange={e => setBankId(e.target.value.replace(/\D/g, ''))}
-                hint="The bank account list is not available yet."
-              />
-            ) : (
-              <Select
-                label="Bank account"
-                value={bankId}
-                onChange={e => setBankId(e.target.value)}
-                options={[
-                  { value: '', label: banks.loading ? 'Loading...' : 'Choose a bank account' },
-                  ...(banks.data ?? []).map(b => ({ value: String(b.id), label: b.label })),
-                ]}
-              />
-            )}
+            <BankAccountPicker value={bankId} onChange={setBankId} />
             <Input
               label="Deposit date"
               type="date"

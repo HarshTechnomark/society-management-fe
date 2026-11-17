@@ -49,6 +49,14 @@ describe('Status page', () => {
     expect(await screen.findByRole('heading', { name: 'Payment received' })).toBeInTheDocument();
   });
 
+  it('offers a way back to Pay while an order is still pending', async () => {
+    show(<PayStatusScreen orderId={4412} pollMs={10} maxPollMs={5000} />, {
+      'GET /me/payment-orders/4412': ok({ orderId: 4412, status: 'ATTEMPTED', payment: null }),
+    });
+    await screen.findByRole('heading', { name: 'Confirming your payment' });
+    expect(screen.getByRole('link', { name: 'Back to Pay' })).toHaveAttribute('href', '/resident/pay');
+  });
+
   it('says the payment failed (not Confirming) when the server reports a failed attempt, and Try again frees the order', async () => {
     const api = show(<PayStatusScreen orderId={4412} {...fast} />, {
       'GET /me/payment-orders/4412': ok({

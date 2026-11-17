@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { Textarea } from '@/components/ui/Textarea';
 import { useToast } from '@/components/ui/Toast';
+import { inr } from '@/lib/money';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
@@ -40,10 +41,30 @@ export const NAMESPACE_LABEL: Record<string, string> = {
 };
 const ORDER = Object.keys(NAMESPACE_LABEL);
 
-const words = (key: string) => {
-  const tail = key.split('.')[1] ?? key;
-  const s = tail.replace(/([A-Z])/g, ' $1').toLowerCase();
-  return s.charAt(0).toUpperCase() + s.slice(1);
+const ACRONYM = /\b(gst|tds|upi|otp|kyc|nach|sms|pan|fy|pdf|qr)\b/g;
+const LABEL_OVERRIDE: Record<string, string> = {
+  'finance.gstInputClaimable': 'GST input credit can be claimed',
+  'finance.billRequiredAbovePaise': 'Bill photo required above (in paise)',
+};
+
+/** A readable label from the setting key: words split, acronyms in capitals, units in brackets. */
+export const words = (key: string) => {
+  if (LABEL_OVERRIDE[key]) return LABEL_OVERRIDE[key];
+  let tail = key.split('.')[1] ?? key;
+  let unit = '';
+  if (tail.endsWith('Paise')) {
+    tail = tail.slice(0, -5);
+    unit = ' (in paise)';
+  } else if (tail.endsWith('Pct')) {
+    tail = tail.slice(0, -3);
+    unit = ' (%)';
+  }
+  const s = tail
+    .replace(/([A-Z])/g, ' $1')
+    .toLowerCase()
+    .replace(ACRONYM, m => m.toUpperCase())
+    .trim();
+  return s.charAt(0).toUpperCase() + s.slice(1) + unit;
 };
 
 /** The JSON text of a value, so a draft and a saved value compare the same way. */
@@ -52,8 +73,7 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 /** Hint such as "= ₹25,000" under an amount in paise. */
 function unitHint(item: SettingItem, value: unknown): string | undefined {
   const n = Number(value);
-  if (item.key.endsWith('Paise') && Number.isFinite(n))
-    return `Stored in paise. That is ₹${(n / 100).toLocaleString('en-IN')}.`;
+  if (item.key.endsWith('Paise') && Number.isFinite(n)) return `Entered in paise. That is ${inr(n)}.`;
   if (item.key.endsWith('Pct')) return 'Percent';
   return undefined;
 }

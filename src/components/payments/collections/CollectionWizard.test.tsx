@@ -15,7 +15,7 @@ const BUILDINGS = ok([
   { id: 2, name: 'Tower B', unitCounts: { active: 33 } },
 ]);
 const base = (extra: Parameters<typeof mockApi>[0] = {}) => ({
-  'GET /funds': FUNDS,
+  'GET /accounts/funds': FUNDS,
   'GET /buildings': BUILDINGS,
   ...extra,
 });
@@ -133,7 +133,7 @@ describe('New collection wizard', () => {
   });
 
   it('fund step: when the list of funds is not available the fund number is typed', async () => {
-    setup({ 'GET /funds': err(404, 'NOT_FOUND') });
+    setup({ 'GET /accounts/funds': err(404, 'NOT_FOUND') });
     await gotoStep(4);
     const input = await screen.findByLabelText(/^Fund number/);
     await userEvent.type(input, '4x');

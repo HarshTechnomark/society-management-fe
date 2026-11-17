@@ -2,6 +2,7 @@ import type { Tone } from '@/components/ui/Chip';
 import { ApiError } from '@/lib/apiClient';
 import { shortDate } from '@/lib/money';
 import type { ItemStatus, RunCycle, RunStatus } from '@/types/billingRuns';
+import { todayIST } from '@/lib/indiaDate';
 
 /** Words for every error code the billing run routes can return (spec 8.5 to 8.10 and section 12). */
 const TEXT: Record<string, string> = {
@@ -201,8 +202,8 @@ export function periodLabel(start: string, cycle: RunCycle = 'MONTHLY'): string 
  */
 export function periodOptions(cycle: RunCycle, now = new Date(), back = 2) {
   const step = CYCLE_MONTHS[cycle];
-  const y = now.getFullYear();
-  const m = now.getMonth();
+  const [y, m1] = todayIST(now).split('-').map(Number);
+  const m = m1 - 1;
   // Months since April of the financial year that contains `now`.
   const fyStart = m >= 3 ? y : y - 1;
   const sinceApril = (y - fyStart) * 12 + (m - 3);
@@ -226,8 +227,7 @@ function addMonths(ymd: string, n: number): string {
   const y = Number(ymd.slice(0, 4)) + Math.floor(m / 12);
   return iso(y, ((m % 12) + 12) % 12);
 }
-const ymdOf = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const ymdOf = (d: Date) => todayIST(d);
 
 export interface PeriodChoices {
   options: { value: string; label: string; isNext: boolean; isCurrent: boolean }[];

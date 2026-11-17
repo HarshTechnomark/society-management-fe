@@ -2,6 +2,7 @@ import type { Tone } from '@/components/ui/Chip';
 import { ApiError } from '@/lib/apiClient';
 import { inr } from '@/lib/money';
 import type { AgeingBucketKey, InvoiceStatus } from '@/types/billingDues';
+import { monthIST } from '@/lib/indiaDate';
 
 /** Words for every section 12 error code the dues, defaulter, reminder and resident bill routes can return. */
 export const DUES_TEXT: Record<string, string> = {
@@ -100,7 +101,7 @@ export const LINE_KIND_LABEL: Record<string, string> = {
 
 /** `YYYY-MM` of today, for the month picker. */
 export function currentMonth(now = new Date()): string {
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  return monthIST(now);
 }
 
 /** A number with up to 3 decimals, without trailing zeros: "800.000" becomes "800", "12.5" stays "12.5". */

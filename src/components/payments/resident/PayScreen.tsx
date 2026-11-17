@@ -49,7 +49,7 @@ function Inner() {
   return (
     <Page>
       <PageHead title="Pay" sub="Choose what to pay for your flat." />
-      <PayTabs />
+      <PayTabs autopayKnown={pay.data ? pay.data.autopayAvailable : pay.loading ? 'pending' : undefined} />
       {dues.error != null ? (
         <Card>
           <ErrorState

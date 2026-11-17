@@ -17,9 +17,9 @@ import {
   daysBetween,
   downloadBlob,
   financialYearStart,
-  isoDate,
   ledgerError,
 } from './format';
+import { todayIST } from '@/lib/indiaDate';
 
 const B = PERMISSIONS.finance.billing;
 const MAX_DAYS = 1100;
@@ -37,7 +37,7 @@ export function StatementDrawer({
   const canExport = usePermission(B.export);
   const toast = useToast();
   const [from, setFrom] = useState(financialYearStart());
-  const [to, setTo] = useState(isoDate(new Date()));
+  const [to, setTo] = useState(todayIST());
   const [applied, setApplied] = useState({ from, to });
   const [problem, setProblem] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);

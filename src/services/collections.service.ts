@@ -1,4 +1,5 @@
 /** Module 12 network calls of the collections screens, admin side (spec 8.11, 8.21 to 8.23). Screens never call `fetch`. */
+import { resetAccountsFundsSession } from './accountsFunds.service';
 import { api, apiBlob, apiList, ApiError } from '@/lib/apiClient';
 import {
   normaliseBuildingOption,
@@ -26,6 +27,7 @@ let fundsMissing: ApiError | null = null;
 /** Forgets what the session learned about optional routes (used by tests). */
 export const resetCollectionsSession = () => {
   fundsMissing = null;
+  resetAccountsFundsSession();
 };
 
 export const collectionsService = {

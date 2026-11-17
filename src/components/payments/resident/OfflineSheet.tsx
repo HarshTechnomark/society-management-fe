@@ -10,8 +10,9 @@ import { fileUploadAvailable, uploadFile } from '@/lib/fileUpload';
 import { paymentsResidentService as svc } from '@/services/paymentsResident.service';
 import type { DeclareInput } from '@/types/paymentsResident';
 import { payError, rupeesToPaise } from './format';
+import { todayIST } from '@/lib/indiaDate';
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+const todayIso = () => todayIST();
 
 /** "Pay offline": the society's bank details, then "I paid by bank transfer" (spec 8.6, with proof). */
 export function OfflineSheet({

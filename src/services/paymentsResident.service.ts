@@ -82,7 +82,14 @@ export const paymentsResidentService = {
     );
     return autopayAvailable;
   },
-  payables: (unitId: number) => api<unknown>('/me/payables', { query: { unitId } }).then(mapPayables),
+  /** The pay list also says whether AutoPay is offered: remember it so the mandates route is never called for nothing. */
+  payables: (unitId: number) =>
+    api<unknown>('/me/payables', { query: { unitId } })
+      .then(mapPayables)
+      .then(p => {
+        if (p.autopayAvailable === false) autopayAvailable = Promise.resolve(false);
+        return p;
+      }),
   createOrder: (input: CreateOrderInput): Promise<OrderCreated> =>
     api<unknown>('/me/payables/payment-orders', { method: 'POST', body: input, idempotent: true }).then(
       mapOrderCreated,

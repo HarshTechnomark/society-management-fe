@@ -6,9 +6,18 @@ import { useLoad } from '@/hooks/useLoad';
 import { paymentsResidentService } from '@/services/paymentsResident.service';
 
 /** The pay section's own links; AutoPay shows only when the AutoPay route says it is available. */
-export function PayTabs() {
+export function PayTabs({ autopayKnown }: { autopayKnown?: boolean | null | 'pending' } = {}) {
   const path = usePathname() ?? '';
-  const autopay = useLoad(() => paymentsResidentService.autopayAvailable(), 'autopay');
+  /** `autopayKnown` is what `GET /me/payables` said: `false` skips the mandates call, `'pending'` waits for it. */
+  const autopay = useLoad(
+    () =>
+      autopayKnown === 'pending'
+        ? Promise.resolve(false)
+        : typeof autopayKnown === 'boolean'
+          ? Promise.resolve(autopayKnown)
+          : paymentsResidentService.autopayAvailable(),
+    `autopay-${String(autopayKnown ?? 'ask')}`,
+  );
   const items = [
     { href: '/resident/pay', label: 'Pay', exact: true },
     { href: '/resident/pay/collections', label: 'Collections' },

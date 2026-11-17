@@ -45,7 +45,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { href: '/admin/settings/billing', label: 'Billing rules', keys: [S.billingRules.view] },
       {
         href: '/admin/settings/billing/opening-balances',
-        label: 'Opening balances',
+        label: 'Opening arrears',
         keys: [PERMISSIONS.finance.billing.view],
       },
     ],
@@ -86,6 +86,24 @@ export const ADMIN_NAV: NavGroup[] = [
         keys: [F.payments.view],
         feature: 'payments.upi_autopay_mandates',
       },
+    ],
+  },
+  {
+    title: 'Accounts',
+    items: [
+      { href: '/admin/accounts', label: 'Society balance', keys: [F.accounts.view] },
+      { href: '/admin/accounts/cash-book', label: 'Cash book', keys: [F.expenses.view] },
+      { href: '/admin/accounts/expenses', label: 'Expenses', keys: [F.expenses.view] },
+      { href: '/admin/accounts/funds', label: 'Funds', keys: [F.accounts.view] },
+      { href: '/admin/accounts/bank', label: 'Bank accounts', keys: [F.bank.view] },
+      { href: '/admin/accounts/settlements', label: 'Settlements', keys: [F.bank.view] },
+      { href: '/admin/accounts/bank/statements', label: 'Bank statements', keys: [F.bank.view] },
+      { href: '/admin/accounts/deposits', label: 'Deposits', keys: [F.accounts.view] },
+      { href: '/admin/accounts/ledger', label: 'Chart of accounts', keys: [F.accounts.view] },
+      { href: '/admin/accounts/journals', label: 'Journals', keys: [F.accounts.view] },
+      { href: '/admin/accounts/opening-balances', label: 'Opening balances', keys: [F.accounts.view] },
+      { href: '/admin/accounts/reports', label: 'Reports', keys: [F.accounts.view] },
+      { href: '/admin/accounts/periods', label: 'Periods and year close', keys: [F.accounts.view] },
     ],
   },
   {

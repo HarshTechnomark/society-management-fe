@@ -19,7 +19,8 @@ import { inr, shortDate } from '@/lib/money';
 import { billingRunsService } from '@/services/billingRuns.service';
 import { ledgerService } from '@/services/ledger.service';
 import type { OpeningBalanceRow, OpeningImportResult, OpeningStatus } from '@/types/ledger';
-import { OPENING_LABEL, OPENING_TONE, defaultAsOfDate, isoDate, ledgerError, rupeesToPaise } from './format';
+import { OPENING_LABEL, OPENING_TONE, defaultAsOfDate, ledgerError, rupeesToPaise } from './format';
+import { todayIST } from '@/lib/indiaDate';
 
 const B = PERMISSIONS.finance.billing;
 const FILTERS: { key: OpeningStatus | 'ALL'; label: string }[] = [
@@ -30,10 +31,10 @@ const FILTERS: { key: OpeningStatus | 'ALL'; label: string }[] = [
   { key: 'REVERSED', label: 'Reversed' },
 ];
 
-/** Settings > Billing > Opening balances (spec 11.6). */
+/** Settings > Billing > Opening arrears (spec 11.6). */
 export function OpeningBalancesScreen() {
   return (
-    <Gate view={B.view} feature="billing.opening_balances" title="Opening balances">
+    <Gate view={B.view} feature="billing.opening_balances" title="Opening arrears">
       <Inner />
     </Gate>
   );
@@ -80,7 +81,7 @@ function Inner() {
   /** Step 1: uploads the file and checks it with `dryRun: true` (nothing is written). */
   const check = async () => {
     if (!file) return;
-    if (asOfValue > isoDate(new Date())) return setError('The as-of date cannot be in the future.');
+    if (asOfValue > todayIST()) return setError('The as-of date cannot be in the future.');
     setBusy(true);
     setError(null);
     setSummary(null);
@@ -180,7 +181,7 @@ function Inner() {
   return (
     <Page>
       <PageHead
-        title="Opening balances"
+        title="Opening arrears"
         sub="Load each flat's old dues or advance once, when you go live. Check the file, then import it; nothing is posted until you confirm."
         actions={
           canImport && (
@@ -206,14 +207,15 @@ function Inner() {
             </a>
             . Amounts are in rupees. A flat has arrears or an advance, not both.
           </p>
-          <div className="grid items-end gap-x-3 min-[640px]:grid-cols-2">
-            <div>
+          <div className="grid grid-cols-1 items-end gap-x-3 min-[640px]:grid-cols-2">
+            <div className="min-w-0">
               <label htmlFor="ob-file" className="mb-1.5 block text-[13px] font-semibold">
                 File
               </label>
               <input
                 id="ob-file"
                 type="file"
+                className="block w-full max-w-full min-w-0"
                 accept=".csv,.xlsx,text/csv"
                 onChange={e => setFile(e.target.files?.[0] ?? null)}
               />
@@ -221,7 +223,7 @@ function Inner() {
             <Input
               label="Balances as of"
               type="date"
-              max={isoDate(new Date())}
+              max={todayIST()}
               value={asOfValue}
               disabled={start.loading && asOf === null}
               onChange={e => setAsOf(e.target.value)}
@@ -289,7 +291,7 @@ function Inner() {
         </Alert>
       )}
 
-      <Card className="mt-4">
+      <Card className="mt-4 min-w-0 max-w-full overflow-hidden">
         <div role="group" aria-label="Filter by status" className="mb-3 flex flex-wrap gap-1.5">
           {FILTERS.map(f => (
             <button
@@ -306,7 +308,7 @@ function Inner() {
           ))}
         </div>
         <DataTable
-          caption="Opening balances"
+          caption="Opening arrears"
           columns={columns}
           rows={load.data?.items ?? []}
           rowKey={r => r.id}

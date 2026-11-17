@@ -23,6 +23,8 @@ export const RESIDENT_NAV: Item[] = [
   { href: '/resident/home', label: 'My home', keys: [RES.household.view] },
   { href: '/resident/bills', label: 'Bills', keys: [RES.dues.view] },
   { href: '/resident/pay', label: 'Pay', keys: [RES.payments.view] },
+  { href: '/resident/finances', label: 'Society finances', keys: [RES.finances.view] },
+  { href: '/resident/deposits', label: 'Deposits', keys: [RES.dues.view] },
   { href: '/resident/join', label: 'Join a society', keys: [] },
   { href: '/resident/confirm', label: 'Confirm requests', keys: [RES.household.view] },
   { href: '/resident/tenant', label: 'My tenant', keys: [RES.household.view] },
