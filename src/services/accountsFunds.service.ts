@@ -24,7 +24,7 @@ export const accountsFundsService = {
   options: async (): Promise<FundOption[]> => {
     if (missing) throw missing;
     try {
-      const r = await api<unknown>(base, { query: { status: 'ACTIVE', limit: 100 } });
+      const r = await api<unknown>(base, { query: { status: 'ACTIVE' } });
       return rowsOf(r)
         .map(mapFundOption)
         .filter(f => f.active)

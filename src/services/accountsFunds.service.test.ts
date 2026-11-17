@@ -84,6 +84,21 @@ describe('services', () => {
     }
     expect(api.calls).toHaveLength(2);
   });
+  it('asks the fund list with only the filters the strict API accepts (no limit)', async () => {
+    const api = mockApi({ 'GET /accounts/funds': ok([{ id: 1, name: 'A', fundType: 'SINKING' }]) });
+    await accountsFundsService.options();
+    expect(JSON.stringify(api.fn.mock.calls[0])).not.toContain('limit');
+  });
+  it('maps the real bank shape, where the verifier is only an id', () => {
+    const b = mapBank({
+      id: 1,
+      maskedNumber: 'XXXXXX5678',
+      verifiedBy: 7,
+      branchName: null,
+      status: 'ACTIVE',
+    });
+    expect(b).toMatchObject({ branchName: '', verifiedByName: '', status: 'ACTIVE' });
+  });
   it('reveals only the number', async () => {
     mockApi({ 'GET /accounts/bank-accounts/3/reveal': ok({ accountNumber: '123456789012' }) });
     expect(await accountsBankService.reveal(3)).toBe('123456789012');

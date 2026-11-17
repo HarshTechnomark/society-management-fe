@@ -53,7 +53,7 @@ export function FundFormDialog({
       if (fund)
         await accountsFundsService.update(fund.id, {
           name: n,
-          purpose: purpose.trim(),
+          purpose: purpose.trim() || null,
           usageRequiresResolution: resolution,
           showToResidents: show,
           version: fund.version,

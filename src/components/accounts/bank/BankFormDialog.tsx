@@ -77,7 +77,7 @@ export function BankFormDialog({
       if (account)
         await accountsBankService.update(account.id, {
           displayName: displayName.trim(),
-          branchName: branchName.trim(),
+          branchName: branchName.trim() || null,
           accountHolderName: holder.trim(),
           ifsc: code,
           ...(changingNumber ? { accountNumber: number, confirmAccountNumber: confirm } : {}),

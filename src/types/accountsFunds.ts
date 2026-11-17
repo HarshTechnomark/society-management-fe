@@ -33,7 +33,7 @@ export interface FundInput {
 
 export interface FundPatch {
   name?: string;
-  purpose?: string;
+  purpose?: string | null;
   usageRequiresResolution?: boolean;
   showToResidents?: boolean;
   status?: 'CLOSED';

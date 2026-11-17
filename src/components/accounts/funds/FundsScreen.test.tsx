@@ -87,6 +87,15 @@ describe('Funds', () => {
     });
   });
 
+  it('saves a fund edit with an empty purpose as null', async () => {
+    const api = renderIt({ 'PATCH /accounts/funds/1': ok(FUNDS[1]) });
+    await screen.findAllByTestId('fund-row');
+    await userEvent.click(screen.getAllByRole('button', { name: /^Edit/ })[0]!);
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.last('PATCH', '/accounts/funds/1')).toBeTruthy());
+    expect(api.last('PATCH', '/accounts/funds/1')!.body).toMatchObject({ purpose: null });
+  });
+
   it('locks transfers and editing on a lower plan', async () => {
     renderIt({}, BASE);
     await screen.findAllByTestId('fund-row');
