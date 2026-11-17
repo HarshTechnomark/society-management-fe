@@ -174,8 +174,8 @@ export function EditAccountDialog({
         version: account.version,
         ...(locked ? {} : { name: n, isActive: active }),
         ...(account.accountType === 'EXPENSE' && !account.isGroup ? { isCashBookCategory: cashBook } : {}),
-        ...(label.trim() ? { transparencyCategory: label.trim() } : {}),
-        description: note.trim(),
+        transparencyCategory: label.trim() || null,
+        description: note.trim() || null,
       });
       toast.show('Account saved.');
       onDone();

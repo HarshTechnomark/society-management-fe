@@ -57,10 +57,13 @@ export function AccountsHome() {
 function Inner() {
   const [days, setDays] = useState(30);
   const range = useMemo(() => {
-    const to = new Date();
-    const from = new Date();
+    // The API refuses a `to` after the society's today (India time), so the dates come from that calendar.
+    const today = new Date(
+      new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) + 'T00:00:00',
+    );
+    const from = new Date(today);
     from.setDate(from.getDate() - (days - 1));
-    return { from: ymd(from), to: ymd(to) };
+    return { from: ymd(from), to: ymd(today) };
   }, [days]);
   const hist = useLoad(() => svc.history(range.from, range.to), days);
   return (

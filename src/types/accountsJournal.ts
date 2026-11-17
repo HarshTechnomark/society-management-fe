@@ -46,8 +46,8 @@ export interface UpdateLedgerAccountInput {
   name?: string;
   isActive?: boolean;
   isCashBookCategory?: boolean;
-  transparencyCategory?: string;
-  description?: string;
+  transparencyCategory?: string | null;
+  description?: string | null;
   version: number;
 }
 

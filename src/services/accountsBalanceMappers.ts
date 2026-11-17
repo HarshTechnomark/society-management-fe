@@ -46,8 +46,19 @@ function mapMovement(raw: unknown): BalanceMovement {
   return {
     journalEntryId: num(r.journalEntryId),
     changedAt: str(r.changedAt),
+    // the API says IN, OUT, MOVE or FUND_ONLY (spec 8.1); the card shows up, down or move
     direction:
-      d === 'UP' || d === 'DOWN' || d === 'MOVE' ? d : delta > 0 ? 'UP' : delta < 0 ? 'DOWN' : 'MOVE',
+      d === 'IN' || d === 'UP'
+        ? 'UP'
+        : d === 'OUT' || d === 'DOWN'
+          ? 'DOWN'
+          : d === 'MOVE' || d === 'FUND_ONLY'
+            ? 'MOVE'
+            : delta > 0
+              ? 'UP'
+              : delta < 0
+                ? 'DOWN'
+                : 'MOVE',
     deltaTotalPaise: delta,
     label: str(r.label),
     totalPaise: num(r.totalPaise),
