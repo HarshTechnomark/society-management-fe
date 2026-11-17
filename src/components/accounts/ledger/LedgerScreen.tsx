@@ -57,7 +57,7 @@ function Inner() {
   const load = useLoad(() => accountsJournalService.chart({ activeOnly: false }), 'chart');
   const tree = useMemo(() => filterTree(load.data ?? [], q, showOff), [load.data, q, showOff]);
   const groups = useMemo(
-    () => flattenTree(load.data ?? []).filter(a => a.isGroup && a.isActive && !a.isSystem),
+    () => flattenTree(load.data ?? []).filter(a => a.isGroup && a.isActive),
     [load.data],
   );
   const mayEdit = canEdit && planOk;
@@ -180,7 +180,7 @@ function Inner() {
                 )}
                 {mayEdit && (
                   <span className="flex gap-1">
-                    {a.isGroup && !a.isSystem && (
+                    {a.isGroup && a.isActive && (
                       <Button
                         size="xs"
                         variant="ghost"

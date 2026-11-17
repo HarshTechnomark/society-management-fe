@@ -50,14 +50,19 @@ export function CandidatePane({
     }
   };
 
+  const scores = (cands.data ?? []).map(c => c.score);
+  const tied = new Set(scores.filter((v, i) => scores.indexOf(v) !== i));
+
   return (
-    <div className="grid gap-3" data-testid="candidate-pane">
+    <div className="grid min-w-0 gap-3" data-testid="candidate-pane">
       <div>
         <p className="text-[13px] text-muted">
           {shortDate(line.txnDate)} {lineIsCredit(line) ? 'money in' : 'money out'}
         </p>
         <p className="text-[18px] font-bold tabular-nums">{inr(lineAmount(line))}</p>
-        <p className="text-[14px]">{line.description}</p>
+        <p className="break-words text-[14px]" title={line.description}>
+          {line.description}
+        </p>
         {line.reference && <p className="text-[13px] text-muted">Reference {line.reference}</p>}
       </div>
       {error && <Alert tone="bad">{error}</Alert>}
@@ -129,10 +134,15 @@ export function CandidatePane({
                       {inr(c.amountPaise)}{' '}
                       <span className="font-normal text-muted">{shortDate(c.entryDate)}</span>
                     </p>
-                    <p className="truncate">{c.narration || c.voucherNo}</p>
+                    <p className="truncate" title={c.narration || c.voucherNo || ''}>
+                      {c.narration || c.voucherNo}
+                    </p>
                     <p className="text-[12.5px] text-muted">
                       {c.voucherNo ? `${c.voucherNo}. ` : ''}
-                      {c.instrumentRef ? `Ref ${c.instrumentRef}. ` : ''}Score {c.score}
+                      {c.instrumentRef ? `Ref ${c.instrumentRef}. ` : ''}Possible match, {c.score}%
+                      {tied.has(c.score)
+                        ? '. Another entry scores the same: check the date and narration.'
+                        : ''}
                     </p>
                   </div>
                   {canWrite && !locked && (

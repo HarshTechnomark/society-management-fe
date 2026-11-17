@@ -104,11 +104,12 @@ describe('Close financial year', () => {
     const api = mockApi({
       'POST /accounts/financial-years/2025-26/close': { status: 202, data: { jobId: 'j1' } },
       'GET /accounts/periods': [ok(periodsRaw()), ok(periodsRaw({ lastClosedFinancialYear: '2025-26' }))],
-      'GET /accounts/reports/income-expenditure': ok({ surplusPaise: 1250000, income: [], expenditure: [] }),
+      'GET /accounts/reports/income-expenditure': ok({
+        rows: [],
+        totals: { incomePaise: 0, expenditurePaise: 0, surplusPaise: 1250000 },
+      }),
       'GET /accounts/reports/balance-sheet': ok({
-        assets: [],
-        liabilities: [],
-        funds: [],
+        rows: [],
         totals: { assetsPaise: 9900000, liabilitiesAndFundsPaise: 9900000 },
       }),
     });

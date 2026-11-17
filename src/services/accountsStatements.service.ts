@@ -30,7 +30,7 @@ const post = (path: string, body: unknown, idempotent = false) =>
 /** The statement answers carry the bank account id only: the names come from the bank account list (empty when it is not available). */
 async function bankLabels(): Promise<Map<number, string>> {
   try {
-    const list = await api<unknown>('/accounts/bank-accounts', { query: { limit: 100 } });
+    const list = await api<unknown>('/accounts/bank-accounts');
     return new Map(
       rows(list)
         .map(normaliseBankOption)
@@ -88,7 +88,7 @@ export const accountsStatementsService = {
     ),
   /** Active bank accounts for the upload picker. The caller treats a 404 as "type the number". */
   bankAccounts: (): Promise<BankAccountOption[]> =>
-    api<unknown>('/accounts/bank-accounts', { query: { limit: 100 } }).then(d =>
+    api<unknown>('/accounts/bank-accounts').then(d =>
       rows(d)
         .map(normaliseBankOption)
         .filter(o => o.id > 0),

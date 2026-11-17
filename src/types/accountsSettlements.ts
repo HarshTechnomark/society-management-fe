@@ -23,6 +23,8 @@ export interface SettlementItem {
   receiptNo: string | null;
   /** Why an unmatched item did not match, when the server says. */
   reason: string | null;
+  /** For AMOUNT_DIFFERS: the amount of the captured payment in your records. */
+  expectedPaise: number | null;
 }
 
 export interface Settlement {

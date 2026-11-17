@@ -106,7 +106,7 @@ describe('Reconciliation screen', () => {
     const api = recon({ 'POST /accounts/bank-statement-lines/101/match': ok({}) });
     await userEvent.click((await screen.findAllByTestId('line-row'))[0].querySelector('button')!);
     const row = await screen.findByTestId('candidate-row');
-    expect(row).toHaveTextContent('Score 100');
+    expect(row).toHaveTextContent('Possible match, 100%');
     await userEvent.click(within(row).getByRole('button', { name: 'Match' }));
     await waitFor(() =>
       expect(api.last('POST', '/accounts/bank-statement-lines/101/match')?.body).toEqual({
@@ -114,6 +114,21 @@ describe('Reconciliation screen', () => {
         version: 1,
       }),
     );
+  });
+  it('hints when several candidates score the same, and gives long descriptions a title', async () => {
+    recon({
+      'GET /accounts/bank-statement-lines/101/candidates': ok([
+        candidateRaw(),
+        candidateRaw({ journalLineId: 701, voucherNo: 'RCT/2', narration: 'Other' }),
+      ]),
+    });
+    await userEvent.click((await screen.findAllByTestId('line-row'))[0].querySelector('button')!);
+    const rows = await screen.findAllByTestId('candidate-row');
+    expect(rows[0]).toHaveTextContent('Another entry scores the same');
+    expect(rows[1]).toHaveTextContent('Another entry scores the same');
+    const first = screen.getAllByTestId('line-row')[0]!;
+    expect(first.querySelector('[title]')).not.toBeNull();
+    expect(first).toHaveClass('min-w-0');
   });
   it('creates an entry from a line with a chosen account', async () => {
     const api = recon({ 'POST /accounts/bank-statement-lines/102/create-entry': ok({}) });

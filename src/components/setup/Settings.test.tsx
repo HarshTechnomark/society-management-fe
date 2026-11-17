@@ -5,7 +5,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { err, mockApi, navigationMock, ok, resetAll } from '@/test/helpers';
 import { setting } from '@/test/setupFixtures';
 import { signIn } from '@/test/setupHelpers';
-import { SettingsScreen } from './SettingsScreen';
+import { SettingsScreen, words } from './SettingsScreen';
 
 vi.mock('next/navigation', () => navigationMock());
 
@@ -82,7 +82,7 @@ describe('Settings (typed editor)', () => {
     expect(await screen.findByRole('spinbutton', { name: 'Due days' })).toHaveValue(9);
     expect(screen.getByRole('textbox', { name: 'Invoice prefix' })).toHaveValue('INV');
     expect(screen.getByText(/Applies from FY 2027-28/)).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: 'Apply gst' })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('switch', { name: 'Apply GST' })).toHaveAttribute('aria-checked', 'false');
     expect(screen.getByRole('combobox', { name: 'Area basis' })).toHaveValue('CARPET');
   });
 
@@ -161,5 +161,15 @@ describe('Settings (typed editor)', () => {
   it('shows the plan lock without property.society_settings', async () => {
     renderIt({}, undefined, []);
     expect(await screen.findByText('Not available in your plan')).toBeInTheDocument();
+  });
+});
+
+describe('setting labels', () => {
+  it('reads like words, with units and acronyms', () => {
+    expect(words('finance.billRequiredAbovePaise')).toBe('Bill photo required above (in paise)');
+    expect(words('finance.gstInputClaimable')).toBe('GST input credit can be claimed');
+    expect(words('billing.applyGst')).toBe('Apply GST');
+    expect(words('billing.lateFeeDefaultFlatPaise')).toBe('Late fee default flat (in paise)');
+    expect(words('billing.lateFeePct')).toBe('Late fee (%)');
   });
 });

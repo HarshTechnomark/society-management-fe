@@ -133,6 +133,20 @@ describe('Add expense', () => {
   });
 });
 
+describe('Add expense without account permissions', () => {
+  it('does not ask for the funds list without finance.accounts.view', async () => {
+    const api = renderIt(
+      <ExpensesScreen />,
+      {},
+      EXP_PERMS.filter(p => p !== 'finance.accounts.view'),
+    );
+    await screen.findAllByTestId('expense-row');
+    await userEvent.click(screen.getByRole('button', { name: 'Add expense' }));
+    await screen.findByRole('dialog');
+    expect(api.calls.some(c => c.path === '/accounts/funds')).toBe(false);
+  });
+});
+
 describe('Expense drawer', () => {
   const open = async (status: string, extra: Record<string, unknown> = {}) => {
     const api = renderIt(<ExpensesScreen />, {
@@ -216,6 +230,20 @@ describe('Cash book', () => {
     await waitFor(() =>
       expect(api.calls.filter(c => c.path === '/accounts/cash-book').length).toBeGreaterThan(1),
     );
+  });
+  it('does not ask for the bank accounts without finance.bank.view', async () => {
+    const api = renderIt(
+      <CashBookScreen />,
+      {
+        'GET /accounts/cash-book': ok(book, 'OK', {
+          pagination: { page: 1, limit: 100, total: 1, totalPages: 1 },
+        }),
+      },
+      EXP_PERMS.filter(p => p !== 'finance.bank.view'),
+    );
+    expect(await screen.findAllByTestId('cash-row')).toHaveLength(1);
+    expect(api.calls.some(c => c.path === '/accounts/bank-accounts')).toBe(false);
+    expect(screen.queryByRole('option', { name: /HDFC Current/ })).toBeNull();
   });
   it('builds CSV in rupees', () => {
     const csv = cashBookCsv([{ ...book.rows[0]!, refType: null, refId: null }]);

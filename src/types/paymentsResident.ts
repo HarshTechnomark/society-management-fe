@@ -35,6 +35,8 @@ export interface Payables {
   allowAdvance: boolean;
   fee: { mode: FeeMode; methods: Record<string, number> };
   gatewayReady: boolean;
+  /** From the API; null when it did not say. */
+  autopayAvailable: boolean | null;
   offlineInstructions: string | null;
   liveOrder: LiveOrder | null;
 }

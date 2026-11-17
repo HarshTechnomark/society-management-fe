@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Textarea } from '@/components/ui/Textarea';
 import { useToast } from '@/components/ui/Toast';
 import { PERMISSIONS } from '@/constants/permissions';
+import { useMe } from '@/lib/auth';
 import { useFeature } from '@/hooks/useFeature';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
@@ -47,6 +48,7 @@ export function JournalDrawer({
   const toast = useToast();
   const canCreate = usePermission(P.create);
   const canApprove = usePermission(P.approve);
+  const { me } = useMe();
   const manualOn = useFeature('accounting.manual_journals');
   const [reversing, setReversing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -79,7 +81,8 @@ export function JournalDrawer({
     !j.reversedBy &&
     !j.reversalOf &&
     !['OPENING_BALANCE', 'CLOSING'].includes(j.voucherType);
-  const draftActions = !!j && canCreate && manualOn && manual && j.status === 'DRAFT';
+  const isMaker = j?.createdBy == null || me?.user.id === j.createdBy;
+  const draftActions = !!j && canCreate && manualOn && manual && j.status === 'DRAFT' && isMaker;
 
   return (
     <>
@@ -107,7 +110,7 @@ export function JournalDrawer({
               <KV label="Date">{shortDate(j.entryDate)}</KV>
               <KV label="Type">{VOUCHER_LABEL[j.voucherType] ?? j.voucherType}</KV>
               <KV label="Narration">{j.narration}</KV>
-              <KV label="Amount">{inr(j.totalPaise)}</KV>
+              <KV label="Total debits / credits">{inr(j.totalPaise)}</KV>
               {j.instrumentRef && <KV label="Reference">{j.instrumentRef}</KV>}
               {j.postedAt && <KV label="Posted">{shortDate(j.postedAt)}</KV>}
               {j.sourceLink && (

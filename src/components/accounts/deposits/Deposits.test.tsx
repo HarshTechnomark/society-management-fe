@@ -121,12 +121,17 @@ describe('Deposit drawer actions', () => {
   });
   it('shows the API reason when the refund request is refused', async () => {
     const { drawer } = await open(dep(), {
-      'POST /accounts/deposits/7/refund-request': err(409, 'INVALID_STATE'),
+      'POST /accounts/deposits/7/refund-request': err(
+        409,
+        'INVALID_STATE',
+        undefined,
+        'The unpaid bill of this deposit is already paid, so it cannot be cancelled.',
+      ),
     });
     await userEvent.click(within(drawer).getByRole('button', { name: 'Request refund' }));
     const dlg = screen.getAllByRole('dialog').at(-1)!;
     await userEvent.click(within(dlg).getByRole('button', { name: 'Request refund' }));
-    expect(await screen.findByText(/not allowed in the current state/)).toBeInTheDocument();
+    expect(await screen.findByText(/already paid, so it cannot be cancelled/)).toBeInTheDocument();
   });
   it('marks the refund paid from a chosen bank account', async () => {
     const { api, drawer } = await open(dep({ status: 'REFUND_APPROVED', refundRequestedPaise: 2500000 }), {

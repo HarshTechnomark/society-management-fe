@@ -41,6 +41,12 @@ beforeEach(() => {
 });
 
 describe('Opening balances screen', () => {
+  it('keeps the table card inside the page width on a phone (the table scrolls inside it)', async () => {
+    renderOb({ 'GET /billing/opening-balances': ok(obList([obRow()], obTotals())) });
+    const table = await screen.findByRole('table', { name: 'Opening balances' });
+    expect(table.closest('section')).toHaveClass('min-w-0', 'max-w-full');
+    expect(screen.getByTestId('table-scroll')).toHaveClass('overflow-x-auto');
+  });
   it('shows the grid with totals, status words and the posting explanation', async () => {
     renderOb({
       'GET /billing/opening-balances': ok(

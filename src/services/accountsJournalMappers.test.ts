@@ -98,3 +98,11 @@ describe('accounts journal mappers', () => {
     });
   });
 });
+
+describe('journal maker', () => {
+  it('keeps the maker id of a journal', async () => {
+    const { normaliseJournal } = await import('./accountsJournalMappers');
+    expect(normaliseJournal({ id: 1, createdBy: '7' }).createdBy).toBe(7);
+    expect(normaliseJournal({ id: 1 }).createdBy).toBeNull();
+  });
+});

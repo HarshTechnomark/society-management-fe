@@ -95,6 +95,7 @@ export function normaliseJournal(raw: unknown): JournalItem {
     refType: str(r.refType),
     refId: str(r.refId),
     version: num(r.version, 1),
+    createdBy: numN(r.createdBy),
   };
 }
 

@@ -105,7 +105,9 @@ export function ImportSettlementDialog({ onClose, onDone }: { onClose: () => voi
               </ul>
             </Alert>
           )}
-          <p className="text-[13px] text-muted">Matching with your payments runs in the background.</p>
+          {result.created > 0 && (
+            <p className="text-[13px] text-muted">Matching with your payments runs in the background.</p>
+          )}
         </div>
       ) : (
         <div className="grid gap-3">

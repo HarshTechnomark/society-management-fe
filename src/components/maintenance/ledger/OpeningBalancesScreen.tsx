@@ -207,14 +207,15 @@ function Inner() {
             </a>
             . Amounts are in rupees. A flat has arrears or an advance, not both.
           </p>
-          <div className="grid items-end gap-x-3 min-[640px]:grid-cols-2">
-            <div>
+          <div className="grid grid-cols-1 items-end gap-x-3 min-[640px]:grid-cols-2">
+            <div className="min-w-0">
               <label htmlFor="ob-file" className="mb-1.5 block text-[13px] font-semibold">
                 File
               </label>
               <input
                 id="ob-file"
                 type="file"
+                className="block w-full max-w-full min-w-0"
                 accept=".csv,.xlsx,text/csv"
                 onChange={e => setFile(e.target.files?.[0] ?? null)}
               />
@@ -290,7 +291,7 @@ function Inner() {
         </Alert>
       )}
 
-      <Card className="mt-4">
+      <Card className="mt-4 min-w-0 max-w-full overflow-hidden">
         <div role="group" aria-label="Filter by status" className="mb-3 flex flex-wrap gap-1.5">
           {FILTERS.map(f => (
             <button

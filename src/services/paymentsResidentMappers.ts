@@ -65,6 +65,7 @@ export function mapPayables(raw: unknown): Payables {
     allowAdvance: r.allowAdvance !== false,
     fee: { mode: str(fee.mode, 'SOCIETY_ABSORBS'), methods },
     gatewayReady: r.gatewayReady === true,
+    autopayAvailable: typeof r.autopayAvailable === 'boolean' ? r.autopayAvailable : null,
     offlineInstructions: strOrNull(r.offlineInstructions),
     liveOrder: r.liveOrder ? { orderId: num(live.orderId ?? live.id), status: str(live.status) } : null,
   };

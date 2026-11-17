@@ -43,6 +43,43 @@ describe('Settlements', () => {
     expect(items[1]).toHaveTextContent('Payment not found');
     expect(screen.getByText('GST on the fee')).toBeInTheDocument();
   });
+  it('says an amount difference in words with the right gap, and clears the red note after accepting', async () => {
+    const diff = settlementRaw({
+      unmatchedItems: [
+        {
+          type: 'payment',
+          gatewayPaymentId: 'pay_2',
+          amountPaise: 75000,
+          feePaise: 1500,
+          taxPaise: 270,
+          reason: 'AMOUNT_DIFFERS',
+          expectedPaise: 80000,
+        },
+      ],
+    });
+    const api = renderIt({
+      'GET /accounts/settlements/5': [
+        ok(diff),
+        ok(diff),
+        ok(settlementRaw({ status: 'POSTED', unmatchedItems: [] })),
+      ],
+      'POST /accounts/settlements/5/reconcile': err(422, 'SETTLEMENT_MISMATCH'),
+      'POST /accounts/settlements/5/accept-difference': ok(settlementRaw({ status: 'POSTED' })),
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'Details of setl_001' }));
+    const items = await screen.findAllByTestId('settlement-item');
+    expect(items[1]).toHaveTextContent('Amount differs: reported ₹750, captured ₹800');
+    expect(items[1]).not.toHaveTextContent('AMOUNT_DIFFERS');
+    expect(screen.getByText('Difference').closest('div')).toHaveTextContent('₹50');
+    await userEvent.click(screen.getByRole('button', { name: 'Reconcile' }));
+    expect(await screen.findByText(/still do not match/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Accept difference' }));
+    const dlg = (await screen.findAllByRole('dialog')).at(-1)!;
+    await userEvent.type(within(dlg).getByLabelText(/Reason/), 'Bank confirmed the payout');
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Accept difference' }));
+    await waitFor(() => expect(api.last('POST', '/accounts/settlements/5/accept-difference')).toBeTruthy());
+    await waitFor(() => expect(screen.queryByText(/still do not match/)).toBeNull());
+  });
   it('reconciles again from the drawer', async () => {
     const api = renderIt({
       'POST /accounts/settlements/5/reconcile': ok(settlementRaw({ status: 'POSTED' })),
@@ -90,6 +127,17 @@ describe('Settlements', () => {
       fileId: 55,
       gatewayProvider: 'RAZORPAY',
     });
+  });
+  it('hides the background-matching line when nothing was added', async () => {
+    fakeUploader();
+    renderIt({ 'POST /accounts/settlements/import': ok({ created: 0, skipped: 2 }) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Import a settlement report' }));
+    const dlg = await screen.findByRole('dialog');
+    await userEvent.click(within(dlg).getByRole('tab', { name: 'Paste the rows' }));
+    await userEvent.type(within(dlg).getByLabelText('Report rows'), 'a,b{Enter}1,2,3 more');
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Import report' }));
+    await within(dlg).findByTestId('import-result');
+    expect(within(dlg).queryByText(/runs in the background/)).toBeNull();
   });
   it('sends pasted JSON as settlements and lists the ones the server refused', async () => {
     const api = renderIt({

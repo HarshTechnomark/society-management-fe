@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi, navigationMock, ok, resetAll } from '@/test/helpers';
 import { BANK_FEATURES, BANK_PERMS } from '@/test/accountsBankFixtures';
@@ -32,6 +32,15 @@ describe('BRS', () => {
     expect(screen.getAllByTestId('brs-item')[0]).toHaveTextContent('Cheque 000123');
     expect(api.calls[0].path).toBe('/accounts/bank-accounts/3/brs');
     expect(screen.getByRole('button', { name: 'Export CSV' })).toBeEnabled();
+  });
+  it('says the date cannot be in the future without calling the server', async () => {
+    signInAs(BANK_PERMS, BANK_FEATURES);
+    const api = mockApi({ 'GET /accounts/bank-accounts/3/brs': ok(BRS) });
+    render(<BrsScreen bankAccountId={3} />);
+    await screen.findByText('The books and the bank statement agree.');
+    fireEvent.change(screen.getByLabelText('As of'), { target: { value: '2099-01-01' } });
+    expect(await screen.findByText(/cannot be in the future/)).toBeInTheDocument();
+    expect(api.calls).toHaveLength(1);
   });
   it('warns about a difference and shows the lock state without the Premium entitlement', async () => {
     signInAs(BANK_PERMS, BANK_FEATURES);

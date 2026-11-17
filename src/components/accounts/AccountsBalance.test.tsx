@@ -140,6 +140,23 @@ describe('Resident finances', () => {
     render(<FinancesScreen />);
     expect(await screen.findByText('You do not have access')).toBeInTheDocument();
   });
+  it('explains money moved out of a fund that was not an expense, and hides zero contributors', async () => {
+    signInAs(perms, []);
+    mockApi({
+      'GET /me/society-finances/funds/3/statement': ok({
+        fund: { id: 3, name: 'Sinking' },
+        collectedPaise: 10000000,
+        spentPaise: 10000000,
+        balancePaise: 0,
+        contributors: 0,
+        spend: [],
+      }),
+    });
+    render(<FundStatementScreen id={3} />);
+    expect(await screen.findByTestId('fund-moved')).toHaveTextContent('₹1,00,000');
+    expect(screen.queryByText(/Nothing has been spent/)).toBeNull();
+    expect(screen.queryByTestId('fund-contributors')).toBeNull();
+  });
   it('shows a fund statement and the not-available state', async () => {
     signInAs(perms, []);
     mockApi({

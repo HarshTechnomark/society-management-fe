@@ -25,6 +25,7 @@ export function FundStatementScreen({ id }: { id: number }) {
 function Inner({ id }: { id: number }) {
   const q = useLoad(() => svc.fundStatement(id), id);
   const d = q.data;
+  const movedPaise = d ? d.spentPaise - d.spend.reduce((t, r) => t + r.amountPaise, 0) : 0;
   const gone = q.error instanceof ApiError && q.error.status === 404;
   const back = (
     <Link href="/resident/finances" className="font-semibold underline">
@@ -70,15 +71,24 @@ function Inner({ id }: { id: number }) {
             <dd className="text-right font-bold" data-testid="fund-balance">
               {inr(d.balancePaise)}
             </dd>
-            <dt className="text-muted">Contributors</dt>
-            <dd className="text-right font-bold">
-              {d.contributors === 1 ? '1 household' : `${d.contributors} households`}
-            </dd>
+            {d.contributors > 0 && (
+              <>
+                <dt className="text-muted">Contributors</dt>
+                <dd className="text-right font-bold" data-testid="fund-contributors">
+                  {d.contributors === 1 ? '1 household' : `${d.contributors} households`}
+                </dd>
+              </>
+            )}
           </dl>
-          {d.spend.length === 0 ? (
+          {d.spend.length > 0 && <CategoryBars title="Spent by category" rows={d.spend} />}
+          {movedPaise > 0 && (
+            <p className="mt-4 text-[14px] text-muted" data-testid="fund-moved">
+              {inr(movedPaise)} {d.spend.length > 0 ? 'more ' : ''}was moved to another fund or adjusted, not
+              spent on an expense.
+            </p>
+          )}
+          {d.spentPaise === 0 && (
             <p className="mt-4 text-[14px] text-muted">Nothing has been spent from this fund yet.</p>
-          ) : (
-            <CategoryBars title="Spent by category" rows={d.spend} />
           )}
           <p className="mt-4 text-[13.5px]">{back}</p>
         </Card>
