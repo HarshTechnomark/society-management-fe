@@ -48,9 +48,12 @@ function Inner({ pollMs, className }: { pollMs: number; className: string }) {
   const total = b?.totalPaise;
   useEffect(() => {
     if (total === undefined) return;
-    setBump(true);
+    const t0 = window.setTimeout(() => setBump(true), 0);
     const t = window.setTimeout(() => setBump(false), 600);
-    return () => window.clearTimeout(t);
+    return () => {
+      window.clearTimeout(t0);
+      window.clearTimeout(t);
+    };
   }, [total]);
 
   return (
