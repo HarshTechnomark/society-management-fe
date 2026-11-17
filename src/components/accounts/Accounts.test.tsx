@@ -217,6 +217,25 @@ const lines = [
 ];
 
 describe('Journals', () => {
+  it('links a journal waiting for approval to its request', async () => {
+    signInAs(PERMS, FEATURES);
+    mockApi({
+      'GET /accounts/journals': ok({ items: JOURNALS }),
+      'GET /accounts/journals/2': ok({
+        ...JOURNALS[1],
+        status: 'PENDING_APPROVAL',
+        lines,
+        difference: 0,
+        approvalRequestId: 61,
+      }),
+    });
+    wrap(<JournalsScreen />);
+    await userEvent.click(await screen.findByRole('button', { name: /Open (draft )?2/ }));
+    expect(await screen.findByRole('link', { name: 'Open the approval' })).toHaveAttribute(
+      'href',
+      '/admin/approvals/61',
+    );
+  });
   it('lists system and manual entries with chips and opens a system voucher with its source link', async () => {
     signInAs(PERMS, FEATURES);
     mockApi({

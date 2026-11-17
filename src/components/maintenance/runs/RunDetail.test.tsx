@@ -241,7 +241,7 @@ describe('Run detail: statuses', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open in approvals' })).toHaveAttribute(
       'href',
-      '/admin/dev-approvals',
+      '/admin/approvals/12',
     );
     expect(screen.queryByRole('button', { name: 'Cancel run' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Exclude A-101' })).toBeNull();
@@ -417,7 +417,7 @@ describe('Run detail: publish (submit for approval)', () => {
     expect(result).toHaveTextContent('Sent for approval');
     expect(within(result).getByRole('link', { name: 'Open in approvals' })).toHaveAttribute(
       'href',
-      '/admin/dev-approvals',
+      '/admin/approvals/12',
     );
     await userEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(
@@ -484,7 +484,7 @@ describe('Run detail: publish (submit for approval)', () => {
     await userEvent.click(within(d).getByRole('button', { name: 'Submit for approval' }));
     expect(await within(d).findByRole('link', { name: 'Open approvals' })).toHaveAttribute(
       'href',
-      '/admin/dev-approvals',
+      '/admin/approvals?type=BILLING_RUN_PUBLISH',
     );
   });
 });

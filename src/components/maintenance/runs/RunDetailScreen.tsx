@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { inr, shortDate } from '@/lib/money';
-import { approvalsPageHref } from '@/services/residents.service';
+import { approvalHref } from '@/components/approvals/links';
 import { billingRunsService } from '@/services/billingRuns.service';
 import type { Run } from '@/types/billingRuns';
 import { billCount, billingRunError, computeErrorText, periodLabel, plainError, rangeText } from './format';
@@ -167,7 +167,10 @@ function Inner({ id }: { id: number }) {
       {s === 'PENDING_APPROVAL' && (
         <Alert tone="info">
           Waiting for approval by a different committee member.{' '}
-          <Link className="font-bold underline" href={approvalsPageHref()}>
+          <Link
+            className="font-bold underline"
+            href={approvalHref(run.approvalRequestId, 'BILLING_RUN_PUBLISH')}
+          >
             Open in approvals
           </Link>
         </Alert>

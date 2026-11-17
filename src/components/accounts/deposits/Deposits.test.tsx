@@ -71,6 +71,13 @@ describe('Deposits list', () => {
 });
 
 describe('Deposit drawer actions', () => {
+  it('links a waiting refund to its approval request', async () => {
+    await open(dep({ status: 'REFUND_PENDING', refundRequestedPaise: 2500000, refundApprovalRequestId: 44 }));
+    expect(screen.getByRole('link', { name: 'Open the approval' })).toHaveAttribute(
+      'href',
+      '/admin/approvals/44',
+    );
+  });
   const open = async (d: object, routes: Parameters<typeof mockApi>[0] = {}) => {
     const api = renderIt([d], routes);
     await userEvent.click(await screen.findByRole('button', { name: /Details of DEP-/ }));

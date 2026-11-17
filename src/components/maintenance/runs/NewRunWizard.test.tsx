@@ -412,7 +412,7 @@ describe('New run wizard: step 3, confirm', () => {
     expect(result).toHaveTextContent('BR-2026-11 was submitted.');
     expect(within(result).getByRole('link', { name: 'Open in approvals' })).toHaveAttribute(
       'href',
-      '/admin/dev-approvals',
+      '/admin/approvals/5',
     );
     expect(within(result).getByRole('link', { name: 'Open the run' })).toHaveAttribute(
       'href',

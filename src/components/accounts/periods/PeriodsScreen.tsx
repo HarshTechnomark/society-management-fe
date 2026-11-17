@@ -1,5 +1,7 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
+import { approvalHref } from '@/components/approvals/links';
 import { Card, Page, PageHead } from '@/components/common/PageHead';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Gate } from '@/components/setup/Gate';
@@ -100,7 +102,13 @@ function Inner() {
             {p.pendingUnlock && !p.unlock && (
               <p className="mt-2 text-[13.5px] text-muted">
                 Request to open from {shortDate(p.pendingUnlock.fromDate)} for {p.pendingUnlock.hours} hours:{' '}
-                {p.pendingUnlock.reason}
+                {p.pendingUnlock.reason}.{' '}
+                <Link
+                  className="font-semibold underline"
+                  href={approvalHref(p.pendingUnlock.approvalRequestId, 'PERIOD_UNLOCK')}
+                >
+                  Open the approval
+                </Link>
               </p>
             )}
             {!lockOn && (

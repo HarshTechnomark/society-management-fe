@@ -130,6 +130,7 @@ export function normaliseJournalDetail(raw: unknown): JournalDetail {
     reversedBy: ref(r.reversedBy),
     reversalReason: strN(r.reversalReason),
     rejectionReason: strN(r.rejectionReason),
+    approvalRequestId: numN(r.approvalRequestId),
     sourceLink: strN(link.refType)
       ? { refType: str(link.refType), refId: str(link.refId), label: str(link.label, str(link.refType)) }
       : null,

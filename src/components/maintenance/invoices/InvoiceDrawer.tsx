@@ -12,7 +12,7 @@ import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { inr, shortDate } from '@/lib/money';
 import { billingInvoicesService } from '@/services/billingInvoices.service';
-import { approvalsPageHref } from '@/services/residents.service';
+import { approvalHref } from '@/components/approvals/links';
 import type { InvoiceDetail, InvoiceLine, NoteSummary } from '@/types/billingInvoices';
 import { CancelInvoiceDialog, WriteOffDialog } from './ActionDialogs';
 import { InvoiceStatusChip, NoteStatusChip, OverdueChip } from './InvoiceBits';
@@ -293,7 +293,10 @@ function Body({
       {waiting && (
         <Alert tone="warn">
           Waiting for approval.{' '}
-          <a className="font-semibold underline" href={approvalsPageHref()}>
+          <a
+            className="font-semibold underline"
+            href={approvalHref(null, cancelAsked ? 'INVOICE_CANCEL' : 'CREDIT_NOTE')}
+          >
             Open the approvals page
           </a>
         </Alert>

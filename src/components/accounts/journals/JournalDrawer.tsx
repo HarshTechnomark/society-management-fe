@@ -18,7 +18,7 @@ import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { inr, shortDate } from '@/lib/money';
 import { accountsJournalService } from '@/services/accountsJournal.service';
-import { approvalsPageHref } from '@/services/residents.service';
+import { approvalHref } from '@/components/approvals/links';
 import type { JournalDetail } from '@/types/accountsJournal';
 import {
   STATUS_LABEL,
@@ -199,8 +199,11 @@ export function JournalDrawer({
             {j.status === 'PENDING_APPROVAL' && (
               <p className="mb-3 text-[13.5px] text-muted">
                 Waiting for a different committee member to approve it.{' '}
-                <Link className="font-semibold underline" href={`${approvalsPageHref()}?source=accounts`}>
-                  Open approvals
+                <Link
+                  className="font-semibold underline"
+                  href={approvalHref(j.approvalRequestId, 'MANUAL_JOURNAL')}
+                >
+                  Open the approval
                 </Link>
               </p>
             )}

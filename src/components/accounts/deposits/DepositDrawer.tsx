@@ -1,5 +1,7 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
+import { approvalHref } from '@/components/approvals/links';
 import { KV } from '@/components/residents/common';
 import { Button } from '@/components/ui/Button';
 import { Drawer } from '@/components/ui/Drawer';
@@ -86,6 +88,17 @@ export function DepositDrawer({
           )}
           {d.notes && <KV label="Notes">{d.notes}</KV>}
         </dl>
+        {d.status === 'REFUND_PENDING' && (
+          <p className="text-[13.5px] text-muted">
+            The refund waits for a second committee member.{' '}
+            <Link
+              className="font-semibold underline"
+              href={approvalHref(d.refundApprovalRequestId, 'DEPOSIT_REFUND')}
+            >
+              Open the approval
+            </Link>
+          </p>
+        )}
         <section aria-label="Timeline">
           <h3 className="mb-2 text-[14px] font-bold">Timeline</h3>
           <ol className="grid gap-2">

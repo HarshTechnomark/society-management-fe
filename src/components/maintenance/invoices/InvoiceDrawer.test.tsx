@@ -112,7 +112,7 @@ describe('Invoice drawer: reading', () => {
     expect(rows[2]).toHaveTextContent('Additional charge');
     expect(screen.getByRole('link', { name: 'Open the approvals page' })).toHaveAttribute(
       'href',
-      expect.stringContaining('approvals'),
+      '/admin/approvals?type=CREDIT_NOTE',
     );
   });
 

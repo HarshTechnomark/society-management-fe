@@ -16,7 +16,8 @@ import { useFeature } from '@/hooks/useFeature';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { inr, shortDate } from '@/lib/money';
-import { approvalsPageHref, residentsService } from '@/services/residents.service';
+import { approvalHref } from '@/components/approvals/links';
+import { residentsService } from '@/services/residents.service';
 import type { MoveRequest, Permit, Transfer, ViolationCategory } from '@/types/residents';
 import {
   FormDialog,
@@ -346,7 +347,10 @@ function MoveDrawer({
             </Button>
           )}
           {m.status === 'PENDING_APPROVAL' && (
-            <Link className="self-center text-[14px] font-semibold underline" href={approvalsPageHref()}>
+            <Link
+              className="self-center text-[14px] font-semibold underline"
+              href={approvalHref(m.approvalRequestId, m.type)}
+            >
               Open in approvals
             </Link>
           )}
@@ -617,7 +621,10 @@ function PermitDrawer({
               </Button>
             )}
             {p.status === 'PENDING_APPROVAL' && (
-              <Link className="self-center text-[14px] font-semibold underline" href={approvalsPageHref()}>
+              <Link
+                className="self-center text-[14px] font-semibold underline"
+                href={approvalHref(p.approvalRequestId, 'RENOVATION_PERMIT')}
+              >
                 Open in approvals
               </Link>
             )}
@@ -959,7 +966,7 @@ function TransferDrawer({
                 {t.status === 'PENDING_APPROVAL' && (
                   <Link
                     className="self-center text-[14px] font-semibold underline"
-                    href={approvalsPageHref()}
+                    href={approvalHref(t.approvalRequestId, 'OWNERSHIP_TRANSFER')}
                   >
                     Open in approvals
                   </Link>

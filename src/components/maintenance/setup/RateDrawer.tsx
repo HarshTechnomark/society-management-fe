@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/Toast';
 import { PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { inr, shortDate } from '@/lib/money';
-import { approvalsPageHref } from '@/services/residents.service';
+import { approvalHref } from '@/components/approvals/links';
 import { billingSetupService } from '@/services/billingSetup.service';
 import { societySetupService } from '@/services/society-setup.service';
 import type { BillingRule, ChargeHead, CycleKey, SimulateItem, SplitRule } from '@/types/billingSetup';
@@ -154,7 +154,10 @@ export function RateDrawer({
         <Alert tone="warn">
           A change from {shortDate(pending.effectiveFrom)} is waiting for approval. You can add another change
           after it is decided.{' '}
-          <a className="font-semibold underline" href={approvalsPageHref()}>
+          <a
+            className="font-semibold underline"
+            href={approvalHref(pending.approvalRequestId, 'BILLING_RULE_CHANGE')}
+          >
             Open in approvals
           </a>
         </Alert>

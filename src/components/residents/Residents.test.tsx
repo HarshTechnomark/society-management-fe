@@ -21,6 +21,7 @@ import {
   vacantFlat,
 } from '@/test/residentsFixtures';
 import { fakeUploader, signInAs } from '@/test/residentsHelpers';
+import { detailRaw } from '@/test/approvalsFixtures';
 import { ResidentsScreen } from './ResidentsScreen';
 
 vi.mock('next/navigation', () => navigationMock());
@@ -461,19 +462,22 @@ describe('Join requests tab', () => {
   it('shows cards with the document chip and approves through module 14', async () => {
     const api = renderIt({
       'GET /join-requests': ok([joinRequest()], 'OK', page(1)),
-      'POST /dev/approvals/555/approve': ok({}),
+      'GET /approvals/555': ok(detailRaw({ id: 555, version: 3 })),
+      'POST /approvals/555/approve': ok({ id: 555, status: 'APPROVED', version: 4 }),
     });
     await tab(/Join requests/);
     expect(await screen.findByText('Asha Rao')).toBeInTheDocument();
     expect(screen.getByText('Agreement and ID received')).toBeInTheDocument();
     expect(screen.getByText('Waiting for the committee')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Approve' }));
-    await waitFor(() => expect(api.last('POST', '/dev/approvals/555/approve')).toBeTruthy());
+    // The approvals engine needs the current version: it is read first.
+    await waitFor(() => expect(api.last('POST', '/approvals/555/approve')?.body).toEqual({ version: 3 }));
   });
   it('rejects with a reason', async () => {
     const api = renderIt({
       'GET /join-requests': ok([joinRequest()], 'OK', page(1)),
-      'POST /dev/approvals/555/reject': ok({}),
+      'GET /approvals/555': ok(detailRaw({ id: 555, version: 3 })),
+      'POST /approvals/555/reject': ok({ id: 555, status: 'REJECTED', version: 4 }),
     });
     await tab(/Join requests/);
     await userEvent.click(await screen.findByRole('button', { name: 'Reject' }));
@@ -481,7 +485,10 @@ describe('Join requests tab', () => {
     await userEvent.type(within(confirm).getByRole('textbox', { name: /Reason/ }), 'Not a resident');
     await userEvent.click(within(confirm).getByRole('button', { name: 'Reject' }));
     await waitFor(() =>
-      expect(api.last('POST', '/dev/approvals/555/reject')?.body).toEqual({ reason: 'Not a resident' }),
+      expect(api.last('POST', '/approvals/555/reject')?.body).toEqual({
+        version: 3,
+        reason: 'Not a resident',
+      }),
     );
   });
   it('disables the buttons with the reason without the approver permission or while the owner has not confirmed', async () => {

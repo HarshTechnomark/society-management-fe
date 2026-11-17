@@ -65,6 +65,8 @@ export function mapExpense(raw: unknown): ExpenseItem {
     collectionTitle: strOrNull(r.collectionTitle ?? col.title),
     billFileCount: num(r.billFileCount, arr(r.files).length),
     approvalRequestId: numOrNull(r.approvalRequestId),
+    approvalRequired: typeof r.approvalRequired === 'boolean' ? r.approvalRequired : null,
+    approvalThresholdPaise: numOrNull(r.approvalThresholdPaise),
     createdByName: strOrNull(r.createdByName) ?? nameOf(r.createdBy),
     version: num(r.version, 1),
   };

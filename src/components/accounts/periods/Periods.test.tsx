@@ -11,6 +11,26 @@ vi.mock('next/navigation', () => navigationMock());
 beforeEach(resetAll);
 
 describe('Periods screen', () => {
+  it('links a waiting unlock to its approval request', async () => {
+    signInAs(PERIOD_PERMS, ACCOUNT_FEATURES);
+    mockApi({
+      'GET /accounts/periods': ok(
+        periodsRaw({
+          pendingUnlock: {
+            approvalRequestId: 31,
+            fromDate: '2026-09-01',
+            hours: 24,
+            reason: 'Late bank entry',
+          },
+        }),
+      ),
+    });
+    render(<PeriodsScreen />);
+    expect(await screen.findByRole('link', { name: 'Open the approval' })).toHaveAttribute(
+      'href',
+      '/admin/approvals/31',
+    );
+  });
   it('shows the lock badge, years and the blockers of a year that cannot close', async () => {
     signInAs(PERIOD_PERMS, ACCOUNT_FEATURES);
     mockApi({ 'GET /accounts/periods': ok(periodsRaw()) });

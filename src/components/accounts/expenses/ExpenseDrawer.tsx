@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { approvalHref } from '@/components/approvals/links';
 import { useState } from 'react';
 import { ConfirmReason } from '@/components/common/ConfirmReason';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -156,7 +157,7 @@ export function ExpenseDrawer({
                 {x.approvalRequestId != null && (
                   <>
                     {' '}
-                    <Link href="/admin/dev-approvals" className="font-semibold underline">
+                    <Link href={approvalHref(x.approvalRequestId)} className="font-semibold underline">
                       Open the approval
                     </Link>
                   </>
@@ -263,7 +264,7 @@ export function ExpenseDrawer({
                 </ol>
                 {x.approvalRequestId != null && x.status !== 'PENDING_APPROVAL' && x.approval?.status && (
                   <Link
-                    href="/admin/dev-approvals"
+                    href={approvalHref(x.approvalRequestId)}
                     className="mt-2 inline-block text-[13.5px] font-semibold underline"
                   >
                     Open the approval

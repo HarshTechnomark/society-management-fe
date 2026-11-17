@@ -214,6 +214,9 @@ function Inner() {
       )}
       {adding && (
         <ExpenseModal
+          approvalThresholdPaise={
+            data?.items.find(x => x.approvalThresholdPaise != null)?.approvalThresholdPaise
+          }
           onClose={() => setAdding(false)}
           onSaved={(r, submitted) => {
             setAdding(false);

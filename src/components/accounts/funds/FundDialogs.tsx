@@ -1,5 +1,7 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
+import { approvalHref } from '@/components/approvals/links';
 import { FundPicker } from '@/components/accounts/pickers/FundPicker';
 import { accountsError, fieldErrors } from '@/components/accounts/format';
 import { rupeesToPaise, todayIso } from '@/components/payments/ops/format';
@@ -209,6 +211,8 @@ export function TransferDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failed, setFailed] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** The approval request of a transfer that waits; the dialog then links to it. */
+  const [sent, setSent] = useState<number | null>(null);
   const id = (v: string) => (v === 'general' ? null : Number(v));
 
   const submit = async () => {
@@ -234,7 +238,8 @@ export function TransferDialog({
         reason: reason.trim(),
       });
       toast.show(r.done ? 'Money moved' : 'Sent for approval. The money moves once it is approved.');
-      onDone();
+      if (!r.done && r.approvalRequestId) setSent(r.approvalRequestId);
+      else onDone();
     } catch (err) {
       setErrors(fieldErrors(err));
       setFailed(accountsError(err));
@@ -243,6 +248,20 @@ export function TransferDialog({
     }
   };
 
+  if (sent)
+    return (
+      <Modal
+        open
+        onClose={onDone}
+        title="Transfer sent for approval"
+        description="The money moves once a second committee member approves it."
+        footer={<Button onClick={onDone}>Done</Button>}
+      >
+        <Link className="text-[14px] font-semibold underline" href={approvalHref(sent, 'FUND_TRANSFER')}>
+          Open the approval
+        </Link>
+      </Modal>
+    );
   return (
     <Modal
       open

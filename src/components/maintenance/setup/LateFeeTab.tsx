@@ -9,7 +9,7 @@ import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { shortDate } from '@/lib/money';
 import { billingSetupService } from '@/services/billingSetup.service';
-import { approvalsPageHref } from '@/services/residents.service';
+import { approvalHref } from '@/components/approvals/links';
 import { LateFeeDrawer } from './LateFeeDrawer';
 import { POLICY_STATUS_LABEL, POLICY_STATUS_TONE, plainError, today } from './format';
 import { describePolicy, policyInForce } from './lateFee';
@@ -75,7 +75,10 @@ export function LateFeeTab() {
               <p className="mt-2 text-[13.5px]">
                 <Chip tone="warn">Waiting for approval</Chip> {describePolicy(pending)} from{' '}
                 {shortDate(pending.effectiveFrom)}{' '}
-                <a className="font-semibold underline" href={approvalsPageHref()}>
+                <a
+                  className="font-semibold underline"
+                  href={approvalHref(pending.approvalRequestId, 'LATE_FEE_POLICY_CHANGE')}
+                >
                   Open in approvals
                 </a>
               </p>

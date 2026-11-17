@@ -14,7 +14,7 @@ import { usePermission } from '@/hooks/usePermission';
 import { inr, shortDate } from '@/lib/money';
 import { plural } from '@/lib/plural';
 import { collectionsService } from '@/services/collections.service';
-import { approvalsPageHref } from '@/services/residents.service';
+import { approvalHref } from '@/components/approvals/links';
 import type { CollectionRequest } from '@/types/collections';
 import { ActionDialogs } from './DetailDialogs';
 import { CollectionStatusChip, Meter, TypeChip } from './CollectionBits';
@@ -176,7 +176,7 @@ function Inner({ id }: { id: number }) {
         </Button>
       )}
       {status === 'PENDING_APPROVAL' && canApprove && (
-        <Link href={approvalsPageHref()} className="text-[14px] font-semibold underline">
+        <Link href={approvalHref(null, 'COLLECTION_PUBLISH')} className="text-[14px] font-semibold underline">
           Open the approval
         </Link>
       )}

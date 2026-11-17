@@ -192,7 +192,7 @@ describe('rates', () => {
     expect(within(card).getAllByText('Waiting for approval').length).toBeGreaterThan(0);
     expect(within(card).getByRole('link', { name: 'Open in approvals' })).toHaveAttribute(
       'href',
-      '/admin/dev-approvals',
+      '/admin/approvals?type=BILLING_RULE_CHANGE',
     );
   });
   it('shows an empty state and an error state', async () => {

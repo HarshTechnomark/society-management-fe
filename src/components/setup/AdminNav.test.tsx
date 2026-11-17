@@ -1,7 +1,8 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetAll } from '@/test/helpers';
+import { mockApi, ok, resetAll, sampleMe } from '@/test/helpers';
+import { countsRaw } from '@/test/approvalsFixtures';
 import { signIn } from '@/test/setupHelpers';
 import { AdminNav, activeHref } from './AdminNav';
 
@@ -148,5 +149,51 @@ describe('Admin navigation', () => {
     render(<AdminNav>x</AdminNav>);
     for (const name of ['Society balance', 'Funds', 'Journals', 'Reports', 'Bank accounts', 'Settlements'])
       expect(nav().getByRole('link', { name })).toBeInTheDocument();
+  });
+
+  it('shows the Approvals group with the waiting-for-me badge from counts', async () => {
+    const perms = ['approvals.inbox.view', 'settings.approval_rules.view'];
+    const api = mockApi({
+      'GET /approvals/counts': ok(countsRaw({ forMe: 4 })),
+      'GET /auth/me': ok(sampleMe({ permissions: perms })),
+    });
+    signIn(perms);
+    render(<AdminNav>x</AdminNav>);
+    const nav = within(screen.getByRole('navigation', { name: 'Admin' }));
+    expect(nav.getByRole('link', { name: /^Approvals/ })).toHaveAttribute('href', '/admin/approvals');
+    expect(nav.getByRole('link', { name: 'Approval rules' })).toHaveAttribute(
+      'href',
+      '/admin/approvals/rules',
+    );
+    expect(nav.getByRole('link', { name: 'Approval settings' })).toHaveAttribute(
+      'href',
+      '/admin/approvals/settings',
+    );
+    expect(nav.getByRole('link', { name: 'Delegations' })).toHaveAttribute(
+      'href',
+      '/admin/approvals/delegations',
+    );
+    expect(await nav.findByLabelText('4 waiting for you')).toHaveTextContent('4');
+    expect(api.last('GET', '/approvals/counts')).toBeTruthy();
+  });
+
+  it('lets a maker without the inbox reach Approvals (Submitted by me), without a badge or rules', async () => {
+    const api = mockApi({ 'GET /approvals/counts': ok(countsRaw()) });
+    signIn(['finance.expenses.create']);
+    render(<AdminNav>x</AdminNav>);
+    const nav = within(screen.getByRole('navigation', { name: 'Admin' }));
+    expect(nav.getByRole('link', { name: 'Approvals' })).toHaveAttribute('href', '/admin/approvals');
+    expect(nav.queryByRole('link', { name: 'Approval rules' })).toBeNull();
+    expect(nav.queryByRole('link', { name: 'Delegations' })).toBeNull();
+    await waitFor(() => expect(api.last('GET', '/approvals/counts')).toBeFalsy());
+  });
+
+  it('hides the badge when nothing waits and marks the approval pages current', async () => {
+    mockApi({ 'GET /approvals/counts': ok(countsRaw({ forMe: 0 })) });
+    signIn(['approvals.inbox.view']);
+    render(<AdminNav>x</AdminNav>);
+    await waitFor(() => expect(screen.queryByLabelText(/waiting for you/)).toBeNull());
+    expect(activeHref('/admin/approvals/42')).toBe('/admin/approvals');
+    expect(activeHref('/admin/approvals/rules')).toBe('/admin/approvals/rules');
   });
 });

@@ -7,6 +7,7 @@ import { detailRaw, EXP_FEATURES, EXP_PERMS, expenseRaw, ledgerTree } from '@/te
 import { err, mockApi, navigationMock, ok, resetAll } from '@/test/helpers';
 import { signIn } from '@/test/setupHelpers';
 import { CashBookScreen, cashBookCsv } from '../cashbook/CashBookScreen';
+import { approvalPolicyText } from './ExpenseModal';
 import { ExpensesScreen } from './ExpensesScreen';
 
 vi.mock('next/navigation', () => navigationMock());
@@ -59,6 +60,26 @@ describe('Expenses list', () => {
 });
 
 describe('Add expense', () => {
+  it('says what the API rule approves automatically', async () => {
+    renderIt(<ExpensesScreen />, {
+      'GET /expenses': ok([expenseRaw({ approvalRequired: true, approvalThresholdPaise: 500000 })], 'OK', pg),
+    });
+    await screen.findAllByTestId('expense-row');
+    await userEvent.click(screen.getByRole('button', { name: 'Add expense' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent(
+      'Expenses up to ₹5,000 are approved automatically; above that a second committee member approves.',
+    );
+  });
+  it('words the approval rule from the threshold, and stays neutral without one', () => {
+    expect(approvalPolicyText(500000)).toBe(
+      'Expenses up to ₹5,000 are approved automatically; above that a second committee member approves.',
+    );
+    expect(approvalPolicyText(0)).toBe(
+      'Every expense is approved by a second committee member before it is paid.',
+    );
+    expect(approvalPolicyText(null)).toMatch(/when the approval rules ask for it/);
+  });
   it('checks fields on the client and sends submit true with the paid-from ledger', async () => {
     const api = renderIt(<ExpensesScreen />, {
       'POST /expenses': ok({ id: 9, status: 'PENDING_APPROVAL', version: 2 }),
@@ -211,7 +232,7 @@ describe('Expense drawer', () => {
     await open('PENDING_APPROVAL', { approvalRequestId: 77 });
     expect(screen.getByRole('link', { name: 'Open the approval' })).toHaveAttribute(
       'href',
-      '/admin/dev-approvals',
+      '/admin/approvals/77',
     );
     expect(screen.getByRole('button', { name: 'Withdraw' })).toBeInTheDocument();
   });

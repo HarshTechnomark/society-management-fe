@@ -31,6 +31,10 @@ export interface ExpenseItem {
   collectionTitle: string | null;
   billFileCount: number;
   approvalRequestId: number | null;
+  /** From the API (module 14 `EXPENSE` rule): null when it sends nothing. */
+  approvalRequired: boolean | null;
+  /** Expenses up to this amount are approved automatically; null when the API sends nothing. */
+  approvalThresholdPaise: number | null;
   createdByName: string | null;
   version: number;
 }

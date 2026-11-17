@@ -7,6 +7,7 @@ import { Chip } from '@/components/ui/Chip';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
+import { approvalsService } from '@/services/approvals.service';
 import { residentsService } from '@/services/residents.service';
 import type { JoinRequest } from '@/types/residents';
 import { Empty, Loading, StatusChip, useRun } from './common';
@@ -34,7 +35,7 @@ export function JoinRequestsTab({ refreshKey, onChanged }: { refreshKey: number;
           if (
             rejecting &&
             (await run(
-              () => residentsService.approvalReject(rejecting.approvalRequestId!, text),
+              () => approvalsService.rejectLatest(rejecting.approvalRequestId!, text),
               'Join request rejected',
             ))
           ) {
@@ -89,7 +90,7 @@ export function JoinRequestsTab({ refreshKey, onChanged }: { refreshKey: number;
                             onClick={async () => {
                               if (
                                 await run(
-                                  () => residentsService.approvalApprove(j.approvalRequestId!),
+                                  () => approvalsService.approveLatest(j.approvalRequestId!),
                                   'Join request approved',
                                 )
                               )

@@ -4,7 +4,7 @@ import { Chip } from '@/components/ui/Chip';
 import { Drawer } from '@/components/ui/Drawer';
 import { useLoad } from '@/hooks/useLoad';
 import { shortDate } from '@/lib/money';
-import { approvalsPageHref } from '@/services/residents.service';
+import { approvalHref } from '@/components/approvals/links';
 import { billingSetupService } from '@/services/billingSetup.service';
 import type { BillingRule } from '@/types/billingSetup';
 import { VERSION_LABEL, VERSION_TONE, describeRate, plainError, type DescribeCtx } from './format';
@@ -58,7 +58,10 @@ export function RuleHistory({
                 <p className="text-[13px] text-bad">Rejected: {v.rejectedReason}</p>
               )}
               {v.status === 'PENDING_APPROVAL' && (
-                <a className="text-[13px] font-semibold underline" href={approvalsPageHref()}>
+                <a
+                  className="text-[13px] font-semibold underline"
+                  href={approvalHref(v.approvalRequestId, 'BILLING_RULE_CHANGE')}
+                >
                   Open in approvals
                 </a>
               )}

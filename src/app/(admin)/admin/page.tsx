@@ -1,3 +1,4 @@
+import { ApprovalsWaitingCard } from '@/components/approvals/home/ApprovalsWaitingCard';
 import { LiveCollectionsCard } from '@/components/payments/collections/LiveCollectionsCard';
 import { SocietyBalanceCard } from '@/components/accounts/balance/SocietyBalanceCard';
 import { SetupBanner } from '@/components/setup/SetupBanner';
@@ -8,6 +9,7 @@ export default function Page() {
   return (
     <main className="mx-auto max-w-xl p-6">
       <SetupBanner />
+      <ApprovalsWaitingCard />
       <SocietyBalanceCard />
       <LiveCollectionsCard />
       <div className="glass p-8">

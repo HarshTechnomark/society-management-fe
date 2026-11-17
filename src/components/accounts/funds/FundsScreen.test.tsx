@@ -140,7 +140,10 @@ describe('Funds', () => {
     await userEvent.type(within(dlg).getByLabelText(/^Amount/), '2500');
     await userEvent.type(within(dlg).getByLabelText(/^Reason/), 'Festival budget');
     await userEvent.click(within(dlg).getByRole('button', { name: 'Request transfer' }));
-    expect(await screen.findByText(/Sent for approval/)).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Open the approval' })).toHaveAttribute(
+      'href',
+      '/admin/approvals/12',
+    );
     expect(api.last('POST', '/accounts/fund-transfers')!.body).toMatchObject({
       fromFundId: null,
       toFundId: 7,
