@@ -133,7 +133,7 @@ export function normaliseJournalDetail(raw: unknown): JournalDetail {
       ? { refType: str(link.refType), refId: str(link.refId), label: str(link.label, str(link.refType)) }
       : null,
     postedAt: strN(r.postedAt),
-    audit: (Array.isArray(r.audit) ? r.audit : []).map(a => {
+    audit: (Array.isArray(r.timeline) ? r.timeline : Array.isArray(r.audit) ? r.audit : []).map(a => {
       const x = obj(a);
       return {
         at: str(x.at, str(x.createdAt)),
@@ -149,11 +149,14 @@ export function normaliseOpening(raw: unknown): OpeningBalanceResult {
   const r = obj(raw);
   const j = obj(r.journal);
   return {
-    journalId: numN(r.journalId) ?? numN(j.id) ?? numN(r.id),
+    journalId: numN(r.journalEntryId) ?? numN(r.journalId) ?? numN(j.id) ?? numN(r.id),
     voucherNo: strN(r.voucherNo) ?? strN(j.voucherNo),
-    asOfDate: strN(r.asOfDate) ?? strN(j.entryDate),
+    asOfDate: strN(r.entryDate) ?? strN(r.asOfDate) ?? strN(j.entryDate),
     totalPaise: num(r.totalPaise, num(j.totalPaise)),
-    autoBalancePaise: num(r.autoBalancePaise),
+    autoBalancePaise: num(
+      r.autoBalancePaise,
+      num(obj(r.balancingLine).debitPaise) + num(obj(r.balancingLine).creditPaise),
+    ),
   };
 }
 

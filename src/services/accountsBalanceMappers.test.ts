@@ -45,4 +45,12 @@ describe('accountsBalanceMappers', () => {
     expect(s.contributors).toBe(4);
     expect(s.spend).toHaveLength(1);
   });
+  it('maps the API movement directions IN, OUT and FUND_ONLY', () => {
+    const m = (direction: string, delta: number) =>
+      mapBalance({ movements: [{ journalEntryId: 1, direction, deltaTotalPaise: delta }] }).movements[0]!
+        .direction;
+    expect(m('IN', 5)).toBe('UP');
+    expect(m('OUT', -5)).toBe('DOWN');
+    expect(m('FUND_ONLY', 0)).toBe('MOVE');
+  });
 });

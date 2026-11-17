@@ -70,4 +70,31 @@ describe('accounts journal mappers', () => {
       voucherNo: 'OB/2',
     });
   });
+  it('reads the real API shapes: the timeline and the opening result', () => {
+    const d = normaliseJournalDetail({
+      id: 1,
+      lines: [],
+      timeline: [
+        { at: '2026-11-03T10:00:00.000Z', action: 'journal.submitted', actorName: 'Meera', reason: null },
+      ],
+    });
+    expect(d.audit).toEqual([
+      { at: '2026-11-03T10:00:00.000Z', action: 'journal.submitted', by: 'Meera', note: null },
+    ]);
+    expect(
+      normaliseOpening({
+        journalEntryId: 12,
+        voucherNo: 'JV/2026-27/000001',
+        entryDate: '2026-04-01',
+        totalPaise: 500,
+        balancingLine: { ledgerAccountCode: '3900', debitPaise: 0, creditPaise: 70 },
+      }),
+    ).toEqual({
+      journalId: 12,
+      voucherNo: 'JV/2026-27/000001',
+      asOfDate: '2026-04-01',
+      totalPaise: 500,
+      autoBalancePaise: 70,
+    });
+  });
 });
