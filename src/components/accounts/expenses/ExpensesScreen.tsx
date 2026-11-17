@@ -18,7 +18,14 @@ import { accountsExpensesService as svc } from '@/services/accountsExpenses.serv
 import type { ExpenseItem, ExpenseQuery } from '@/types/accountsExpenses';
 import { ExpenseDrawer } from './ExpenseDrawer';
 import { ExpenseModal } from './ExpenseModal';
-import { STATUS_FILTERS, expenseError, plainError, statusInfo, type StatusFilterKey } from './format';
+import {
+  STATUS_FILTERS,
+  downloadBlob,
+  expenseError,
+  plainError,
+  statusInfo,
+  type StatusFilterKey,
+} from './format';
 
 const E = PERMISSIONS.finance.expenses;
 const LIMIT = 20;
@@ -77,8 +84,7 @@ function Inner() {
   const exportIt = async () => {
     setExporting(true);
     try {
-      await svc.exportJob(query);
-      toast.show('Your export is being prepared. You will be told when it is ready.');
+      downloadBlob(await svc.exportCsv(query), 'expenses.csv');
     } catch (e) {
       toast.show(expenseError(e), 'error');
     } finally {

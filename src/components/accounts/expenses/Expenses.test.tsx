@@ -50,8 +50,8 @@ describe('Expenses list', () => {
     expect(screen.queryByRole('button', { name: 'Add expense' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Export CSV' })).toBeNull();
   });
-  it('starts the export job', async () => {
-    const api = renderIt(<ExpensesScreen />, { 'GET /expenses/export': ok({ exportJobId: 5 }) });
+  it('downloads the CSV', async () => {
+    const api = renderIt(<ExpensesScreen />, { 'GET /expenses/export': ok({}) });
     await screen.findAllByTestId('expense-row');
     await userEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
     await waitFor(() => expect(api.calls.some(c => c.path === '/expenses/export')).toBe(true));

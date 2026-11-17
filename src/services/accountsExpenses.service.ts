@@ -1,5 +1,5 @@
 /** Module 13 expense and cash book calls (spec 8.4 to 8.10). Every create and money call sends an Idempotency-Key. */
-import { api, apiList, ApiError } from '@/lib/apiClient';
+import { api, apiBlob, apiList, ApiError } from '@/lib/apiClient';
 import {
   mapBank,
   mapCashBook,
@@ -59,11 +59,9 @@ export const accountsExpensesService = {
       ...mapExpenseResult(r),
       reversalVoucherNo: ((r as { reversalVoucherNo?: unknown } | null)?.reversalVoucherNo as string) ?? null,
     })),
-  /** Starts the export job (202); the file arrives by notification. */
-  exportJob: (q: ExpenseQuery, format: 'csv' | 'xlsx' = 'csv') =>
-    api<{ exportJobId?: number }>('/expenses/export', {
-      query: clean({ ...q, page: undefined, limit: undefined, format }),
-    }),
+  /** CSV of the expenses the filters match (synchronous download). */
+  exportCsv: (q: ExpenseQuery) =>
+    apiBlob('/expenses/export', { query: clean({ ...q, page: undefined, limit: undefined, format: 'csv' }) }),
 
   cashBook: async (q: CashBookQuery) => {
     const r = await apiList<unknown>('/accounts/cash-book', { query: clean(q) });
