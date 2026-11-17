@@ -1,0 +1,3 @@
+settlement_id,settlement_date,utr,type,payment_id,refund_id,amount,fee,tax,net
+setl_001,2026-11-05,UTR1234567890,payment,pay_001,,12500.00,29.50,5.31,12465.19
+setl_001,2026-11-05,UTR1234567890,payment,pay_002,,8000.00,18.88,3.40,7977.72
