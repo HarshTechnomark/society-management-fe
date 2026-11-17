@@ -28,6 +28,11 @@ const ENTITY_LABEL: Record<string, string> = {
   OFFLINE_PAYMENT: 'payment',
   PAYMENT_REFUND: 'refund',
   COLLECTION_PUBLISH: 'collection',
+  MANUAL_JOURNAL: 'journal',
+  EXPENSE: 'expense',
+  FUND_TRANSFER: 'fund',
+  DEPOSIT_REFUND: 'deposit',
+  PERIOD_UNLOCK: 'period',
 };
 const MODE_LABEL: Record<string, string> = {
   GATEWAY: 'back to the payer',
@@ -69,6 +74,11 @@ const TYPE_LABEL: Record<string, string> = {
   OFFLINE_PAYMENT: 'Offline payment',
   PAYMENT_REFUND: 'Payment refund',
   COLLECTION_PUBLISH: 'Collection publish',
+  MANUAL_JOURNAL: 'Manual journal',
+  EXPENSE: 'Expense',
+  FUND_TRANSFER: 'Fund transfer',
+  DEPOSIT_REFUND: 'Deposit refund',
+  PERIOD_UNLOCK: 'Period unlock',
 };
 
 /**
