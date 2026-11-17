@@ -5,7 +5,7 @@ import {
   normalisePagination,
   paidFromAccounts,
   rows,
-  summarise,
+  normaliseSummary,
 } from './accountsDepositsMappers';
 import type {
   CreateDepositInput,
@@ -30,10 +30,8 @@ const post = (path: string, body: object) =>
 export const accountsDepositsService = {
   list: (q: DepositQuery = {}) => list(B, q),
   get: (id: number) => api<unknown>(`${B}/${id}`).then(normaliseDeposit),
-  /** Tiles: read from the newest 100 deposits (no filters). */
-  async summary(): Promise<DepositSummary> {
-    return summarise((await list(B, { limit: 100 })).items);
-  },
+  /** Tiles: `GET /accounts/deposits/summary` (totals over every deposit). */
+  summary: (): Promise<DepositSummary> => api<unknown>(`${B}/summary`).then(normaliseSummary),
   create: (body: CreateDepositInput) => post(B, body),
   deduct: (id: number, body: { amountPaise: number; reason: string; date: string; version: number }) =>
     post(`${B}/${id}/deduct`, body),

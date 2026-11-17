@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { err, mockApi, ok, resetAll } from '@/test/helpers';
 import { accountsDepositsService as svc } from './accountsDeposits.service';
-import { normaliseDeposit, paidFromAccounts, summarise } from './accountsDepositsMappers';
+import { normaliseDeposit, paidFromAccounts, normaliseSummary } from './accountsDepositsMappers';
 
 beforeEach(resetAll);
 const raw = (over: Record<string, unknown> = {}) => ({
@@ -34,30 +34,13 @@ describe('deposit mappers', () => {
     expect(d.adjustments[0].kind).toBe('DEDUCTION');
     expect(normaliseDeposit(null).status).toBe('AWAITING_PAYMENT');
   });
-  it('sums held, refunded and forfeited', () => {
-    const s = summarise([
-      normaliseDeposit(raw()),
-      normaliseDeposit(
-        raw({
-          id: 8,
-          status: 'REFUNDED',
-          receivedPaise: 100000,
-          deductedPaise: 0,
-          refundedPaise: 100000,
-          adjustments: [],
-        }),
-      ),
-      normaliseDeposit(
-        raw({
-          id: 9,
-          status: 'FORFEITED',
-          receivedPaise: 50000,
-          deductedPaise: 50000,
-          adjustments: [{ kind: 'FORFEIT', amountPaise: 50000 }],
-        }),
-      ),
-    ]);
-    expect(s).toEqual({ heldPaise: 2200000, refundedPaise: 100000, forfeitedPaise: 50000 });
+  it('reads the three tile totals and survives garbage', () => {
+    expect(normaliseSummary({ heldPaise: 5, refundedPaise: '7', forfeitedPaise: 9 })).toEqual({
+      heldPaise: 5,
+      refundedPaise: 7,
+      forfeitedPaise: 9,
+    });
+    expect(normaliseSummary(null)).toEqual({ heldPaise: 0, refundedPaise: 0, forfeitedPaise: 0 });
   });
   it('picks active bank and cash leaves from a tree', () => {
     const tree = [
@@ -70,6 +53,7 @@ describe('deposit mappers', () => {
           { id: 2, code: '1110-001', name: 'HDFC', subtype: 'BANK', children: [] },
           { id: 3, code: '1120', name: 'Cash', subtype: 'CASH' },
           { id: 4, code: '1130', name: 'Old', subtype: 'BANK', isActive: false },
+          { id: 5, code: '1110', name: 'Bank group', subtype: 'BANK', isGroup: true },
         ],
       },
     ];
@@ -83,6 +67,13 @@ describe('accountsDepositsService', () => {
     const r = await svc.list({ status: 'HELD', q: 'A-12' });
     expect(r.items).toHaveLength(1);
     expect(String(api.fn.mock.calls[0][0])).toContain('status=HELD');
+  });
+  it('loads the tiles from the summary route', async () => {
+    const api = mockApi({
+      'GET /accounts/deposits/summary': ok({ heldPaise: 100, refundedPaise: 20, forfeitedPaise: 3 }),
+    });
+    expect(await svc.summary()).toEqual({ heldPaise: 100, refundedPaise: 20, forfeitedPaise: 3 });
+    expect(api.fn.mock.calls).toHaveLength(1);
   });
   it('sends money calls with an Idempotency-Key and the version', async () => {
     const api = mockApi({

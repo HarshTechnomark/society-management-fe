@@ -77,17 +77,14 @@ export function normaliseDeposit(raw: unknown): Deposit {
   };
 }
 
-/** Totals for the three tiles: still held, refunded, kept back (forfeited). Deductions are not forfeits. */
-export function summarise(deposits: Deposit[]): DepositSummary {
-  const s: DepositSummary = { heldPaise: 0, refundedPaise: 0, forfeitedPaise: 0 };
-  for (const d of deposits) {
-    if (d.status === 'HELD' || d.status === 'REFUND_PENDING' || d.status === 'REFUND_APPROVED')
-      s.heldPaise += d.heldPaise;
-    s.refundedPaise += d.refundedPaise;
-    for (const a of d.adjustments) if (a.kind === 'FORFEIT') s.forfeitedPaise += a.amountPaise;
-  }
-  return s;
-}
+export const normaliseSummary = (raw: unknown): DepositSummary => {
+  const r = obj(raw);
+  return {
+    heldPaise: num(r.heldPaise),
+    refundedPaise: num(r.refundedPaise),
+    forfeitedPaise: num(r.forfeitedPaise),
+  };
+};
 
 /** Flattens the chart of accounts (tree or list) to active BANK, CASH and PETTY_CASH leaves. */
 export function paidFromAccounts(data: unknown): PaidFromAccount[] {
@@ -97,6 +94,7 @@ export function paidFromAccounts(data: unknown): PaidFromAccount[] {
     const kids = Array.isArray(a.children) ? a.children : [];
     if (kids.length) kids.forEach(walk);
     else if (
+      a.isGroup !== true &&
       ['BANK', 'CASH', 'PETTY_CASH'].includes(str(a.subtype)) &&
       a.isActive !== false &&
       a.status !== 'INACTIVE'

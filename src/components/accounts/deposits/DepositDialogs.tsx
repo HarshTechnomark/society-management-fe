@@ -84,6 +84,11 @@ function useAct(done: string, onDone: () => void, onClose: () => void) {
   return { busy, failed, run };
 }
 
+const inDays = (n: number) => {
+  const d = new Date(`${todayIso()}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
 const dateError = (d: string) =>
   !/^\d{4}-\d{2}-\d{2}$/.test(d)
     ? 'Choose a date.'
@@ -115,6 +120,7 @@ export function NewDepositDialog({ onClose, onDone }: { onClose: () => void; onD
     if (!date) e.date = opening ? 'Choose the date it was received.' : 'Choose the due date.';
     else if (opening && date > todayIso()) e.date = 'The date cannot be in the future.';
     else if (!opening && date < todayIso()) e.date = 'The due date cannot be in the past.';
+    else if (!opening && date > inDays(90)) e.date = 'The due date can be at most 90 days from today.';
     setErrors(e);
     if (Object.keys(e).length) return;
     void run(() =>
