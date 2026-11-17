@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -163,6 +163,26 @@ describe('Expense drawer', () => {
     await screen.findByText('Expense EXP-412');
     return api;
   };
+  it('shows the fund name from the funds list, a journal link, and no invented rejection', async () => {
+    await open('POSTED', {
+      fundId: 2,
+      fundName: null,
+      approvedBy: { name: 'Meera' },
+      approval: { requestId: 9, status: null, actions: [] },
+      journal: {
+        id: 61,
+        voucherNo: 'VCH/1',
+        lines: [{ account: 'Garden', debitPaise: 180000, creditPaise: 0 }],
+      },
+    });
+    expect(await screen.findByText('Repair fund')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Open the journal entry/ })).toHaveAttribute(
+      'href',
+      '/admin/accounts/journals?open=61',
+    );
+    expect(screen.getByTestId('approval-state')).toHaveTextContent('Approved by Meera');
+    expect(screen.getByTestId('approval-state')).not.toHaveTextContent(/rejected/i);
+  });
   it('shows bill, timeline and Reverse for a posted expense and sends the reason', async () => {
     const api = await open('POSTED');
     expect(await screen.findByText('bill.jpg', { selector: 'a' })).toHaveAttribute(
@@ -244,6 +264,12 @@ describe('Cash book', () => {
     expect(await screen.findAllByTestId('cash-row')).toHaveLength(1);
     expect(api.calls.some(c => c.path === '/accounts/bank-accounts')).toBe(false);
     expect(screen.queryByRole('option', { name: /HDFC Current/ })).toBeNull();
+  });
+  it('says a range over 366 days is too long, apart from start-after-end', async () => {
+    renderIt(<CashBookScreen />, {});
+    fireEvent.change(await screen.findByLabelText('From'), { target: { value: '2020-01-01' } });
+    expect(await screen.findByText('A range can be 366 days at most.')).toBeInTheDocument();
+    expect(screen.queryByText(/must be on or before/)).toBeNull();
   });
   it('builds CSV in rupees', () => {
     const csv = cashBookCsv([{ ...book.rows[0]!, refType: null, refId: null }]);

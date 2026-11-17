@@ -20,6 +20,7 @@ import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
+import { useFeature } from '@/hooks/useFeature';
 import { usePermission } from '@/hooks/usePermission';
 import { inr, shortDate } from '@/lib/money';
 import { accountsExpensesService as svc } from '@/services/accountsExpenses.service';
@@ -69,6 +70,7 @@ function Inner() {
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const pettyOn = useFeature('accounting.petty_cash');
   const canSeeBanks = usePermission(PERMISSIONS.finance.bank.view);
   // The bank list needs `finance.bank.view`: without it only cash and petty cash are offered and nothing is called.
   const banks = useLoad(
@@ -83,11 +85,10 @@ function Inner() {
     page,
     limit: LIMIT,
   };
-  const validRange =
-    !!from &&
-    !!to &&
-    from <= to &&
-    Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`) <= 366 * 86_400_000;
+  const ordered = !!from && !!to && from <= to;
+  const tooLong =
+    ordered && Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`) > 366 * 86_400_000;
+  const validRange = ordered && !tooLong;
   const book = useLoad<CashBook | null>(
     () => (validRange ? svc.cashBook(query) : Promise.resolve(null)),
     JSON.stringify(query),
@@ -120,7 +121,7 @@ function Inner() {
   const accountOptions = [
     { value: 'ALL', label: 'All cash and bank' },
     { value: 'CASH', label: 'Cash in hand' },
-    { value: 'PETTY_CASH', label: 'Petty cash' },
+    ...(pettyOn ? [{ value: 'PETTY_CASH', label: 'Petty cash' }] : []),
     ...(banks.data ?? []).map(b => ({ value: `BANK:${b.id}`, label: b.label })),
   ];
 
@@ -182,7 +183,14 @@ function Inner() {
           onChange={reset(setDirection)}
         />
         {!validRange ? (
-          <EmptyState title="Choose a date range" text="The start date must be on or before the end date." />
+          <EmptyState
+            title="Choose a date range"
+            text={
+              tooLong
+                ? 'A range can be 366 days at most.'
+                : 'The start date must be on or before the end date.'
+            }
+          />
         ) : book.error != null ? (
           <ErrorState
             error={plainError(book.error)}
@@ -212,11 +220,11 @@ function Inner() {
             )}
             <div className="overflow-x-auto" data-testid="table-scroll">
               <table
-                className="w-full min-w-[760px] border-collapse text-left text-[14px]"
+                className="w-full min-w-[760px] border-collapse text-left text-[14px] max-[639px]:block max-[639px]:min-w-0"
                 aria-busy={book.loading || undefined}
               >
                 <caption className="sr-only">Cash book</caption>
-                <thead>
+                <thead className="max-[639px]:sr-only">
                   <tr className="border-b border-[var(--line)] text-[12px] font-semibold uppercase tracking-wide text-muted">
                     {['Date', 'Details', 'Account', 'In', 'Out', 'Balance'].map(h => (
                       <th
@@ -229,7 +237,7 @@ function Inner() {
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="max-[639px]:block">
                   {book.loading || !data
                     ? Array.from({ length: 5 }, (_, i) => (
                         <tr key={i} data-testid="skeleton-row" className="border-b border-[var(--line)]">
@@ -244,21 +252,23 @@ function Inner() {
                         <tr
                           key={`${r.voucherNo}-${i}`}
                           data-testid="cash-row"
-                          className="border-b border-[var(--line)] last:border-0"
+                          className="border-b border-[var(--line)] last:border-0 max-[639px]:grid max-[639px]:grid-cols-[1fr_auto] max-[639px]:gap-x-3 max-[639px]:gap-y-1 max-[639px]:px-1 max-[639px]:py-3"
                         >
-                          <td className="px-3 py-3">{shortDate(r.date)}</td>
-                          <td className="px-3 py-3">
+                          <td className="px-3 py-3 max-[639px]:order-3 max-[639px]:p-0 max-[639px]:text-[13px] max-[639px]:text-muted">
+                            {shortDate(r.date)}
+                          </td>
+                          <td className="min-w-0 px-3 py-3 max-[639px]:order-1 max-[639px]:p-0">
                             <div className="font-semibold">{r.narration || r.voucherType}</div>
                             <div className="text-[12.5px] text-muted">{r.voucherNo}</div>
                           </td>
-                          <td className="px-3 py-3">{r.account}</td>
-                          <td className="px-3 py-3 text-right tabular-nums text-ok">
+                          <td className="px-3 py-3 max-[639px]:hidden">{r.account}</td>
+                          <td className="px-3 py-3 text-right tabular-nums text-ok max-[639px]:order-2 max-[639px]:p-0 max-[639px]:empty:hidden">
                             {r.inPaise ? inr(r.inPaise) : ''}
                           </td>
-                          <td className="px-3 py-3 text-right tabular-nums text-bad">
+                          <td className="px-3 py-3 text-right tabular-nums text-bad max-[639px]:order-2 max-[639px]:p-0 max-[639px]:empty:hidden">
                             {r.outPaise ? inr(r.outPaise) : ''}
                           </td>
-                          <td className="px-3 py-3 text-right font-semibold tabular-nums">
+                          <td className="px-3 py-3 text-right font-semibold tabular-nums max-[639px]:order-4 max-[639px]:p-0 max-[639px]:text-[13px] max-[639px]:before:content-['Balance_'] max-[639px]:before:font-normal max-[639px]:before:text-muted">
                             {inr(r.runningPaise)}
                           </td>
                         </tr>

@@ -1,6 +1,7 @@
 'use client';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { inr } from '@/lib/money';
 import { useLoad } from '@/hooks/useLoad';
 import { accountsFundsService } from '@/services/accountsFunds.service';
 
@@ -18,6 +19,8 @@ interface Props {
   includeGeneral?: boolean;
   /** A fund that must not be offered (the other side of a transfer). */
   excludeId?: number | null;
+  /** Shows the balance next to each fund name. */
+  showBalance?: boolean;
 }
 
 /**
@@ -28,6 +31,7 @@ export function FundPicker({
   value,
   onChange,
   label = 'Fund',
+  showBalance = false,
   hint = 'The money collected lands in this fund.',
   error,
   required,
@@ -68,7 +72,11 @@ export function FundPicker({
       options={[
         { value: '', label: 'Choose a fund' },
         ...(includeGeneral ? [{ value: GENERAL_FUND, label: 'General (not earmarked)' }] : []),
-        ...list.map(f => ({ value: String(f.id), label: f.label })),
+        ...list.map(f => ({
+          value: String(f.id),
+          label:
+            showBalance && f.balancePaise !== undefined ? `${f.label} (${inr(f.balancePaise)})` : f.label,
+        })),
       ]}
       required={required}
     />

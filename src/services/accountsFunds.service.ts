@@ -28,7 +28,7 @@ export const accountsFundsService = {
       return rowsOf(r)
         .map(mapFundOption)
         .filter(f => f.active)
-        .map(({ id, label, fundType }) => ({ id, label, fundType }));
+        .map(({ id, label, fundType, balancePaise }) => ({ id, label, fundType, balancePaise }));
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) missing = e;
       throw e;

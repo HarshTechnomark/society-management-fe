@@ -96,8 +96,11 @@ export function ExpenseModal({
   const [busy, setBusy] = useState<'save' | 'draft' | null>(null);
 
   const all = ledgers.data ?? [];
+  // Petty cash (1130) needs the petty cash feature: the server refuses it on other plans.
   const sources = all.filter(
-    a => ['BANK', 'CASH'].includes(a.subtype) || (a.subtype === 'PETTY_CASH' && pettyOn),
+    a =>
+      (['BANK', 'CASH'].includes(a.subtype) && (pettyOn || a.code !== '1130')) ||
+      (a.subtype === 'PETTY_CASH' && pettyOn),
   );
   const heads = all.filter(a =>
     type === 'STATUTORY_DUE'

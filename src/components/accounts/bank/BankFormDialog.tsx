@@ -74,8 +74,9 @@ export function BankFormDialog({
     if (Object.keys(e).length) return;
     setBusy(true);
     try {
-      if (account)
-        await accountsBankService.update(account.id, {
+      let saved = 'Bank account added';
+      if (account) {
+        const updated = await accountsBankService.update(account.id, {
           displayName: displayName.trim(),
           branchName: branchName.trim() || null,
           accountHolderName: holder.trim(),
@@ -83,7 +84,12 @@ export function BankFormDialog({
           ...(changingNumber ? { accountNumber: number, confirmAccountNumber: confirm } : {}),
           version: account.version,
         });
-      else {
+        // Say what the server did: the verification is reset only when it answers so.
+        saved =
+          account.verificationStatus === 'VERIFIED' && updated.verificationStatus !== 'VERIFIED'
+            ? 'Bank account saved. It needs to be verified again.'
+            : 'Bank account saved.';
+      } else {
         const body: BankAccountInput = {
           displayName: displayName.trim(),
           bankName: bankName.trim(),
@@ -98,7 +104,7 @@ export function BankFormDialog({
         };
         await accountsBankService.create(body);
       }
-      toast.show(account ? 'Bank account saved. It needs to be verified again.' : 'Bank account added');
+      toast.show(saved);
       onSaved();
     } catch (err) {
       setErrors(fieldErrors(err));
