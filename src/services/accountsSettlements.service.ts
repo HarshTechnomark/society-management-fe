@@ -25,6 +25,12 @@ export const accountsSettlementsService = {
     api<unknown>('/accounts/settlements/import', { method: 'POST', body, idempotent: true }).then(
       normaliseImportResult,
     ),
+  /** Development only (`POST /dev/accounts/settlements/generate`): a settlement from the captured online payments no settlement lists yet. */
+  devGenerate: (societyId: number, reconcile = false) =>
+    api<{ settlementId: number; gatewaySettlementId: string; payments: number }>(
+      '/dev/accounts/settlements/generate',
+      { method: 'POST', body: { societyId, reconcile } },
+    ),
   reconcile: (id: number) =>
     api<unknown>(`/accounts/settlements/${id}/reconcile`, { method: 'POST', body: {} }).then(
       normaliseSettlement,

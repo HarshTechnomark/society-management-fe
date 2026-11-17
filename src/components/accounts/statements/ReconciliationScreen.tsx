@@ -125,9 +125,12 @@ function Inner({ id }: { id: number }) {
     setBusy('auto');
     setError(null);
     try {
-      const r = await accountsStatementsService.autoMatch(id);
-      toast.show(r.matched > 0 ? `${r.matched} lines matched.` : 'No new matches found.');
+      await accountsStatementsService.autoMatch(id);
+      toast.show('Auto-match started. Matched lines appear in a moment.');
       reloadAll();
+      // The job runs in the background: look again a little later.
+      setTimeout(reloadAll, 1500);
+      setTimeout(reloadAll, 4000);
     } catch (e) {
       setError(bankError(e));
     } finally {

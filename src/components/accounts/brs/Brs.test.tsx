@@ -39,6 +39,33 @@ describe('BRS', () => {
     render(<BrsScreen bankAccountId={3} />);
     expect(await screen.findByText(/difference of ₹120/)).toBeInTheDocument();
   });
+  it('says so when no statement has been imported instead of showing a difference', async () => {
+    signInAs(BANK_PERMS, BANK_FEATURES);
+    mockApi({
+      'GET /accounts/bank-accounts/3/brs': ok({ ...BRS, statementBalancePaise: null, differencePaise: null }),
+    });
+    render(<BrsScreen bankAccountId={3} />);
+    expect(await screen.findByText(/No bank statement has been imported/)).toBeInTheDocument();
+    expect(screen.queryByText('Difference')).toBeNull();
+  });
+  it('labels the backend item kinds and subtracts book items not on the statement', async () => {
+    signInAs(BANK_PERMS, BANK_FEATURES);
+    mockApi({
+      'GET /accounts/bank-accounts/3/brs': ok({
+        ...BRS,
+        items: [
+          { kind: 'BOOK_UNCLEARED_IN', date: '2026-11-29', description: 'Deposit', amountPaise: 50000 },
+        ],
+      }),
+    });
+    render(<BrsScreen bankAccountId={3} />);
+    expect(
+      await screen.findByText(/In the books, not yet on the statement \(money in\)/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Less: money in, in the books but not yet on the statement').closest('div'),
+    ).toHaveTextContent('-₹500');
+  });
   it('builds a CSV with rupees and quoted text', () => {
     const csv = brsToCsv(
       normaliseBrs({

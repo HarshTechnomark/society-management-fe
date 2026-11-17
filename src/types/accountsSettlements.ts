@@ -57,9 +57,29 @@ export interface SettlementQuery {
   limit?: number;
 }
 
+/** One settlement as the JSON import takes it (money in paise; the net must equal gross - refunds - fee - GST + adjustment). */
+export interface ImportSettlementJson {
+  gatewaySettlementId: string;
+  settlementDate: string;
+  utr?: string;
+  netPaise: number;
+  feePaise?: number;
+  feeGstPaise?: number;
+  adjustmentPaise?: number;
+  items: {
+    type: 'payment' | 'refund';
+    gatewayPaymentId: string;
+    gatewayRefundId?: string;
+    amountPaise: number;
+    feePaise?: number;
+    taxPaise?: number;
+  }[];
+}
+/** Either an uploaded report (`fileId`) or the settlements as JSON. */
 export interface ImportSettlementInput {
-  fileId: number;
   gatewayProvider: string;
+  fileId?: number;
+  settlements?: ImportSettlementJson[];
 }
 export interface ImportSettlementResult {
   created: number;

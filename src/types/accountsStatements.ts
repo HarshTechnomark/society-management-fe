@@ -82,12 +82,6 @@ export interface CreateEntryInput {
   narration?: string;
   version: number;
 }
-export interface AutoMatchResult {
-  matched: number;
-  byReference: number;
-  byAmountDate: number;
-}
-
 export interface BrsItem {
   kind:
     | 'UNCLEARED_DEBIT'
@@ -108,8 +102,9 @@ export interface Brs {
   unmatchedStatementCreditsPaise: number;
   unmatchedStatementDebitsPaise: number;
   computedBankBalancePaise: number;
-  statementBalancePaise: number;
-  differencePaise: number;
+  /** Null while no statement has been imported up to the date. */
+  statementBalancePaise: number | null;
+  differencePaise: number | null;
   items: BrsItem[];
 }
 
