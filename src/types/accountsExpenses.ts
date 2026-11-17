@@ -152,7 +152,7 @@ export interface CashBookRow {
   outPaise: number;
   runningPaise: number;
   refType: string | null;
-  refId: number | null;
+  refId: string | null;
 }
 
 export interface CashBook {

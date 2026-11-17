@@ -65,10 +65,14 @@ export function mapExpense(raw: unknown): ExpenseItem {
     collectionTitle: strOrNull(r.collectionTitle ?? col.title),
     billFileCount: num(r.billFileCount, arr(r.files).length),
     approvalRequestId: numOrNull(r.approvalRequestId),
-    createdByName: nameOf(r.createdBy) ?? strOrNull(r.createdByName),
+    createdByName: strOrNull(r.createdByName) ?? nameOf(r.createdBy),
     version: num(r.version, 1),
   };
 }
+
+/** Bills have no URL in the API answer yet (module 01 files); outside production the development store serves them. */
+const devFileUrl = (id: number): string | null =>
+  process.env.NODE_ENV === 'production' || !id ? null : `/api/v1/dev/files/${id}`;
 
 const mapFile = (raw: unknown): ExpenseFile => {
   const r = obj(raw);
@@ -77,7 +81,7 @@ const mapFile = (raw: unknown): ExpenseFile => {
     name: str(r.name ?? r.fileName, 'Bill'),
     mimeType: str(r.mimeType),
     status: str(r.status),
-    url: strOrNull(r.url ?? r.downloadUrl),
+    url: strOrNull(r.url ?? r.downloadUrl) ?? devFileUrl(num(r.id)),
   };
 };
 
@@ -123,7 +127,9 @@ export function mapExpenseDetail(raw: unknown): ExpenseDetail {
     }),
     canApprove: r.canApprove === true,
     canReverse: r.canReverse === true,
-    createdById: numOrNull(r.createdById ?? obj(r.createdBy).id),
+    createdById: numOrNull(
+      r.createdById ?? (typeof r.createdBy === 'object' ? obj(r.createdBy).id : r.createdBy),
+    ),
   };
 }
 
@@ -198,7 +204,7 @@ const mapCashRow = (raw: unknown): CashBookRow => {
     outPaise: num(r.outPaise),
     runningPaise: num(r.runningPaise),
     refType: strOrNull(r.refType),
-    refId: numOrNull(r.refId),
+    refId: strOrNull(r.refId),
   };
 };
 

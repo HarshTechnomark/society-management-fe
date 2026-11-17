@@ -46,6 +46,7 @@ export const EXPENSE_TEXT: Record<string, string> = {
   FEATURE_NOT_IN_PLAN: 'This feature is not part of your plan.',
   PERMISSION_DENIED: 'You do not have permission to do this.',
   EXPENSE_NOT_FOUND: 'This expense was not found. Reload the page.',
+  BANK_ACCOUNT_NOT_FOUND: 'This bank account was not found. Pick another one.',
   FUND_NOT_FOUND: 'This fund was not found. Pick another one.',
   LEDGER_ACCOUNT_NOT_FOUND: 'This category or account was not found. Pick another one.',
   IDEMPOTENCY_KEY_REUSED: 'This request was already sent with different details. Try again.',

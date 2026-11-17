@@ -78,7 +78,11 @@ function Inner() {
     page,
     limit: LIMIT,
   };
-  const validRange = !!from && !!to && from <= to;
+  const validRange =
+    !!from &&
+    !!to &&
+    from <= to &&
+    Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`) <= 366 * 86_400_000;
   const book = useLoad<CashBook | null>(
     () => (validRange ? svc.cashBook(query) : Promise.resolve(null)),
     JSON.stringify(query),

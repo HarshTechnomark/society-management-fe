@@ -99,7 +99,7 @@ export function ExpenseDrawer({
           Cancel draft
         </Button>
       )}
-      {canApprove && x.status === 'POSTED' && (
+      {canApprove && x.status === 'POSTED' && x.canReverse && (
         <Button size="sm" variant="danger-soft" onClick={() => setDialog('reverse')}>
           Reverse
         </Button>
