@@ -32,6 +32,14 @@ beforeEach(() => {
   configureFileUploader(null);
 });
 
+describe('AutoPay availability', () => {
+  it('never calls the mandates route when the pay list says AutoPay is off', async () => {
+    const api = show(base({}, { ...payablesRaw(), autopayAvailable: false } as never));
+    await screen.findAllByTestId('pay-row');
+    expect(api.last('GET', '/me/autopay-mandates')).toBeUndefined();
+  });
+});
+
 describe('Pay list', () => {
   it('lists bills first (overdue oldest first), then optional items, with the advance line and total', async () => {
     show(base());

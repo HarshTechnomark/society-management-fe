@@ -335,7 +335,7 @@ function Editor({
           <span className="mr-4">Debits {inr(t.debit)}</span>
           <span className="mr-4">Credits {inr(t.credit)}</span>
           <strong className={balanced ? 'text-ok' : 'text-bad'} data-testid="difference">
-            {t.bad ? 'Check the amounts' : `Difference ₹${(Math.abs(t.difference) / 100).toFixed(2)}`}
+            {t.bad ? 'Check the amounts' : `Difference ${inr(Math.abs(t.difference))}`}
           </strong>
         </div>
       </div>

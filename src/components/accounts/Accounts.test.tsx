@@ -124,6 +124,24 @@ describe('Chart of accounts', () => {
       name: 'Garden',
     });
   });
+  it('lets a custom account be added under a system group (every seeded group is a system account)', async () => {
+    signInAs(PERMS, FEATURES);
+    const sys = [
+      acc(1, '2000', 'Liabilities', {
+        accountType: 'LIABILITY',
+        isGroup: true,
+        isSystem: true,
+        children: [
+          acc(2, '2600', 'Other liabilities', { accountType: 'LIABILITY', isGroup: true, isSystem: true }),
+        ],
+      }),
+    ];
+    mockApi({ 'GET /accounts/ledger-accounts': ok(sys) });
+    wrap(<LedgerScreen />);
+    await screen.findAllByTestId('account-row');
+    expect(screen.getByRole('button', { name: 'Add an account' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Add under Other liabilities' })).toBeInTheDocument();
+  });
   it('is read-only with an upgrade note on a lower plan', async () => {
     signInAs(PERMS, []);
     mockApi({ 'GET /accounts/ledger-accounts': ok(CHART) });
@@ -235,6 +253,30 @@ describe('Journals', () => {
     expect(screen.getByText(/Difference ₹100/)).toBeInTheDocument();
     expect(api.last('POST', '/accounts/journals/2/submit')).toBeUndefined();
   });
+  it('hides the draft actions from a user who is not the maker, and labels the totals', async () => {
+    signInAs(PERMS, FEATURES);
+    mockApi({
+      'GET /accounts/journals': ok({ items: JOURNALS }),
+      'GET /accounts/journals/2': ok({ ...JOURNALS[1], lines, difference: 0, createdBy: 999 }),
+    });
+    wrap(<JournalsScreen />);
+    expect(await screen.findAllByTitle('Voucher total')).toHaveLength(3);
+    await userEvent.click(await screen.findByRole('button', { name: 'Open draft 2' }));
+    expect(await screen.findByText('Total debits / credits')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Submit for approval' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Edit draft' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Cancel draft' })).toBeNull();
+  });
+  it('shows the draft actions to the maker', async () => {
+    signInAs(PERMS, FEATURES);
+    mockApi({
+      'GET /accounts/journals': ok({ items: JOURNALS }),
+      'GET /accounts/journals/2': ok({ ...JOURNALS[1], lines, difference: 0, createdBy: 101 }),
+    });
+    wrap(<JournalsScreen />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Open draft 2' }));
+    expect(await screen.findByRole('button', { name: 'Submit for approval' })).toBeInTheDocument();
+  });
   it('reverses a posted manual journal with a reason and the version', async () => {
     signInAs(PERMS, FEATURES);
     const api = mockApi({
@@ -284,12 +326,12 @@ describe('New journal', () => {
     const api = mockApi(routes);
     wrap(<JournalEditorScreen />);
     await fill(api, '900');
-    expect(screen.getByTestId('difference')).toHaveTextContent('Difference ₹100.00');
+    expect(screen.getByTestId('difference')).toHaveTextContent('Difference ₹100');
     expect(screen.getAllByRole('button', { name: 'Submit for approval' })[0]).toBeDisabled();
     await userEvent.clear(screen.getByLabelText('Credit, line 2'));
     await userEvent.click(screen.getByLabelText('Credit, line 2'));
     await userEvent.paste('1000');
-    expect(screen.getByTestId('difference')).toHaveTextContent('Difference ₹0.00');
+    expect(screen.getByTestId('difference')).toHaveTextContent('Difference ₹0');
     expect(screen.getByRole('button', { name: 'Submit for approval' })).toBeEnabled();
   });
   it('saves an unbalanced draft', async () => {

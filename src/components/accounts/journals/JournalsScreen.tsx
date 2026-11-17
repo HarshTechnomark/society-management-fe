@@ -142,7 +142,13 @@ function Inner() {
                 <span className="text-[13.5px] text-muted">{shortDate(j.entryDate)}</span>
                 <span className="text-[13.5px]">{VOUCHER_LABEL[j.voucherType] ?? j.voucherType}</span>
                 <span className="min-w-0 truncate text-[14px]">{j.narration}</span>
-                <span className="text-[14px] font-semibold tabular-nums">{inr(j.totalPaise)}</span>
+                <span
+                  className="text-[14px] font-semibold tabular-nums"
+                  title="Voucher total"
+                  aria-label={`Voucher total ${inr(j.totalPaise)}`}
+                >
+                  {inr(j.totalPaise)}
+                </span>
                 <span>
                   <Chip tone={j.source === 'SYSTEM' ? 'info' : 'gold'}>
                     {j.source === 'SYSTEM' ? 'System' : 'Manual'}
@@ -154,6 +160,11 @@ function Inner() {
               </li>
             ))}
           </ul>
+        )}
+        {items.length > 0 && (
+          <p className="mt-2 text-[12.5px] text-muted">
+            Voucher total: the sum of all debits of the entry. A fund-paid expense counts the fund use too.
+          </p>
         )}
         {pg && pg.totalPages > 1 && (
           <nav className="mt-3 flex items-center justify-between text-[13.5px]" aria-label="Pages">

@@ -77,6 +77,8 @@ export interface JournalItem {
   refType: string;
   refId: string;
   version: number;
+  /** User id of the maker; null when unknown. */
+  createdBy: number | null;
 }
 
 export interface JournalLine {
