@@ -8,6 +8,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { useLoad } from '@/hooks/useLoad';
+import { apiBlob } from '@/lib/apiClient';
 import { uploadFile } from '@/lib/fileUpload';
 import { accountsStatementsService } from '@/services/accountsStatements.service';
 import { bankError, isNotFound } from './format';
@@ -29,6 +30,23 @@ export function UploadStatementDialog({ onClose, onDone }: { onClose: () => void
   const [failed, setFailed] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const typed = accounts.data === null && !accounts.loading;
+
+  const sample = async () => {
+    const id = Number(account);
+    if (!Number.isInteger(id) || id <= 0)
+      return setErrors(x => ({ ...x, account: 'Choose the bank account first.' }));
+    try {
+      const blob = await apiBlob('/dev/accounts/sample-statement', { query: { bankAccountId: id } });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sample-statement.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setFailed(bankError(e));
+    }
+  };
 
   const submit = async () => {
     const e: Record<string, string> = {};
@@ -106,6 +124,11 @@ export function UploadStatementDialog({ onClose, onDone }: { onClose: () => void
         <a href={STATEMENT_TEMPLATE_URL} download className="text-[13.5px] font-semibold underline">
           Download the CSV template
         </a>
+        {process.env.NODE_ENV !== 'production' && (
+          <button type="button" onClick={sample} className="text-left text-[13.5px] font-semibold underline">
+            Download a sample (testing only)
+          </button>
+        )}
       </div>
     </Modal>
   );
