@@ -49,6 +49,9 @@ const TEXT: Record<string, string> = {
   FEATURE_NOT_IN_PLAN: 'Deposits are not part of your plan.',
 };
 export function depositError(e: unknown): string {
+  // The server's own sentence says what is wrong (for example why a deposit cannot be cancelled): show it.
+  if (e instanceof ApiError && e.code === 'INVALID_STATE' && e.message && e.message !== e.code)
+    return e.message;
   if (e instanceof ApiError && TEXT[e.code]) return TEXT[e.code];
   return opsError(e);
 }

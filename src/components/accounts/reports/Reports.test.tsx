@@ -39,7 +39,7 @@ describe('Reports screen', () => {
     render(<ReportsScreen />);
     await userEvent.click(await screen.findByRole('button', { name: /Open the ledger of 1110-001/ }));
     const link = await screen.findByRole('link', { name: 'RV/26-27/0007' });
-    expect(link).toHaveAttribute('href', '/admin/accounts/journals/77');
+    expect(link).toHaveAttribute('href', '/admin/accounts/journals?open=77');
   });
   it('asks for an account before the general ledger and refuses a range over a year', async () => {
     signInAs(REPORT_PERMS, ACCOUNT_FEATURES);

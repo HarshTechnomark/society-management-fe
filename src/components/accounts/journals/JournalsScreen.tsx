@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -38,7 +39,8 @@ function Inner() {
   const manualOn = useFeature('accounting.manual_journals');
   const [f, setF] = useState({ q: '', from: '', to: '', status: '', source: '', voucherType: '' });
   const [page, setPage] = useState(1);
-  const [openId, setOpenId] = useState<number | null>(null);
+  const sp = useSearchParams();
+  const [openId, setOpenId] = useState<number | null>(Number(sp?.get('open')) || null);
   const set = (k: keyof typeof f) => (v: string) => {
     setF(s => ({ ...s, [k]: v }));
     setPage(1);

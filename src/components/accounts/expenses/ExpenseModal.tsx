@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
+import { PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import { useFeature } from '@/hooks/useFeature';
 import { useLoad } from '@/hooks/useLoad';
 import { ApiError } from '@/lib/apiClient';
@@ -62,7 +64,9 @@ export function ExpenseModal({
   const tdsOn = useFeature('accounting.tds');
   const pettyOn = useFeature('accounting.petty_cash');
   const ledgers = useLoad(() => svc.ledgerOptions(false), 'all');
-  const funds = useLoad(() => svc.funds(), 'funds');
+  const canSeeFunds = usePermission(PERMISSIONS.finance.accounts.view);
+  // The funds list needs `finance.accounts.view`: without it only "General" is offered and nothing is called.
+  const funds = useLoad(() => (canSeeFunds ? svc.funds() : Promise.resolve([])), `funds-${canSeeFunds}`);
   const ledgerMissing = ledgers.error != null;
   const fundsMissing = funds.error != null;
 

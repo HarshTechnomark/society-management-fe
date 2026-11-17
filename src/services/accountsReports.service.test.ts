@@ -87,3 +87,19 @@ describe('accountsReportsService', () => {
     await expect(s.get('trial-balance', {})).rejects.toMatchObject({ code: 'FEATURE_NOT_IN_PLAN' });
   });
 });
+
+describe('negative report amounts', () => {
+  it('shows a minus sign on a negative line and keeps both directions in their sections', () => {
+    const v = normaliseReport('receipts-payments', {
+      rows: [
+        { section: 'RECEIPT', code: '4100', name: 'Maintenance', amountPaise: 100000 },
+        { section: 'RECEIPT', code: '5400', name: 'Payment gateway charges', amountPaise: -20416 },
+        { section: 'PAYMENT', code: '5300', name: 'Repairs', amountPaise: 50000 },
+      ],
+      totals: { receiptsPaise: 79584, paymentsPaise: 50000 },
+    });
+    expect(v.blocks[0].rows[1][1].text).toBe('-₹204.16');
+    expect(v.blocks[0].rows).toHaveLength(2);
+    expect(v.blocks[1].rows).toHaveLength(1);
+  });
+});

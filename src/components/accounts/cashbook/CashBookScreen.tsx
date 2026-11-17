@@ -69,7 +69,12 @@ function Inner() {
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const banks = useLoad(() => svc.bankAccounts(), 'banks');
+  const canSeeBanks = usePermission(PERMISSIONS.finance.bank.view);
+  // The bank list needs `finance.bank.view`: without it only cash and petty cash are offered and nothing is called.
+  const banks = useLoad(
+    () => (canSeeBanks ? svc.bankAccounts() : Promise.resolve([])),
+    `banks-${canSeeBanks}`,
+  );
   const query = {
     account,
     from,

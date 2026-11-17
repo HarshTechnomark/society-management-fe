@@ -253,6 +253,16 @@ describe('Journals', () => {
     expect(screen.getByText(/Difference ₹100/)).toBeInTheDocument();
     expect(api.last('POST', '/accounts/journals/2/submit')).toBeUndefined();
   });
+  it('opens the voucher drawer from ?open=<id> (the report links)', async () => {
+    signInAs(PERMS, FEATURES);
+    search.current = new URLSearchParams('open=1');
+    mockApi({
+      'GET /accounts/journals': ok({ items: JOURNALS }),
+      'GET /accounts/journals/1': ok({ ...JOURNALS[0], lines }),
+    });
+    wrap(<JournalsScreen />);
+    expect(await screen.findAllByTestId('journal-line')).toHaveLength(2);
+  });
   it('hides the draft actions from a user who is not the maker, and labels the totals', async () => {
     signInAs(PERMS, FEATURES);
     mockApi({

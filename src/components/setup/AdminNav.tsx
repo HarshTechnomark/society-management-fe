@@ -45,7 +45,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { href: '/admin/settings/billing', label: 'Billing rules', keys: [S.billingRules.view] },
       {
         href: '/admin/settings/billing/opening-balances',
-        label: 'Opening balances',
+        label: 'Opening arrears',
         keys: [PERMISSIONS.finance.billing.view],
       },
     ],

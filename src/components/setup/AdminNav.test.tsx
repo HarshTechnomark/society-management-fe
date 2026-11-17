@@ -44,6 +44,21 @@ describe('Admin navigation', () => {
     expect(within(nav).getByRole('link', { name: 'Holidays' })).toBeInTheDocument();
   });
 
+  it('names the two opening pages differently', () => {
+    signIn(['settings.society.view', 'finance.billing.view', 'finance.accounts.view']);
+    render(<AdminNav>x</AdminNav>);
+    const nav = screen.getByRole('navigation', { name: 'Admin' });
+    expect(within(nav).getByRole('link', { name: 'Opening arrears' })).toHaveAttribute(
+      'href',
+      '/admin/settings/billing/opening-balances',
+    );
+    expect(within(nav).getAllByRole('link', { name: 'Opening balances' })).toHaveLength(1);
+    expect(within(nav).getByRole('link', { name: 'Opening balances' })).toHaveAttribute(
+      'href',
+      '/admin/accounts/opening-balances',
+    );
+  });
+
   it('shows the account pages by permission and marks the most specific page current', () => {
     signIn([
       'settings.subscription.view',

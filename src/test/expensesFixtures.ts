@@ -7,6 +7,8 @@ export const EXP_PERMS = [
   'finance.expenses.delete',
   'finance.expenses.export',
   'finance.expenses.approve',
+  'finance.bank.view',
+  'finance.accounts.view',
 ];
 export const EXP_FEATURES = ['accounting.simple_cash_book'];
 

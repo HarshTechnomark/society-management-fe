@@ -7,7 +7,7 @@ function Cell({ c, onLedger }: { c: ReportCell; onLedger: (id: number, code: str
     return (
       <Link
         className="font-semibold underline underline-offset-2"
-        href={`/admin/accounts/journals/${c.journalId}`}
+        href={`/admin/accounts/journals?open=${c.journalId}`}
       >
         {c.text}
       </Link>
