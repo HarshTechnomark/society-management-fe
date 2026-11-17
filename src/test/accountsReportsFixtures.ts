@@ -27,22 +27,128 @@ export const trialBalanceRaw = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 export const glRaw = () => ({
+  ledgerAccount: { id: 11, code: '1110-001', name: 'Bank - HDFC Current', accountType: 'ASSET' },
   from: '2026-04-01',
   to: '2026-10-31',
-  account: { id: 11, code: '1110-001', name: 'Bank - HDFC Current' },
+  normalSide: 'DEBIT',
   openingPaise: 100000,
   rows: [
     {
+      entryId: 77,
       date: '2026-05-02',
       voucherNo: 'RV/26-27/0007',
-      journalId: 77,
       narration: 'Maintenance A-101',
       debitPaise: 250000,
       creditPaise: 0,
-      balancePaise: 350000,
+      runningPaise: 350000,
     },
   ],
   closingPaise: 350000,
+  totals: { debitPaise: 250000, creditPaise: 0 },
+});
+export const ieRaw = () => ({
+  from: '2026-04-01',
+  to: '2026-10-31',
+  rows: [
+    {
+      ledgerAccountId: 5,
+      code: '4100',
+      name: 'Maintenance income',
+      section: 'INCOME',
+      isGroup: false,
+      amountPaise: 3225000,
+    },
+    {
+      ledgerAccountId: 6,
+      code: '5330',
+      name: 'Lift AMC',
+      section: 'EXPENDITURE',
+      isGroup: false,
+      amountPaise: 118000,
+    },
+  ],
+  totals: { incomePaise: 3225000, expenditurePaise: 118000, surplusPaise: 3107000 },
+});
+export const bsRaw = () => ({
+  asOf: '2026-10-31',
+  balanced: true,
+  rows: [
+    {
+      ledgerAccountId: 1,
+      code: '1120',
+      name: 'Cash',
+      section: 'ASSETS',
+      isGroup: false,
+      amountPaise: 500000,
+    },
+    {
+      ledgerAccountId: 2,
+      code: '2410',
+      name: 'Sinking fund',
+      section: 'FUNDS',
+      isGroup: false,
+      amountPaise: 400000,
+    },
+    {
+      code: null,
+      name: 'Surplus (deficit) of the current year',
+      section: 'RESERVES',
+      isGroup: false,
+      amountPaise: 100000,
+    },
+  ],
+  totals: {
+    assetsPaise: 500000,
+    liabilitiesPaise: 0,
+    fundsPaise: 400000,
+    reservesPaise: 100000,
+    liabilitiesAndFundsPaise: 500000,
+  },
+});
+export const rpRaw = () => ({
+  from: '2026-04-01',
+  to: '2026-10-31',
+  rows: [
+    { side: 'RECEIPT', code: '4100', name: 'Maintenance income', amountPaise: 900000 },
+    { side: 'PAYMENT', code: '5330', name: 'Lift AMC', amountPaise: 118000 },
+  ],
+  totals: { openingPaise: 100000, receiptsPaise: 900000, paymentsPaise: 118000, closingPaise: 882000 },
+});
+export const gstRaw = () => ({
+  rows: [
+    {
+      month: '2026-05',
+      outputCgstPaise: 900,
+      outputSgstPaise: 900,
+      outputIgstPaise: 0,
+      outputTotalPaise: 1800,
+      inputCreditPaise: 500,
+      netPayablePaise: 1300,
+    },
+  ],
+  totals: {
+    outputCgstPaise: 900,
+    outputSgstPaise: 900,
+    outputIgstPaise: 0,
+    outputTotalPaise: 1800,
+    inputCreditPaise: 500,
+    netPayablePaise: 1300,
+  },
+});
+export const tdsRaw = () => ({
+  rows: [
+    {
+      date: '2026-05-04',
+      voucherNo: 'PV/1',
+      entryId: 41,
+      payee: 'Lift Co',
+      tdsSection: '194C',
+      deductedPaise: 20000,
+      depositedPaise: 0,
+      challanNo: null,
+    },
+  ],
+  totals: { deductedPaise: 20000, depositedPaise: 0 },
 });
 export const periodsRaw = (over: Record<string, unknown> = {}) => ({
   booksLockedThrough: '2026-09-30',

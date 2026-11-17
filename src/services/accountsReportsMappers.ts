@@ -55,17 +55,26 @@ export function periodText(raw: R, report: ReportKey): string {
   return from && to ? `${shortDate(from)} to ${shortDate(to)}` : '';
 }
 
-function amountBlock(title: string, raw: unknown, totalLabel: string): ReportBlock {
-  const g = obj(raw);
-  const rows = arr(Array.isArray(raw) ? raw : g.rows);
+/** One block of the flat 8.19 rows (`section`, `code`, `name`, `amountPaise`); group rows are shown in bold. */
+function sectionBlock(
+  title: string,
+  rows: R[],
+  section: string,
+  totalLabel: string,
+  total: unknown,
+): ReportBlock {
+  const mine = rows.filter(r => r.section === section || r.side === section);
   return {
     title,
     columns: [{ label: 'Account' }, { label: 'Amount', right: true }],
-    rows: rows.map(x => [accountCell(obj(x)), dash(obj(x).amountPaise)]),
-    total: [text(totalLabel, { bold: true }), money(pick(g, 'totalPaise', 'total') ?? sum(rows), true, true)],
+    rows: mine.map(r => {
+      const c = accountCell(r);
+      return [r.isGroup === true ? { ...c, bold: true } : c, dash(r.amountPaise)];
+    }),
+    total: [text(totalLabel, { bold: true }), money(total ?? sumOf(mine), true, true)],
   };
 }
-const sum = (rows: unknown[]) => rows.reduce<number>((s, x) => s + num(obj(x).amountPaise), 0);
+const sumOf = (rows: R[]) => rows.reduce<number>((s, x) => s + num(x.amountPaise), 0);
 
 export function normaliseReport(report: ReportKey, rawIn: unknown): ReportView {
   const raw = obj(rawIn);
@@ -98,39 +107,39 @@ export function normaliseReport(report: ReportKey, rawIn: unknown): ReportView {
       break;
     }
     case 'income-expenditure': {
-      const inc = pick(raw, 'income', 'incomes');
-      const exp = pick(raw, 'expenditure', 'expense', 'expenses');
+      const rows = arr(raw.rows).map(obj);
+      const t = obj(raw.totals);
       view.blocks = [
-        amountBlock('Income', inc, 'Total income'),
-        amountBlock('Expenditure', exp, 'Total expenditure'),
+        sectionBlock('Income', rows, 'INCOME', 'Total income', t.incomePaise),
+        sectionBlock('Expenditure', rows, 'EXPENDITURE', 'Total expenditure', t.expenditurePaise),
       ];
-      const s = numN(pick(raw, 'surplusPaise', 'surplusOrDeficitPaise'));
-      if (s !== undefined)
+      const sp = numN(t.surplusPaise);
+      if (sp !== undefined)
         view.summary = [
-          { label: s < 0 ? 'Deficit for the period' : 'Surplus for the period', value: inr(Math.abs(s)) },
+          { label: sp < 0 ? 'Deficit for the period' : 'Surplus for the period', value: inr(Math.abs(sp)) },
         ];
-      view.empty = view.blocks.every(b => b.rows.length === 0);
+      view.empty = rows.length === 0;
       break;
     }
     case 'balance-sheet': {
-      view.blocks = [
-        amountBlock('Assets', raw.assets, 'Total assets'),
-        amountBlock('Liabilities', raw.liabilities, 'Total liabilities'),
-        amountBlock('Funds', raw.funds, 'Total funds'),
-      ].filter(b => b.rows.length > 0);
-      const surplus = numN(pick(raw, 'currentYearSurplusPaise', 'surplusPaise'));
-      if (surplus !== undefined) view.summary.push({ label: 'Surplus of this year', value: inr(surplus) });
+      const rows = arr(raw.rows).map(obj);
       const t = obj(raw.totals);
-      const a = numN(pick(t, 'assetsPaise'));
-      const l = numN(pick(t, 'liabilitiesAndFundsPaise', 'liabilitiesPaise'));
+      view.blocks = [
+        sectionBlock('Assets', rows, 'ASSETS', 'Total assets', t.assetsPaise),
+        sectionBlock('Liabilities', rows, 'LIABILITIES', 'Total liabilities', t.liabilitiesPaise),
+        sectionBlock('Funds', rows, 'FUNDS', 'Total funds', t.fundsPaise),
+        sectionBlock('Reserves and surplus', rows, 'RESERVES', 'Total reserves and surplus', t.reservesPaise),
+      ].filter(b => b.rows.length > 0);
+      const a = numN(t.assetsPaise);
+      const l = numN(t.liabilitiesAndFundsPaise);
       if (a !== undefined) view.summary.push({ label: 'Total assets', value: inr(a) });
       if (l !== undefined) view.summary.push({ label: 'Liabilities, funds and surplus', value: inr(l) });
-      view.empty = view.blocks.length === 0;
+      view.empty = rows.length === 0;
       break;
     }
     case 'general-ledger': {
       const rows = arr(raw.rows);
-      const acc = obj(raw.account);
+      const acc = obj(pick(raw, 'ledgerAccount', 'account'));
       const opening = numN(pick(raw, 'openingPaise', 'openingBalancePaise'));
       if (acc.name) view.heading = `General ledger: ${str(acc.code)} ${str(acc.name)}`.replace('  ', ' ');
       view.blocks = [
@@ -146,14 +155,14 @@ export function normaliseReport(report: ReportKey, rawIn: unknown): ReportView {
           ],
           rows: rows.map(x => {
             const r = obj(x);
-            const jid = numN(pick(r, 'journalId', 'journalEntryId'));
+            const jid = numN(pick(r, 'entryId', 'journalId', 'journalEntryId'));
             return [
               text(shortDate(str(r.date))),
               text(str(r.voucherNo, '-'), jid ? { journalId: jid } : {}),
               text(str(r.narration)),
               dash(r.debitPaise),
               dash(r.creditPaise),
-              money(r.balancePaise),
+              money(pick(r, 'runningPaise', 'balancePaise')),
             ];
           }),
           total: null,
@@ -166,43 +175,44 @@ export function normaliseReport(report: ReportKey, rawIn: unknown): ReportView {
       break;
     }
     case 'receipts-payments': {
+      const rows = arr(raw.rows).map(obj);
+      const t = obj(raw.totals);
       view.blocks = [
-        amountBlock('Receipts', raw.receipts, 'Total receipts'),
-        amountBlock('Payments', raw.payments, 'Total payments'),
+        sectionBlock('Receipts', rows, 'RECEIPT', 'Total receipts', t.receiptsPaise),
+        sectionBlock('Payments', rows, 'PAYMENT', 'Total payments', t.paymentsPaise),
       ];
-      const o = numN(pick(raw, 'openingPaise', 'openingBalancePaise'));
-      const c = numN(pick(raw, 'closingPaise', 'closingBalancePaise'));
+      const o = numN(t.openingPaise);
+      const c = numN(t.closingPaise);
       if (o !== undefined) view.summary.push({ label: 'Cash and bank at the start', value: inr(o) });
       if (c !== undefined) view.summary.push({ label: 'Cash and bank at the end', value: inr(c) });
-      view.empty = view.blocks.every(b => b.rows.length === 0);
+      view.empty = rows.length === 0;
       break;
     }
     case 'gst-summary': {
       const rows = arr(raw.rows);
       const t = obj(raw.totals);
+      const cells = (r: R, bold = false): ReportCell[] => [
+        dash(r.outputCgstPaise),
+        dash(r.outputSgstPaise),
+        dash(r.outputIgstPaise),
+        dash(r.outputTotalPaise),
+        dash(r.inputCreditPaise),
+        money(r.netPayablePaise, true, bold),
+      ];
       view.blocks = [
         {
           title: null,
           columns: [
             { label: 'Month' },
+            { label: 'CGST collected', right: true },
+            { label: 'SGST collected', right: true },
+            { label: 'IGST collected', right: true },
             { label: 'GST collected (output)', right: true },
-            { label: 'GST paid (input)', right: true },
-            { label: 'Net', right: true },
+            { label: 'GST paid (input credit)', right: true },
+            { label: 'Net payable', right: true },
           ],
-          rows: rows.map(x => {
-            const r = obj(x);
-            const out = num(pick(r, 'outputPaise', 'outputGstPaise'));
-            const inn = num(pick(r, 'inputPaise', 'inputGstPaise'));
-            return [text(str(r.month)), dash(out), dash(inn), money(numN(r.netPaise) ?? out - inn)];
-          }),
-          total: rows.length
-            ? [
-                text('Total', { bold: true }),
-                money(pick(t, 'outputPaise', 'outputGstPaise'), true, true),
-                money(pick(t, 'inputPaise', 'inputGstPaise'), true, true),
-                money(pick(t, 'netPaise'), true, true),
-              ]
-            : null,
+          rows: rows.map(x => [text(str(obj(x).month)), ...cells(obj(x))]),
+          total: rows.length ? [text('Total', { bold: true }), ...cells(t, true)] : null,
         },
       ];
       view.empty = rows.length === 0;
@@ -210,6 +220,7 @@ export function normaliseReport(report: ReportKey, rawIn: unknown): ReportView {
     }
     case 'tds-register': {
       const rows = arr(raw.rows);
+      const t = obj(raw.totals);
       view.blocks = [
         {
           title: null,
@@ -218,17 +229,21 @@ export function normaliseReport(report: ReportKey, rawIn: unknown): ReportView {
             { label: 'Voucher' },
             { label: 'Payee' },
             { label: 'Section' },
-            { label: 'TDS', right: true },
+            { label: 'Deducted', right: true },
+            { label: 'Deposited', right: true },
+            { label: 'Challan' },
           ],
           rows: rows.map(x => {
             const r = obj(x);
-            const jid = numN(pick(r, 'journalId', 'journalEntryId'));
+            const jid = numN(pick(r, 'entryId', 'journalId', 'journalEntryId'));
             return [
               text(shortDate(str(r.date))),
               text(str(r.voucherNo, '-'), jid ? { journalId: jid } : {}),
-              text(str(pick(r, 'payeeName', 'payee'), '-')),
-              text(str(r.section, '-')),
-              money(pick(r, 'tdsPaise', 'amountPaise')),
+              text(str(pick(r, 'payee', 'payeeName'), '-')),
+              text(str(pick(r, 'tdsSection', 'section'), '-')),
+              dash(r.deductedPaise),
+              dash(r.depositedPaise),
+              text(str(r.challanNo, '-')),
             ];
           }),
           total: rows.length
@@ -237,7 +252,9 @@ export function normaliseReport(report: ReportKey, rawIn: unknown): ReportView {
                 text(''),
                 text(''),
                 text(''),
-                money(pick(raw, 'totalPaise') ?? obj(raw.totals).tdsPaise, true, true),
+                money(t.deductedPaise, true, true),
+                money(t.depositedPaise, true, true),
+                text(''),
               ]
             : null,
         },
