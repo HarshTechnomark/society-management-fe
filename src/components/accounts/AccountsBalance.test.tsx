@@ -140,22 +140,65 @@ describe('Resident finances', () => {
     render(<FinancesScreen />);
     expect(await screen.findByText('You do not have access')).toBeInTheDocument();
   });
-  it('explains money moved out of a fund that was not an expense, and hides zero contributors', async () => {
+  it('shows the moved-out row and the equation for a fund with transfers out', async () => {
     signInAs(perms, []);
     mockApi({
       'GET /me/society-finances/funds/3/statement': ok({
         fund: { id: 3, name: 'Sinking' },
-        collectedPaise: 10000000,
-        spentPaise: 10000000,
-        balancePaise: 0,
+        collectedPaise: 60000000,
+        spentPaise: 0,
+        movedInPaise: 0,
+        movedOutPaise: 10000000,
+        balancePaise: 50000000,
         contributors: 0,
         spend: [],
+        lines: [{ kind: 'TRANSFER_OUT', date: '2026-04-02', label: 'To Repair fund', amountPaise: 10000000 }],
       }),
     });
     render(<FundStatementScreen id={3} />);
-    expect(await screen.findByTestId('fund-moved')).toHaveTextContent('₹1,00,000');
+    expect(await screen.findByTestId('fund-moved-out')).toHaveTextContent('₹1,00,000');
+    expect(screen.queryByTestId('fund-moved-in')).toBeNull();
     expect(screen.queryByText(/Nothing has been spent/)).toBeNull();
+    expect(screen.getByTestId('fund-equation')).toHaveTextContent('Collected ₹6,00,000 + Moved in ₹0');
+    expect(screen.getByTestId('fund-equation')).toHaveTextContent('Balance ₹5,00,000');
+    expect(screen.getByTestId('fund-lines')).toHaveTextContent('Moved to another fund');
     expect(screen.queryByTestId('fund-contributors')).toBeNull();
+  });
+  it('shows the moved-in row for a fund that received a transfer', async () => {
+    signInAs(perms, []);
+    mockApi({
+      'GET /me/society-finances/funds/2/statement': ok({
+        fund: { id: 2, name: 'Repair fund' },
+        collectedPaise: 20000000,
+        spentPaise: 4500000,
+        movedInPaise: 10000000,
+        movedOutPaise: 0,
+        balancePaise: 25500000,
+        contributors: 5,
+        spend: [{ category: 'Repairs', amountPaise: 4500000 }],
+      }),
+    });
+    render(<FundStatementScreen id={2} />);
+    expect(await screen.findByTestId('fund-moved-in')).toHaveTextContent('₹1,00,000');
+    expect(screen.getByText('Moved in from another fund')).toBeInTheDocument();
+    expect(screen.queryByTestId('fund-moved-out')).toBeNull();
+  });
+  it('says nothing was spent only when spent and moved out are both zero', async () => {
+    signInAs(perms, []);
+    mockApi({
+      'GET /me/society-finances/funds/4/statement': ok({
+        fund: { id: 4, name: 'New' },
+        collectedPaise: 100,
+        spentPaise: 0,
+        movedInPaise: 0,
+        movedOutPaise: 0,
+        balancePaise: 100,
+        contributors: 1,
+        spend: [],
+      }),
+    });
+    render(<FundStatementScreen id={4} />);
+    expect(await screen.findByText(/Nothing has been spent/)).toBeInTheDocument();
   });
   it('shows a fund statement and the not-available state', async () => {
     signInAs(perms, []);

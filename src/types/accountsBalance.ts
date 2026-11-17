@@ -63,11 +63,22 @@ export interface ResidentFinances {
   spendByCategory: CategoryAmount[] | null;
   incomeByCategory: CategoryAmount[] | null;
 }
+export type FundLineKind = 'EXPENSE' | 'TRANSFER_OUT' | 'TRANSFER_IN' | 'CONTRIBUTION';
+export interface FundStatementLine {
+  kind: FundLineKind;
+  date: string;
+  label: string;
+  amountPaise: number;
+}
 export interface FundStatement {
   fund: { id: number; name: string };
   collectedPaise: number;
   spentPaise: number;
+  movedInPaise: number;
+  movedOutPaise: number;
   balancePaise: number;
   contributors: number;
   spend: { category: string; amountPaise: number }[];
+  /** Typed statement lines, when the API sends them. */
+  lines: FundStatementLine[];
 }

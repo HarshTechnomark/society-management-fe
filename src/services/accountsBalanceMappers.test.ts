@@ -45,6 +45,20 @@ describe('accountsBalanceMappers', () => {
     expect(s.contributors).toBe(4);
     expect(s.spend).toHaveLength(1);
   });
+  it('maps moved in/out and keeps only typed statement lines', () => {
+    const s = mapFundStatement({
+      fund: { id: 2, name: 'R' },
+      movedInPaise: 7,
+      movedOutPaise: 5,
+      lines: [
+        { kind: 'TRANSFER_IN', amountPaise: 7, label: 'x' },
+        { kind: 'BOGUS', amountPaise: 1 },
+      ],
+    });
+    expect([s.movedInPaise, s.movedOutPaise]).toEqual([7, 5]);
+    expect(s.lines).toHaveLength(1);
+    expect(mapFundStatement({}).lines).toEqual([]);
+  });
   it('maps the API movement directions IN, OUT and FUND_ONLY', () => {
     const m = (direction: string, delta: number) =>
       mapBalance({ movements: [{ journalEntryId: 1, direction, deltaTotalPaise: delta }] }).movements[0]!
