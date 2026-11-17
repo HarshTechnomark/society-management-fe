@@ -1,6 +1,7 @@
 'use client';
 import { plural } from '@/lib/plural';
 import { useRef, useState } from 'react';
+import { FundPicker } from '@/components/accounts/pickers/FundPicker';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -61,13 +62,11 @@ export function CollectionWizard({
   const [busy, setBusy] = useState<'draft' | 'submit' | null>(null);
   // once saved, a retry changes the same collection instead of creating a second one
   const saved = useRef<CollectionDetail | null>(editing ?? null);
-  const funds = useLoad(() => collectionsService.funds());
   const buildings = useLoad(() => collectionsService.buildings());
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => {
     setD(prev => ({ ...prev, [k]: v }));
     setErrors(prev => ({ ...prev, [k]: undefined }));
   };
-  const fundList = funds.data ?? [];
   const flats = flatCount(d, buildings.data ?? []);
 
   const next = () => {
@@ -342,39 +341,7 @@ export function CollectionWizard({
 
       {step === 3 && (
         <>
-          {fundList.length > 0 ? (
-            <Select
-              label="Fund"
-              value={d.fundId}
-              error={errors.fundId}
-              hint="The money collected lands in this fund."
-              onChange={e => set('fundId', e.target.value)}
-              options={[
-                { value: '', label: funds.loading ? 'Loading funds' : 'Choose a fund' },
-                ...fundList.map(f => ({ value: String(f.id), label: f.label })),
-              ]}
-              required
-            />
-          ) : funds.loading ? (
-            <Select
-              label="Fund"
-              value=""
-              onChange={() => {}}
-              options={[{ value: '', label: 'Loading funds' }]}
-              disabled
-            />
-          ) : (
-            // the list of funds comes from the accounts module; until it answers the number of the fund is typed
-            <Input
-              label="Fund number"
-              inputMode="numeric"
-              value={d.fundId}
-              error={errors.fundId}
-              hint="The list of funds is not available yet. Enter the number of the fund the money goes to."
-              onChange={e => set('fundId', e.target.value.replace(/\D/g, ''))}
-              required
-            />
-          )}
+          <FundPicker value={d.fundId} onChange={v => set('fundId', v)} error={errors.fundId} required />
           <Input
             label="Target (₹)"
             inputMode="decimal"
