@@ -117,4 +117,21 @@ describe('Admin navigation', () => {
     expect(nav.queryByRole('link', { name: 'Payment links' })).toBeNull();
     expect(nav.queryByRole('link', { name: 'AutoPay' })).toBeNull();
   });
+  it('shows the Accounts links by finance.accounts.view, finance.expenses.view and finance.bank.view', () => {
+    signIn(['settings.society.view']);
+    const { unmount } = render(<AdminNav>x</AdminNav>);
+    const nav = () => within(screen.getByRole('navigation', { name: 'Admin' }));
+    expect(nav().queryByRole('link', { name: 'Society balance' })).not.toBeInTheDocument();
+    unmount();
+    signIn(['finance.expenses.view']);
+    const second = render(<AdminNav>x</AdminNav>);
+    expect(nav().getByRole('link', { name: 'Expenses' })).toHaveAttribute('href', '/admin/accounts/expenses');
+    expect(nav().getByRole('link', { name: 'Cash book' })).toBeInTheDocument();
+    expect(nav().queryByRole('link', { name: 'Journals' })).not.toBeInTheDocument();
+    second.unmount();
+    signIn(['finance.accounts.view', 'finance.bank.view']);
+    render(<AdminNav>x</AdminNav>);
+    for (const name of ['Society balance', 'Funds', 'Journals', 'Reports', 'Bank accounts', 'Settlements'])
+      expect(nav().getByRole('link', { name })).toBeInTheDocument();
+  });
 });
