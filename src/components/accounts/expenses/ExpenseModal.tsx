@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { GENERAL_FUND } from '@/components/accounts/pickers/FundPicker';
 import { FileField } from '@/components/residents/common';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
@@ -73,7 +74,7 @@ export function ExpenseModal({
   const [paidFrom, setPaidFrom] = useState(expense?.paidFrom ? String(expense.paidFrom.id) : '');
   const [mode, setMode] = useState(expense?.paymentMode ?? '');
   const [reference, setReference] = useState(expense?.paymentReference ?? '');
-  const [fund, setFund] = useState(expense?.fundId ? String(expense.fundId) : '');
+  const [fund, setFund] = useState(expense?.fundId ? String(expense.fundId) : GENERAL_FUND);
   const [note, setNote] = useState(expense?.description ?? '');
   const [gst, setGst] = useState(expense && expense.gstPaise ? paiseText(expense.gstPaise) : '');
   const [tds, setTds] = useState(expense && expense.tdsPaise ? paiseText(expense.tdsPaise) : '');
@@ -135,7 +136,7 @@ export function ExpenseModal({
       e.tdsSection = 'Enter the TDS section, for example 194C.';
     if (challan.trim() && !/^[A-Za-z0-9/-]{6,30}$/.test(challan.trim()))
       e.challan = 'The challan number has 6 to 30 letters and digits.';
-    if (fund && !/^\d+$/.test(fund)) e.fund = 'Enter the fund number.';
+    if (fund && fund !== GENERAL_FUND && !/^\d+$/.test(fund)) e.fund = 'Enter the fund number.';
     if (note.length > 500) e.note = 'Keep the note under 500 characters.';
     setErrors(e);
     if (Object.keys(e).length > 0 || amountPaise === null) return null;
@@ -153,7 +154,7 @@ export function ExpenseModal({
       ...(tdsP ? { tdsPaise: tdsP } : {}),
       ...(needSection ? { tdsSection: tdsSection.trim().toUpperCase() } : {}),
       ...(isTdsDeposit && challan.trim() ? { challanNo: challan.trim() } : {}),
-      ...(fund ? { fundId: Number(fund) } : {}),
+      ...(fund && fund !== GENERAL_FUND ? { fundId: Number(fund) } : {}),
       fileIds: bills.map(b => b.id),
       ...(expense ? {} : { submit }),
     };
@@ -330,10 +331,10 @@ export function ExpenseModal({
         <Input
           label="Fund number (optional)"
           inputMode="numeric"
-          value={fund}
+          value={fund === GENERAL_FUND ? '' : fund}
           error={errors.fund}
           hint="Leave empty for general money of the society."
-          onChange={e => setFund(e.target.value.replace(/\D/g, ''))}
+          onChange={e => setFund(e.target.value.replace(/\D/g, '') || GENERAL_FUND)}
         />
       ) : (
         <Select
@@ -342,7 +343,7 @@ export function ExpenseModal({
           error={errors.fund}
           onChange={e => setFund(e.target.value)}
           options={[
-            { value: '', label: 'General' },
+            { value: GENERAL_FUND, label: 'General' },
             ...(funds.data ?? []).map(f => ({
               value: String(f.id),
               label: f.balancePaise != null ? `${f.name} (${inr(f.balancePaise)})` : f.name,

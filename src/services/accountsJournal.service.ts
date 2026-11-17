@@ -58,5 +58,5 @@ export const accountsJournalService = {
     api<unknown>(`${B}/opening-balances`, { method: 'POST', body, idempotent: true }).then(normaliseOpening),
 
   /** Funds for the line picker (module 13 part 4 owns the funds screens); callers treat a failure as "no list". */
-  fundOptions: () => api<unknown>(`${B}/funds`, { query: { limit: 100 }, plan: false }).then(normaliseFunds),
+  fundOptions: () => api<unknown>(`${B}/funds`, { plan: false }).then(normaliseFunds),
 };

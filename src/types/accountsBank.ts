@@ -44,7 +44,7 @@ export interface BankAccountInput {
 
 export interface BankAccountPatch {
   displayName?: string;
-  branchName?: string;
+  branchName?: string | null;
   accountHolderName?: string;
   ifsc?: string;
   accountNumber?: string;

@@ -4,6 +4,9 @@ import { Select } from '@/components/ui/Select';
 import { useLoad } from '@/hooks/useLoad';
 import { accountsFundsService } from '@/services/accountsFunds.service';
 
+/** The value of the "General (not earmarked)" choice, shared with the expense form so both agree (the API says `null`). */
+export const GENERAL_FUND = 'general';
+
 interface Props {
   value: string;
   onChange: (value: string) => void;
@@ -64,7 +67,7 @@ export function FundPicker({
       onChange={e => onChange(e.target.value)}
       options={[
         { value: '', label: 'Choose a fund' },
-        ...(includeGeneral ? [{ value: 'general', label: 'General (not earmarked)' }] : []),
+        ...(includeGeneral ? [{ value: GENERAL_FUND, label: 'General (not earmarked)' }] : []),
         ...list.map(f => ({ value: String(f.id), label: f.label })),
       ]}
       required={required}
