@@ -62,6 +62,7 @@ function Inner({ id }: { id: number }) {
 
   const imp = useLoad(() => accountsStatementsService.get(id), `imp-${id}`);
   const status = imp.data?.status;
+  const reload = imp.reload;
   const parsed = status === 'PARSED' || status === 'RECONCILED';
   const lines = useLoad(
     () =>
@@ -71,20 +72,18 @@ function Inner({ id }: { id: number }) {
     `${id}|${parsed}|${filter}|${page}`,
   );
   // While the file is being read, ask again every few seconds (without bumping the idle timer).
-  const [fresh, setFresh] = useState<typeof imp.data>(null);
   useEffect(() => {
     if (status !== 'UPLOADED') return;
     const t = setInterval(() => {
-      accountsStatementsService.get(id, true).then(setFresh, () => {});
+      accountsStatementsService.get(id, true).then(
+        r => {
+          if (r.status !== 'UPLOADED') reload();
+        },
+        () => {},
+      );
     }, 4000);
     return () => clearInterval(t);
-  }, [status, id]);
-  useEffect(() => {
-    if (fresh && fresh.status !== 'UPLOADED') {
-      setFresh(null);
-      imp.reload();
-    }
-  }, [fresh, imp]);
+  }, [status, id, reload]);
 
   const reloadAll = () => {
     imp.reload();
