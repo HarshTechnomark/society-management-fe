@@ -131,4 +131,33 @@ describe('DevApprovals', () => {
     expect(await screen.findByText('Flat A-1203 · ₹2,500 · cash')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
   });
+  it('labels the module 13 approval types and decides them with source=accounts', async () => {
+    const api = renderIt({
+      'GET /dev/approvals': ok([
+        {
+          id: 31,
+          type: 'MANUAL_JOURNAL',
+          entityId: 8,
+          societyId: 1,
+          status: 'PENDING',
+          source: 'accounts',
+          title: 'Fix',
+          amountPaise: 118000,
+        },
+        { id: 32, type: 'EXPENSE', entityId: 9, societyId: 1, status: 'PENDING', source: 'accounts' },
+        { id: 33, type: 'FUND_TRANSFER', entityId: 1, societyId: 1, status: 'PENDING', source: 'accounts' },
+        { id: 34, type: 'DEPOSIT_REFUND', entityId: 2, societyId: 1, status: 'PENDING', source: 'accounts' },
+        { id: 35, type: 'PERIOD_UNLOCK', entityId: 3, societyId: 1, status: 'PENDING', source: 'accounts' },
+      ]),
+      'POST /dev/approvals/31/approve': ok({ id: 31, status: 'APPROVED' }),
+    });
+    for (const label of ['Manual journal', 'Expense', 'Fund transfer', 'Deposit refund', 'Period unlock'])
+      expect(await screen.findByText(label)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Approve request 31' }));
+    await waitFor(() =>
+      expect(
+        api.fn.mock.calls.some(c => String(c[0]).includes('/dev/approvals/31/approve?source=accounts')),
+      ).toBe(true),
+    );
+  });
 });
