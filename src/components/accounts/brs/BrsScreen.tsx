@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Card, Page, PageHead } from '@/components/common/PageHead';
+import { ApiError } from '@/lib/apiClient';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Gate } from '@/components/setup/Gate';
 import { PlanLocked } from '@/components/subscription/FeatureGate';
@@ -33,7 +34,18 @@ export function BrsScreen({ bankAccountId }: { bankAccountId: number }) {
 
 function Inner({ id }: { id: number }) {
   const [asOf, setAsOf] = useState(todayIso());
-  const load = useLoad(() => accountsStatementsService.brs(id, asOf), `${id}|${asOf}`);
+  const future = asOf > todayIso();
+  const load = useLoad(
+    () =>
+      future
+        ? Promise.reject(
+            new ApiError(400, 'VALIDATION_FAILED', 'Invalid date', [
+              { field: 'asOf', message: 'The date cannot be in the future.' },
+            ]),
+          )
+        : accountsStatementsService.brs(id, asOf),
+    `${id}|${asOf}`,
+  );
   const b = load.data;
 
   const exportCsv = () => {
@@ -81,6 +93,7 @@ function Inner({ id }: { id: number }) {
         </div>
         {load.error != null ? (
           <ErrorState
+            title={load.error instanceof ApiError && load.error.status === 400 ? 'Check the date' : undefined}
             error={plainError(load.error)}
             action={
               <Button size="sm" onClick={load.reload}>

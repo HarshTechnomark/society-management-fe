@@ -285,7 +285,7 @@ function Inner({ id }: { id: number }) {
           </div>
 
           <div className="grid gap-4 min-[901px]:grid-cols-[1.2fr_1fr]">
-            <Card title="Statement lines">
+            <Card title="Statement lines" className="min-w-0">
               {lines.loading ? (
                 <div className="skeleton h-20 w-full" data-testid="skeleton-row" />
               ) : lines.error ? (
@@ -304,15 +304,17 @@ function Inner({ id }: { id: number }) {
               ) : (
                 <ul aria-label="Statement lines" className="divide-y divide-[var(--line)]">
                   {items.map((l: StatementLine) => (
-                    <li key={l.id} data-testid="line-row">
+                    <li key={l.id} data-testid="line-row" className="min-w-0">
                       <button
                         type="button"
                         onClick={() => setSelected(l.id)}
                         aria-pressed={selected === l.id}
-                        className={`flex w-full items-center justify-between gap-3 px-1 py-2.5 text-left ${selected === l.id ? 'bg-[rgba(20,35,44,0.06)]' : ''}`}
+                        className={`flex w-full min-w-0 items-center justify-between gap-3 px-1 py-2.5 text-left ${selected === l.id ? 'bg-[rgba(20,35,44,0.06)]' : ''}`}
                       >
                         <span className="min-w-0 text-[13.5px]">
-                          <span className="block truncate font-semibold">{l.description}</span>
+                          <span className="block truncate font-semibold" title={l.description}>
+                            {l.description}
+                          </span>
                           <span className="text-muted">
                             {shortDate(l.txnDate)}
                             {l.reference ? ` . ${l.reference}` : ''}

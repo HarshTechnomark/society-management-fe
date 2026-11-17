@@ -97,9 +97,7 @@ export function SettlementDrawer({
             <KV label="GST on the fee">{inr(s.feeGstPaise)}</KV>
             {s.adjustmentPaise !== 0 && <KV label="Adjustments">{inr(s.adjustmentPaise)}</KV>}
             <KV label="Net credited to the bank">{inr(s.netPaise)}</KV>
-            <KV label="Difference">
-              {inr(s.unmatchedItems.filter(i => i.type === 'payment').reduce((t, i) => t + i.amountPaise, 0))}
-            </KV>
+            <KV label="Difference">{inr(unmatchedDifference(s))}</KV>
           </dl>
           <div>
             <h3 className="mb-1 text-[15px] font-bold">Payments in this settlement</h3>
@@ -138,6 +136,7 @@ export function SettlementDrawer({
           onCancel={() => setAccepting(false)}
           onSubmit={async reason => {
             await accountsSettlementsService.acceptDifference(s.id, { reason, version: s.version });
+            setError(null);
             toast.show('Settlement posted with the difference.');
             setAccepting(false);
             load.reload();
@@ -147,6 +146,31 @@ export function SettlementDrawer({
       )}
     </Drawer>
   );
+}
+
+const REASON_TEXT: Record<string, string> = {
+  UNKNOWN_PAYMENT: 'Not found in your payments',
+  NOT_CAPTURED: 'The payment was not captured in your records',
+  ALREADY_SETTLED: 'Already paid out in another settlement',
+  DUPLICATE_ITEM: 'Listed twice in this report',
+  REFUNDS_EXCEED_GROSS: 'The refunds are more than the payments',
+};
+/** Words for the reason code the API sends on an unmatched item. */
+export function reasonText(reason: string | null, item: SettlementItem): string {
+  if (reason === 'AMOUNT_DIFFERS')
+    return item.expectedPaise === null
+      ? 'Amount differs from your payment'
+      : `Amount differs: reported ${inr(item.amountPaise)}, captured ${inr(item.expectedPaise)}`;
+  return (reason && REASON_TEXT[reason]) || reason || 'Not found in your payments';
+}
+/** What the settlement is off by: the gap on a wrong amount, the whole amount on any other unmatched payment. */
+export function unmatchedDifference(s: Settlement): number {
+  return s.unmatchedItems
+    .filter(i => i.type === 'payment')
+    .reduce(
+      (t, i) => t + (i.expectedPaise !== null ? Math.abs(i.amountPaise - i.expectedPaise) : i.amountPaise),
+      0,
+    );
 }
 
 const unmatched = (s: Settlement, i: SettlementItem) =>
@@ -166,7 +190,7 @@ function ItemRow({ item: i, bad }: { item: SettlementItem; bad: SettlementItem |
         </span>
         <span className={bad ? '' : 'text-muted'}>
           {bad
-            ? (bad.reason ?? i.reason ?? 'Not found in your payments')
+            ? reasonText(bad.reason ?? i.reason, bad)
             : i.receiptNo
               ? `Receipt ${i.receiptNo}`
               : i.type === 'refund'

@@ -20,6 +20,7 @@ export function normaliseSettlementItem(raw: unknown): SettlementItem {
     matchedPaymentId: numN(r.matchedPaymentId) ?? numN(pay.id),
     receiptNo: strN(r.receiptNo) ?? strN(pay.receiptNo),
     reason: strN(r.reason),
+    expectedPaise: numN(r.expectedPaise),
   };
 }
 
