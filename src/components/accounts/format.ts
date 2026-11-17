@@ -1,4 +1,5 @@
 import { ApiError } from '@/lib/apiClient';
+import { financialYearStartIST } from '@/lib/indiaDate';
 
 /** Words for the section 12 codes the fund and bank account routes return. */
 const TEXT: Record<string, string> = {
@@ -53,6 +54,5 @@ export function fieldErrors(e: unknown): Record<string, string> {
 
 /** 1 April of the current financial year as an ISO day. */
 export function fyStart(now = new Date()): string {
-  const y = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
-  return `${y}-04-01`;
+  return financialYearStartIST(now);
 }

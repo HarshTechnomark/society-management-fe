@@ -10,7 +10,8 @@ import { useLoad } from '@/hooks/useLoad';
 import { accountsBalanceService as svc } from '@/services/accountsBalance.service';
 import { BalanceChart } from './BalanceChart';
 import { SocietyBalanceCard } from './SocietyBalanceCard';
-import { plainBalanceError, ymd } from './format';
+import { plainBalanceError } from './format';
+import { addDaysIST, todayIST } from '@/lib/indiaDate';
 
 const DAYS = [
   { days: 30, label: '30 days' },
@@ -58,12 +59,8 @@ function Inner() {
   const [days, setDays] = useState(30);
   const range = useMemo(() => {
     // The API refuses a `to` after the society's today (India time), so the dates come from that calendar.
-    const today = new Date(
-      new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) + 'T00:00:00',
-    );
-    const from = new Date(today);
-    from.setDate(from.getDate() - (days - 1));
-    return { from: ymd(from), to: ymd(today) };
+    const to = todayIST();
+    return { from: addDaysIST(to, -(days - 1)), to };
   }, [days]);
   const hist = useLoad(() => svc.history(range.from, range.to), days);
   return (

@@ -1,6 +1,7 @@
 import type { Tone } from '@/components/ui/Chip';
 import { ApiError } from '@/lib/apiClient';
 import type { MandateStatus, OrderStatus, RefundMode, RefundStatus } from '@/types/paymentsOps';
+import { todayIST } from '@/lib/indiaDate';
 
 /** Words for the section 12 error codes the refund, order, mandate, link and advance routes can return. */
 const TEXT: Record<string, string> = {
@@ -145,11 +146,8 @@ export const advanceNarration = (text: string | null | undefined): string => {
   return t.replace(/^Advance from payment\s+/i, 'From receipt ');
 };
 export const isOpenRefund = (s: RefundStatus) => s === 'PENDING_APPROVAL' || s === 'PROCESSING';
-/** Today as YYYY-MM-DD in local time. */
-export const todayIso = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+/** Today as YYYY-MM-DD in India time (the society's calendar). */
+export const todayIso = () => todayIST();
 /** Rupees typed as text ("1,250.50") to paise; null when not a positive amount with at most two decimals. */
 export function rupeesToPaise(text: string): number | null {
   const t = text.replace(/[,\s₹]/g, '');

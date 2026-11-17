@@ -14,11 +14,9 @@ import { inr, shortDate } from '@/lib/money';
 import { accountsStatementsService } from '@/services/accountsStatements.service';
 import { isPlan402, plainError } from '../statements/format';
 import { BRS_KIND_LABEL, brsToCsv } from './brsCsv';
+import { todayIST } from '@/lib/indiaDate';
 
-const todayIso = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+const todayIso = () => todayIST();
 
 /** Bank reconciliation statement of one bank account (spec 8.14 route 38, Premium). */
 export function BrsScreen({ bankAccountId }: { bankAccountId: number }) {

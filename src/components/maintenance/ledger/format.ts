@@ -2,6 +2,7 @@ import type { Tone } from '@/components/ui/Chip';
 import { ApiError } from '@/lib/apiClient';
 import { inr } from '@/lib/money';
 import type { OpeningStatus } from '@/types/ledger';
+import { addDaysIST, financialYearStartIST, firstOfMonthIST } from '@/lib/indiaDate';
 
 /** Words for every section 12 error code the ledger, statement and opening balance routes can return. */
 export const LEDGER_TEXT: Record<string, string> = {
@@ -100,6 +101,7 @@ export function duesView(paise: number): { label: string; tone: 'due' | 'advance
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
+/** A Date as YYYY-MM-DD of its own (local) fields; use `todayIST()` for "today". */
 export const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 /**
@@ -109,15 +111,14 @@ export const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}
 export function defaultAsOfDate(billingStart: string | null, now = new Date()): string {
   if (billingStart) {
     const [y, m, d] = billingStart.slice(0, 10).split('-').map(Number);
-    return isoDate(new Date(y, m - 1, d - 1));
+    return addDaysIST(`${y}-${pad(m)}-${pad(d)}`, -1);
   }
-  return isoDate(new Date(now.getFullYear(), now.getMonth(), 0));
+  return addDaysIST(firstOfMonthIST(now), -1);
 }
 
 /** First day of the current Indian financial year (1 April). */
 export function financialYearStart(now = new Date()): string {
-  const y = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
-  return `${y}-04-01`;
+  return financialYearStartIST(now);
 }
 
 export function daysBetween(from: string, to: string): number {
