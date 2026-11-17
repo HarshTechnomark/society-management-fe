@@ -33,7 +33,11 @@ const VIEW = ['finance.accounts.view'];
 const ALL = ['finance.accounts.view', 'finance.accounts.create'];
 function renderIt(rows: unknown[], routes: Parameters<typeof mockApi>[0] = {}, perms = ALL) {
   signInAs(perms, []);
-  const api = mockApi({ 'GET /accounts/deposits': list(rows), ...routes });
+  const api = mockApi({
+    'GET /accounts/deposits': list(rows),
+    'GET /accounts/deposits/summary': ok({ heldPaise: 5000000, refundedPaise: 0, forfeitedPaise: 0 }),
+    ...routes,
+  });
   render(<DepositsScreen />);
   return api;
 }
