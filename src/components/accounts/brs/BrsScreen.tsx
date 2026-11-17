@@ -97,12 +97,12 @@ function Inner({ id }: { id: number }) {
             <dl className="grid gap-1 text-[14.5px]" aria-label="Summary">
               <Row label="Balance as per the books" v={b.bookBalancePaise} strong />
               <Row
-                label="Add: money in, in the books but not yet on the statement"
-                v={b.unclearedDebitsPaise}
+                label="Less: money in, in the books but not yet on the statement"
+                v={-b.unclearedDebitsPaise}
               />
               <Row
-                label="Less: money out, in the books but not yet on the statement"
-                v={-b.unclearedCreditsPaise}
+                label="Add: money out, in the books but not yet on the statement"
+                v={b.unclearedCreditsPaise}
               />
               <Row
                 label="Add: money in on the statement, not in the books"
@@ -113,11 +113,19 @@ function Inner({ id }: { id: number }) {
                 v={-b.unmatchedStatementDebitsPaise}
               />
               <Row label="Balance as computed" v={b.computedBankBalancePaise} strong />
-              <Row label="Balance as per the bank statement" v={b.statementBalancePaise} strong />
-              <Row label="Difference" v={b.differencePaise} strong />
+              {b.statementBalancePaise !== null && b.differencePaise !== null && (
+                <>
+                  <Row label="Balance as per the bank statement" v={b.statementBalancePaise} strong />
+                  <Row label="Difference" v={b.differencePaise} strong />
+                </>
+              )}
             </dl>
             <div className="mt-3">
-              {b.differencePaise === 0 ? (
+              {b.differencePaise === null ? (
+                <Alert tone="info">
+                  No bank statement has been imported up to this date, so there is nothing to compare with.
+                </Alert>
+              ) : b.differencePaise === 0 ? (
                 <Alert tone="ok">The books and the bank statement agree.</Alert>
               ) : (
                 <Alert tone="warn">

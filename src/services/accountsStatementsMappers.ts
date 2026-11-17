@@ -1,6 +1,5 @@
 /** Normalisers from the statement shapes (spec 7.10, 7.11, 8.14 BRS, 8.16) to `types/accountsStatements.ts`. Never throw. */
 import type {
-  AutoMatchResult,
   BankAccountOption,
   BrsItem,
   Brs,
@@ -77,13 +76,6 @@ export function normaliseCandidate(raw: unknown): Candidate {
   };
 }
 
-export function normaliseAutoMatch(raw: unknown): AutoMatchResult {
-  const r = obj(raw);
-  const byReference = num(r.byReference, num(r.pass1));
-  const byAmountDate = num(r.byAmountDate, num(r.pass2));
-  return { matched: num(r.matched, byReference + byAmountDate), byReference, byAmountDate };
-}
-
 export function normaliseBrsItem(raw: unknown): BrsItem {
   const r = obj(raw);
   return {
@@ -105,8 +97,8 @@ export function normaliseBrs(raw: unknown): Brs {
     unmatchedStatementCreditsPaise: num(r.unmatchedStatementCreditsPaise),
     unmatchedStatementDebitsPaise: num(r.unmatchedStatementDebitsPaise),
     computedBankBalancePaise: num(r.computedBankBalancePaise),
-    statementBalancePaise: num(r.statementBalancePaise),
-    differencePaise: num(r.differencePaise),
+    statementBalancePaise: numN(r.statementBalancePaise),
+    differencePaise: numN(r.differencePaise),
     items: arr(r.items).map(normaliseBrsItem),
   };
 }
@@ -114,9 +106,10 @@ export function normaliseBrs(raw: unknown): Brs {
 export function normaliseBankOption(raw: unknown): BankAccountOption {
   const r = obj(raw);
   const bank = str(r.bankName, str(r.name));
+  const display = str(r.displayName);
   const masked = str(r.accountNumberMasked, str(r.accountNumber));
   return {
     id: num(r.id),
-    label: str(r.label) || [bank, masked].filter(Boolean).join(' ') || `Account ${num(r.id)}`,
+    label: str(r.label) || display || [bank, masked].filter(Boolean).join(' ') || `Account ${num(r.id)}`,
   };
 }

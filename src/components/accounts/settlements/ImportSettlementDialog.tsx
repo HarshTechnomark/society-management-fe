@@ -8,9 +8,22 @@ import { Textarea } from '@/components/ui/Textarea';
 import { useToast } from '@/components/ui/Toast';
 import { uploadFile } from '@/lib/fileUpload';
 import { accountsSettlementsService } from '@/services/accountsSettlements.service';
-import type { ImportSettlementResult } from '@/types/accountsSettlements';
+import type { ImportSettlementJson, ImportSettlementResult } from '@/types/accountsSettlements';
 import { GATEWAY_PROVIDERS, bankError } from '../statements/format';
 import { ImportFilePicker } from '../statements/ImportFilePicker';
+
+/** Pasted text that starts with `[` or `{` is JSON (a list of settlements, or `{ settlements: [...] }`); anything else is the CSV rows. */
+export function parsePastedSettlements(text: string): ImportSettlementJson[] | null | 'invalid' {
+  const t = text.trim();
+  if (!/^[[{]/.test(t)) return null;
+  try {
+    const v: unknown = JSON.parse(t);
+    const list = Array.isArray(v) ? v : (v as { settlements?: unknown } | null)?.settlements;
+    return Array.isArray(list) && list.length > 0 ? (list as ImportSettlementJson[]) : 'invalid';
+  } catch {
+    return 'invalid';
+  }
+}
 
 export const SETTLEMENT_TEMPLATE_URL = '/templates/settlement-report-template.csv';
 
@@ -30,15 +43,23 @@ export function ImportSettlementDialog({ onClose, onDone }: { onClose: () => voi
   const submit = async () => {
     setFailed(null);
     let source: File | null = file;
+    let json: ImportSettlementJson[] | null = null;
     if (mode === 'paste') {
       if (text.trim().length < 10) return setError('Paste the rows of the report, with its heading row.');
-      source = new File([text], 'settlement-report.csv', { type: 'text/csv' });
+      const parsed = parsePastedSettlements(text);
+      if (parsed === 'invalid')
+        return setError('This is not a valid list of settlements. Paste the CSV rows or the JSON list.');
+      json = parsed;
+      if (!json) source = new File([text], 'settlement-report.csv', { type: 'text/csv' });
     } else if (!file) return setError(fileProblem || 'Choose the report file.');
     setError(null);
     setBusy(true);
     try {
-      const { fileId } = await uploadFile(source!, 'IMPORT_FILE');
-      const r = await accountsSettlementsService.import({ fileId, gatewayProvider: provider });
+      const r = await accountsSettlementsService.import(
+        json
+          ? { settlements: json, gatewayProvider: provider }
+          : { fileId: (await uploadFile(source!, 'IMPORT_FILE')).fileId, gatewayProvider: provider },
+      );
       setResult(r);
       toast.show(`${r.created} settlements added${r.skipped ? `, ${r.skipped} already there` : ''}.`);
       onDone();
@@ -128,6 +149,11 @@ export function ImportSettlementDialog({ onClose, onDone }: { onClose: () => voi
               error={error ?? undefined}
               onChange={e => setText(e.target.value)}
             />
+          )}
+          {mode === 'paste' && (
+            <p className="text-[12.5px] text-muted">
+              CSV rows with the heading row, or a JSON list of settlements (amounts in paise).
+            </p>
           )}
           <a href={SETTLEMENT_TEMPLATE_URL} download className="text-[13.5px] font-semibold underline">
             Download the CSV template

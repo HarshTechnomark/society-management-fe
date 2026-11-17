@@ -4,6 +4,10 @@ import { Card, Page, PageHead } from '@/components/common/PageHead';
 import { Gate } from '@/components/setup/Gate';
 import { ListBody, NoRows, StatusChip } from '@/components/payments/ops/Bits';
 import { PlanLocked } from '@/components/subscription/FeatureGate';
+import { Alert } from '@/components/ui/Alert';
+import { useToast } from '@/components/ui/Toast';
+import { ApiError } from '@/lib/apiClient';
+import { getMe } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -29,6 +33,7 @@ export function SettlementsScreen() {
 }
 
 function Inner() {
+  const toast = useToast();
   const canImport = usePermission(P.import);
   const canApprove = usePermission(P.approve);
   const [status, setStatus] = useState('');
@@ -47,14 +52,54 @@ function Inner() {
     `${status}|${q}|${page}`,
   );
   const filtered = !!(status || q);
+  const [generating, setGenerating] = useState(false);
+  const [devError, setDevError] = useState<string | null>(null);
+  /** Development only: the practice gateway has no payout report, so this builds one from the captured online payments. */
+  const generate = async () => {
+    const societyId = getMe()?.activeSocietyId;
+    if (!societyId) return;
+    setGenerating(true);
+    setDevError(null);
+    try {
+      const r = await accountsSettlementsService.devGenerate(societyId, false);
+      toast.show(`Settlement ${r.gatewaySettlementId} generated from ${r.payments} payments.`);
+      load.reload();
+    } catch (e) {
+      setDevError(
+        e instanceof ApiError && e.code === 'NOTHING_TO_SETTLE'
+          ? 'No captured online payment is waiting for a settlement. Pay an invoice online first.'
+          : plainError(e) instanceof Error
+            ? (plainError(e) as Error).message
+            : 'The test settlement could not be generated.',
+      );
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   return (
     <Page>
       <PageHead
         title="Settlements"
         sub="Payouts from your payment gateway, matched with the payments you recorded."
-        actions={canImport && <Button onClick={() => setImporting(true)}>Import a settlement report</Button>}
+        actions={
+          canImport && (
+            <>
+              {process.env.NODE_ENV !== 'production' && (
+                <Button variant="glass" loading={generating} onClick={() => void generate()}>
+                  Generate a test settlement
+                </Button>
+              )}
+              <Button onClick={() => setImporting(true)}>Import a settlement report</Button>
+            </>
+          )
+        }
       />
+      {devError && (
+        <Alert tone="bad" className="mb-3">
+          {devError}
+        </Alert>
+      )}
       <Card>
         <div className="mb-3 flex flex-wrap items-end gap-3">
           <Select

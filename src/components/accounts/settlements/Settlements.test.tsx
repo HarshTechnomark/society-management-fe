@@ -91,6 +91,39 @@ describe('Settlements', () => {
       gatewayProvider: 'RAZORPAY',
     });
   });
+  it('sends pasted JSON as settlements and lists the ones the server refused', async () => {
+    const api = renderIt({
+      'POST /accounts/settlements/import': ok({
+        created: 1,
+        skipped: 0,
+        failed: [{ gatewaySettlementId: 'setl_9', code: 'SETTLEMENT_TOTALS_INVALID', message: 'Net is off' }],
+      }),
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'Import a settlement report' }));
+    const dlg = await screen.findByRole('dialog');
+    await userEvent.click(within(dlg).getByRole('tab', { name: 'Paste the rows' }));
+    const json = '[{"gatewaySettlementId":"setl_9","settlementDate":"2026-11-05","netPaise":100,"items":[]}]';
+    await userEvent.click(within(dlg).getByLabelText('Report rows'));
+    await userEvent.paste(json);
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Import report' }));
+    expect(await within(dlg).findByTestId('import-result')).toHaveTextContent('setl_9: Net is off');
+    expect(api.last('POST', '/accounts/settlements/import')?.body).toEqual({
+      gatewayProvider: 'RAZORPAY',
+      settlements: JSON.parse(json),
+    });
+  });
+  it('offers the test settlement outside production and generates it for the active society', async () => {
+    const api = renderIt({
+      'POST /dev/accounts/settlements/generate': ok({
+        settlementId: 7,
+        gatewaySettlementId: 'setl_dev_1',
+        payments: 2,
+      }),
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'Generate a test settlement' }));
+    await waitFor(() => expect(api.last('POST', '/dev/accounts/settlements/generate')).toBeTruthy());
+    expect(api.last('POST', '/dev/accounts/settlements/generate')?.body).toMatchObject({ reconcile: false });
+  });
   it('shows the empty state', async () => {
     renderIt({ 'GET /accounts/settlements': listOf([]) });
     expect(await screen.findByText('No settlements yet')).toBeInTheDocument();

@@ -51,6 +51,12 @@ export function normaliseSettlement(raw: unknown): Settlement {
 
 export function normaliseImportResult(raw: unknown): ImportSettlementResult {
   const r = obj(raw);
-  const errs = arr(r.errors).map(e => (typeof e === 'string' ? e : str(obj(e).message, str(obj(e).error))));
+  const errs = [...arr(r.errors), ...arr(r.failed)].map(e => {
+    if (typeof e === 'string') return e;
+    const o = obj(e);
+    const m = str(o.message, str(o.error));
+    const id = str(o.gatewaySettlementId);
+    return id && m ? `${id}: ${m}` : m;
+  });
   return { created: num(r.created), skipped: num(r.skipped), errors: errs.filter(Boolean) };
 }
