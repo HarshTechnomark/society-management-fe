@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { err, mockApi, ok, resetAll } from '@/test/helpers';
-import { glRaw, trialBalanceRaw } from '@/test/accountsReportsFixtures';
+import { bsRaw, glRaw, gstRaw, ieRaw, rpRaw, tdsRaw, trialBalanceRaw } from '@/test/accountsReportsFixtures';
 import { accountsReportsService as s } from './accountsReports.service';
 import { normaliseReport } from './accountsReportsMappers';
 
@@ -22,6 +22,28 @@ describe('accountsReportsService', () => {
     expect(v.heading).toContain('Bank - HDFC Current');
     expect(v.blocks[0].rows[0][1]).toMatchObject({ journalId: 77 });
     expect(v.summary.map(x => x.label)).toEqual(['Opening balance', 'Closing balance']);
+  });
+  it('maps the flat sectioned rows of the other reports', () => {
+    const ie = normaliseReport('income-expenditure', ieRaw());
+    expect(ie.blocks.map(b => b.title)).toEqual(['Income', 'Expenditure']);
+    expect(ie.blocks[0].rows[0][0]).toMatchObject({ ledgerAccountId: 5 });
+    expect(ie.blocks[0].total?.[1].text).toBe('₹32,250');
+    expect(ie.summary[0]).toEqual({ label: 'Surplus for the period', value: '₹31,070' });
+    const bs = normaliseReport('balance-sheet', bsRaw());
+    expect(bs.balanced).toBe(true);
+    expect(bs.blocks.map(b => b.title)).toEqual(['Assets', 'Funds', 'Reserves and surplus']);
+    expect(bs.blocks[2].rows[0][0].text).toBe('Surplus (deficit) of the current year');
+    const rp = normaliseReport('receipts-payments', rpRaw());
+    expect(rp.blocks[0].rows).toHaveLength(1);
+    expect(rp.blocks[1].rows).toHaveLength(1);
+    expect(rp.summary.map(x => x.label)).toEqual(['Cash and bank at the start', 'Cash and bank at the end']);
+    const gst = normaliseReport('gst-summary', gstRaw());
+    expect(gst.blocks[0].rows[0][4].text).toBe('₹18');
+    expect(gst.blocks[0].total?.[6].text).toBe('₹13');
+    const tds = normaliseReport('tds-register', tdsRaw());
+    expect(tds.blocks[0].rows[0][1]).toMatchObject({ journalId: 41 });
+    expect(tds.blocks[0].rows[0][3].text).toBe('194C');
+    expect(tds.blocks[0].total?.[4].text).toBe('₹200');
   });
   it('never throws on an unknown shape', () => {
     for (const k of [

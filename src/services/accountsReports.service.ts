@@ -29,7 +29,7 @@ export const accountsReportsService = {
       body: { report, params: clean(params), format },
       idempotent: true,
     }).then(r => String(r?.exportJobId ?? '')),
-  /** Assumed status route (not in the spec): `GET /accounts/exports/:id` -> `{ status, downloadUrl, expiresAt }`. */
+  /** Status of an export job: `GET /accounts/exports/:id` -> `{ status, downloadUrl, expiresAt }` (a fresh short-lived link when READY). */
   exportStatus: (id: string): Promise<ExportStatus> =>
     api<unknown>(`/accounts/exports/${encodeURIComponent(id)}`, { plan: false }).then(raw => {
       const r = obj(raw);
