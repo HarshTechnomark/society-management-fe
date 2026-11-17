@@ -212,7 +212,7 @@ export function ExpenseModal({
       wide
       onClose={onClose}
       title={expense ? `Edit ${expense.displayId}` : 'Add an expense'}
-      description={`Above ${inr(APPROVAL_ABOVE_PAISE)} needs approval. Above ${inr(BILL_ABOVE_PAISE)} needs a bill.`}
+      description={`Every expense is approved by a second committee member before it is paid. Above ${inr(BILL_ABOVE_PAISE)} a bill is needed.`}
       footer={
         <>
           {formError && (
