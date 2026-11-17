@@ -118,7 +118,14 @@ function Inner() {
         </div>
         {load.loading && <div className="skeleton h-40 w-full" data-testid="chart-loading" />}
         {!load.loading && load.error != null && (
-          <ErrorState error={plainError(load.error)} onRetry={load.reload} />
+          <ErrorState
+            error={plainError(load.error)}
+            action={
+              <Button size="sm" onClick={() => load.reload()}>
+                Try again
+              </Button>
+            }
+          />
         )}
         {!load.loading && !load.error && rows.length === 0 && (
           <EmptyState title="No accounts match" text="Clear the search to see the whole chart." />
@@ -129,6 +136,7 @@ function Inner() {
               <li
                 key={a.id}
                 role="treeitem"
+                aria-selected={false}
                 aria-level={depth + 1}
                 aria-expanded={a.children.length ? searching || !closed.has(a.id) : undefined}
                 data-testid="account-row"

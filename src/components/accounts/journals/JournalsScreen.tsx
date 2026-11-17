@@ -108,7 +108,14 @@ function Inner() {
         </div>
         {load.loading && <div className="skeleton h-40 w-full" data-testid="journals-loading" />}
         {!load.loading && load.error != null && (
-          <ErrorState error={plainError(load.error)} onRetry={load.reload} />
+          <ErrorState
+            error={plainError(load.error)}
+            action={
+              <Button size="sm" onClick={() => load.reload()}>
+                Try again
+              </Button>
+            }
+          />
         )}
         {!load.loading && !load.error && items.length === 0 && (
           <EmptyState

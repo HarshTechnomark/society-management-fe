@@ -87,7 +87,14 @@ function Inner() {
       />
       {loading && <div className="skeleton h-48 w-full" />}
       {!loading && failure != null && (
-        <ErrorState error={plainError(failure)} onRetry={() => (draft.reload(), chart.reload())} />
+        <ErrorState
+          error={plainError(failure)}
+          action={
+            <Button size="sm" onClick={() => (draft.reload(), chart.reload())}>
+              Try again
+            </Button>
+          }
+        />
       )}
       {!loading && !failure && draft.data && draft.data.status !== 'DRAFT' && (
         <EmptyState title="This journal is not a draft" text="Only drafts can be edited." />

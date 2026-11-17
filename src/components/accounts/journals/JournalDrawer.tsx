@@ -86,7 +86,14 @@ export function JournalDrawer({
       <Drawer open onClose={onClose} title={j?.voucherNo ?? (j ? `Draft ${j.id}` : 'Journal')} size={640}>
         {load.loading && <div className="skeleton h-40 w-full" />}
         {!load.loading && load.error != null && (
-          <ErrorState error={plainError(load.error)} onRetry={load.reload} />
+          <ErrorState
+            error={plainError(load.error)}
+            action={
+              <Button size="sm" onClick={() => load.reload()}>
+                Try again
+              </Button>
+            }
+          />
         )}
         {failed && <Alert tone="bad">{failed}</Alert>}
         {j && (

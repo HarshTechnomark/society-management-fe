@@ -98,7 +98,14 @@ function Inner() {
       />
       {(chart.loading || existing.loading) && <div className="skeleton h-48 w-full" />}
       {!chart.loading && chart.error != null && (
-        <ErrorState error={plainError(chart.error)} onRetry={chart.reload} />
+        <ErrorState
+          error={plainError(chart.error)}
+          action={
+            <Button size="sm" onClick={() => chart.reload()}>
+              Try again
+            </Button>
+          }
+        />
       )}
       {!chart.loading && !existing.loading && !chart.error && posted && (
         <Card title="Opening balances are posted">
