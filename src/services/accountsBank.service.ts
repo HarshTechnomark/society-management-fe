@@ -1,5 +1,5 @@
 import { ApiError, api } from '@/lib/apiClient';
-import type { BankAccount, BankAccountInput, BankAccountPatch, BankOption } from '@/types/accountsBank';
+import type { BankAccountInput, BankAccountPatch, BankOption } from '@/types/accountsBank';
 import { mapBank, mapBankOption } from './accountsBankMappers';
 import { rowsOf, str } from './accountsFundsMappers';
 
