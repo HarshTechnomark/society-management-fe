@@ -1,4 +1,5 @@
 /** Module 12 admin payment calls (spec 8.10 to 8.17 and the cheque routes). Money and create calls send an Idempotency-Key. */
+import { resetAccountsBankSession } from './accountsBank.service';
 import { api, apiBlob, apiList, ApiError } from '@/lib/apiClient';
 import {
   mapBankAccount,
@@ -26,6 +27,7 @@ let banksMissing: ApiError | null = null;
 /** Forgets what the session learned about optional routes (used by tests). */
 export const resetPaymentsSession = () => {
   banksMissing = null;
+  resetAccountsBankSession();
 };
 
 export const paymentsService = {
