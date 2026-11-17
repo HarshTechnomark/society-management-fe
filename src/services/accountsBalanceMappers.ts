@@ -5,6 +5,7 @@ import type {
   BalanceMovement,
   BalancePoint,
   CategoryAmount,
+  FundLineKind,
   FundStatement,
   ResidentFinances,
   SocietyBalance,
@@ -130,11 +131,25 @@ export function mapFundStatement(raw: unknown): FundStatement {
     fund: { id: num(f.id), name: str(f.name) },
     collectedPaise: num(r.collectedPaise),
     spentPaise: num(r.spentPaise),
+    movedInPaise: num(r.movedInPaise),
+    movedOutPaise: num(r.movedOutPaise),
     balancePaise: num(r.balancePaise),
     contributors: num(r.contributors),
     spend: arr(r.spend).map(s => {
       const o = obj(s);
       return { category: str(o.category), amountPaise: num(o.amountPaise) };
     }),
+    lines: arr(r.lines)
+      .map(l => {
+        const o = obj(l);
+        return {
+          kind: str(o.kind) as FundLineKind,
+          date: str(o.date),
+          label: str(o.label ?? o.description ?? o.narration ?? o.category),
+          amountPaise: num(o.amountPaise),
+        };
+      })
+      .filter(l => LINE_KINDS.includes(l.kind)),
   };
 }
+const LINE_KINDS: string[] = ['EXPENSE', 'TRANSFER_OUT', 'TRANSFER_IN', 'CONTRIBUTION'];

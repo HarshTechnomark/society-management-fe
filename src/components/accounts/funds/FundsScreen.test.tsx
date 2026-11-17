@@ -186,6 +186,33 @@ describe('Funds', () => {
     expect(screen.getAllByTestId('statement-row')).toHaveLength(1);
   });
 
+  it('labels each statement row by its kind', async () => {
+    const row = (kind: string, n: number) => ({
+      date: '2026-10-02',
+      voucherNo: `V${n}`,
+      narration: 'n',
+      inPaise: 0,
+      outPaise: 0,
+      runningPaise: 0,
+      kind,
+    });
+    renderIt({
+      'GET /accounts/funds/1/statement': ok({
+        openingPaise: 0,
+        closingPaise: 0,
+        rows: [row('CONTRIBUTION', 1), row('EXPENSE', 2), row('TRANSFER_IN', 3), row('TRANSFER_OUT', 4)],
+      }),
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'Open statement of Sinking fund' }));
+    await screen.findByText('V1');
+    expect(screen.getAllByTestId('statement-kind').map(c => c.textContent)).toEqual([
+      'Collected',
+      'Spent',
+      'Moved in from another fund',
+      'Moved to another fund',
+    ]);
+  });
+
   it('shows plain words when a fund cannot be closed', async () => {
     renderIt({ 'PATCH /accounts/funds/7': err(422, 'FUND_BALANCE_NOT_ZERO') });
     await screen.findAllByTestId('fund-row');

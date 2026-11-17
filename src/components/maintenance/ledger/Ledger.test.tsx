@@ -40,10 +40,14 @@ beforeEach(() => {
   configureFileUploader({ upload });
 });
 
-describe('Opening balances screen', () => {
+describe('Opening arrears screen', () => {
+  it('titles the page Opening arrears', async () => {
+    renderOb({ 'GET /billing/opening-balances': ok(obList([obRow()], obTotals())) });
+    expect(await screen.findByRole('heading', { level: 1, name: 'Opening arrears' })).toBeInTheDocument();
+  });
   it('keeps the table card inside the page width on a phone (the table scrolls inside it)', async () => {
     renderOb({ 'GET /billing/opening-balances': ok(obList([obRow()], obTotals())) });
-    const table = await screen.findByRole('table', { name: 'Opening balances' });
+    const table = await screen.findByRole('table', { name: 'Opening arrears' });
     expect(table.closest('section')).toHaveClass('min-w-0', 'max-w-full');
     expect(screen.getByTestId('table-scroll')).toHaveClass('overflow-x-auto');
   });
@@ -66,7 +70,7 @@ describe('Opening balances screen', () => {
         ),
       ),
     });
-    const table = await screen.findByRole('table', { name: 'Opening balances' });
+    const table = await screen.findByRole('table', { name: 'Opening arrears' });
     expect(within(table).getByText('A-1203')).toBeInTheDocument();
     expect(within(table).getAllByText('₹12,500').length).toBeGreaterThan(0);
     expect(within(table).getByText('Draft')).toBeInTheDocument();
@@ -109,7 +113,7 @@ describe('Opening balances screen', () => {
     renderOb({ 'GET /billing/opening-balances': ok(obList([obRow({ status: 'POSTED' })])) }, [
       'finance.billing.view',
     ]);
-    await screen.findByRole('table', { name: 'Opening balances' });
+    await screen.findByRole('table', { name: 'Opening arrears' });
     expect(screen.queryByRole('button', { name: 'Post opening balances' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Check file' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Reverse\s+A-/ })).toBeNull();
@@ -142,7 +146,7 @@ describe('Opening balances screen', () => {
             })
           : ok({ draft: 70, invalid: 2, dryRun: false, totals: obTotals({ invalidCount: 2 }), errors: [] }),
     });
-    await screen.findByRole('table', { name: 'Opening balances' });
+    await screen.findByRole('table', { name: 'Opening arrears' });
     const gets = () =>
       api.calls.filter(c => c.method === 'GET' && c.path === '/billing/opening-balances').length;
     const before = gets();
@@ -189,7 +193,7 @@ describe('Opening balances screen', () => {
         errors: [],
       }),
     });
-    await screen.findByRole('table', { name: 'Opening balances' });
+    await screen.findByRole('table', { name: 'Opening arrears' });
     await userEvent.upload(screen.getByLabelText('File'), new File(['a'], 'ob.csv'));
     await userEvent.click(screen.getByRole('button', { name: 'Check file' }));
     expect(await screen.findByRole('button', { name: 'Import 3 rows' })).toBeInTheDocument();
@@ -229,7 +233,7 @@ describe('Opening balances screen', () => {
 
   it('refuses a future as-of date before calling the API', async () => {
     const api = renderOb();
-    await screen.findByRole('table', { name: 'Opening balances' });
+    await screen.findByRole('table', { name: 'Opening arrears' });
     await userEvent.upload(screen.getByLabelText('File'), new File(['a'], 'ob.csv'));
     const d = screen.getByLabelText('Balances as of');
     await waitFor(() => expect(d).toBeEnabled());
@@ -242,7 +246,7 @@ describe('Opening balances screen', () => {
 
   it('shows the server error of a bad import file', async () => {
     renderOb({ 'POST /billing/opening-balances/import': err(422, 'IMPORT_FILE_INVALID') });
-    await screen.findByRole('table', { name: 'Opening balances' });
+    await screen.findByRole('table', { name: 'Opening arrears' });
     await userEvent.upload(screen.getByLabelText('File'), new File(['a'], 'ob.csv'));
     await userEvent.click(screen.getByRole('button', { name: 'Check file' }));
     expect(await screen.findByText(/could not be read, or a column heading is missing/)).toBeInTheDocument();

@@ -53,6 +53,8 @@ export function mapFundOption(raw: unknown): FundOption & { active: boolean } {
   };
 }
 
+const KINDS = ['CONTRIBUTION', 'EXPENSE', 'TRANSFER_IN', 'TRANSFER_OUT'];
+
 export function mapStatement(raw: unknown): FundStatement {
   const r = obj(raw);
   return {
@@ -67,6 +69,7 @@ export function mapStatement(raw: unknown): FundStatement {
         inPaise: num(o.inPaise),
         outPaise: num(o.outPaise),
         runningPaise: num(o.runningPaise),
+        kind: KINDS.includes(str(o.kind)) ? (str(o.kind) as FundStatementRow['kind']) : undefined,
       };
     }),
   };

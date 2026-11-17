@@ -50,6 +50,7 @@ export interface FundStatementRow {
   inPaise: number;
   outPaise: number;
   runningPaise: number;
+  kind?: 'CONTRIBUTION' | 'EXPENSE' | 'TRANSFER_IN' | 'TRANSFER_OUT';
 }
 
 export interface FundStatement {

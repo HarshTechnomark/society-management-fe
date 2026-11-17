@@ -10,6 +10,13 @@ import { inr, shortDate } from '@/lib/money';
 import { accountsFundsService } from '@/services/accountsFunds.service';
 import type { Fund } from '@/types/accountsFunds';
 
+const KIND_LABEL = {
+  CONTRIBUTION: 'Collected',
+  EXPENSE: 'Spent',
+  TRANSFER_IN: 'Moved in from another fund',
+  TRANSFER_OUT: 'Moved to another fund',
+} as const;
+
 /** Statement of one fund: opening balance, every movement with its voucher, closing balance. */
 export function FundStatementDrawer({ fund, onClose }: { fund: Fund; onClose: () => void }) {
   const [from, setFrom] = useState(fyStart());
@@ -35,11 +42,11 @@ export function FundStatementDrawer({ fund, onClose }: { fund: Fund; onClose: ()
             <p className="text-[14px] text-muted">No movements in this period.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] border-collapse text-left text-[13.5px]">
+              <table className="w-full min-w-[600px] border-collapse text-left text-[13.5px]">
                 <caption className="sr-only">Fund statement</caption>
                 <thead>
                   <tr className="border-b border-[var(--line)] text-[12px] uppercase tracking-wide text-muted">
-                    {['Date', 'Voucher', 'In', 'Out', 'Balance'].map(h => (
+                    {['Date', 'Type', 'Voucher', 'In', 'Out', 'Balance'].map(h => (
                       <th key={h} scope="col" className="px-2 py-2">
                         {h}
                       </th>
@@ -54,6 +61,9 @@ export function FundStatementDrawer({ fund, onClose }: { fund: Fund; onClose: ()
                       data-testid="statement-row"
                     >
                       <td className="px-2 py-2.5">{shortDate(r.date)}</td>
+                      <td className="px-2 py-2.5" data-testid="statement-kind">
+                        {r.kind ? KIND_LABEL[r.kind] : ''}
+                      </td>
                       <td className="px-2 py-2.5">
                         <div className="font-semibold">{r.voucherNo}</div>
                         <div className="text-[12.5px] text-muted">{r.narration}</div>

@@ -31,10 +31,10 @@ const FILTERS: { key: OpeningStatus | 'ALL'; label: string }[] = [
   { key: 'REVERSED', label: 'Reversed' },
 ];
 
-/** Settings > Billing > Opening balances (spec 11.6). */
+/** Settings > Billing > Opening arrears (spec 11.6). */
 export function OpeningBalancesScreen() {
   return (
-    <Gate view={B.view} feature="billing.opening_balances" title="Opening balances">
+    <Gate view={B.view} feature="billing.opening_balances" title="Opening arrears">
       <Inner />
     </Gate>
   );
@@ -181,7 +181,7 @@ function Inner() {
   return (
     <Page>
       <PageHead
-        title="Opening balances"
+        title="Opening arrears"
         sub="Load each flat's old dues or advance once, when you go live. Check the file, then import it; nothing is posted until you confirm."
         actions={
           canImport && (
@@ -308,7 +308,7 @@ function Inner() {
           ))}
         </div>
         <DataTable
-          caption="Opening balances"
+          caption="Opening arrears"
           columns={columns}
           rows={load.data?.items ?? []}
           rowKey={r => r.id}
