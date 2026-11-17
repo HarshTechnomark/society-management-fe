@@ -10,6 +10,8 @@ export interface Fund {
   balancePaise: number;
   inflowFyPaise: number;
   outflowFyPaise: number;
+  /** Money moved out to other funds this year, when the API sends it separately from spending. */
+  movedOutFyPaise: number;
   showToResidents: boolean;
   status: FundStatus;
   version: number;
@@ -21,6 +23,7 @@ export interface FundOption {
   id: number;
   label: string;
   fundType: FundType;
+  balancePaise?: number;
 }
 
 export interface FundInput {

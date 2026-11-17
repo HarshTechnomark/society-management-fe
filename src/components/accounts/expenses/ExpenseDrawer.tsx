@@ -13,6 +13,7 @@ import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { inr, shortDate } from '@/lib/money';
+import { accountsFundsService } from '@/services/accountsFunds.service';
 import { accountsExpensesService as svc } from '@/services/accountsExpenses.service';
 import { ExpenseModal } from './ExpenseModal';
 import { expenseError, modeLabel, plainError, statusInfo } from './format';
@@ -47,9 +48,15 @@ export function ExpenseDrawer({
   const canEdit = usePermission(E.edit);
   const canDelete = usePermission(E.delete);
   const canApprove = usePermission(E.approve);
+  const canSeeFunds = usePermission(PERMISSIONS.finance.accounts.view);
+  const funds = useLoad(
+    () => (canSeeFunds ? accountsFundsService.options() : Promise.resolve([])),
+    `funds-${canSeeFunds}`,
+  );
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [busy, setBusy] = useState(false);
   const x = load.data;
+  const approvedHere = !!x && (x.status === 'POSTED' || x.status === 'REVERSED') && !!x.approvedByName;
 
   const done = (message: string) => {
     setDialog(null);
@@ -174,7 +181,11 @@ export function ExpenseDrawer({
               <KV label="Entered by">{x.createdByName ?? '-'}</KV>
               {x.approvedByName && <KV label="Approved by">{x.approvedByName}</KV>}
               <KV label="Belongs to">
-                {x.collectionTitle ?? x.fundName ?? (x.fundId ? `Fund ${x.fundId}` : 'General')}
+                {x.collectionTitle ??
+                  x.fundName ??
+                  (x.fundId
+                    ? (funds.data?.find(f => f.id === x.fundId)?.label ?? `Fund ${x.fundId}`)
+                    : 'General')}
               </KV>
               {x.gstPaise > 0 && <KV label="GST">{inr(x.gstPaise)}</KV>}
               {x.tdsPaise > 0 && (
@@ -223,24 +234,34 @@ export function ExpenseDrawer({
                 </ul>
               )}
             </Section>
-            {x.approval && (
+            {(x.approval?.status || (x.approval?.actions.length ?? 0) > 0 || approvedHere) && (
               <Section title="Approval">
-                <p className="mb-2 text-[14px]">
-                  Status: {x.approval.status.toLowerCase().replace(/_/g, ' ') || 'not started'}
-                  {x.approval.levels
+                <p className="mb-2 text-[14px]" data-testid="approval-state">
+                  {x.approval?.status
+                    ? `Request status: ${x.approval.status.toLowerCase().replace(/_/g, ' ')}`
+                    : approvedHere
+                      ? `Approved${x.approvedByName ? ` by ${x.approvedByName}` : ''}.`
+                      : ''}
+                  {x.approval?.levels
                     ? ` (${x.approval.levels} step${x.approval.levels === 1 ? '' : 's'})`
                     : ''}
                 </p>
                 <ol className="grid gap-1.5 text-[13.5px]" data-testid="timeline">
-                  {x.approval.actions.map((a, i) => (
+                  {(x.approval?.actions ?? []).map((a, i) => (
                     <li key={i}>
                       <span className="text-muted">{shortDate(a.at)}</span> {actionWord(a.action)}
                       {a.by ? ` by ${a.by}` : ''}
                       {a.note ? `: ${a.note}` : ''}
                     </li>
                   ))}
+                  {(x.approval?.actions.length ?? 0) === 0 && (
+                    <>
+                      {x.createdByName && <li>Entered by {x.createdByName}</li>}
+                      {approvedHere && x.approvedByName && <li>Approved by {x.approvedByName}</li>}
+                    </>
+                  )}
                 </ol>
-                {x.approvalRequestId != null && x.status !== 'PENDING_APPROVAL' && (
+                {x.approvalRequestId != null && x.status !== 'PENDING_APPROVAL' && x.approval?.status && (
                   <Link
                     href="/admin/dev-approvals"
                     className="mt-2 inline-block text-[13.5px] font-semibold underline"
@@ -252,6 +273,16 @@ export function ExpenseDrawer({
             )}
             {x.journalLines.length > 0 && (
               <Section title="Accounts affected">
+                {x.journalEntryId != null && canSeeFunds && (
+                  <p className="mb-1 text-[13.5px]">
+                    <Link
+                      className="font-semibold underline"
+                      href={`/admin/accounts/journals?open=${x.journalEntryId}`}
+                    >
+                      Open the journal entry{x.voucherNo ? ` ${x.voucherNo}` : ''}
+                    </Link>
+                  </p>
+                )}
                 <ul className="grid gap-1 text-[13.5px]">
                   {x.journalLines.map((l, i) => (
                     <li key={i} className="flex justify-between gap-3">

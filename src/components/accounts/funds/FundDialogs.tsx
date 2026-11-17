@@ -81,7 +81,11 @@ export function FundFormDialog({
       open
       onClose={busy ? () => {} : onClose}
       title={fund ? 'Edit fund' : 'New fund'}
-      description="A fund earmarks money for one purpose. New funds start at zero; move money in with a transfer."
+      description={
+        fund
+          ? 'Change the name, purpose or what residents see.'
+          : 'A fund earmarks money for one purpose. New funds start at zero; move money in with a transfer.'
+      }
       footer={
         <>
           <Button variant="ghost" disabled={busy} onClick={onClose}>
@@ -261,6 +265,7 @@ export function TransferDialog({
         <FundPicker
           label="From"
           hint=""
+          showBalance
           includeGeneral
           value={src}
           onChange={setSrc}
@@ -270,6 +275,7 @@ export function TransferDialog({
         <FundPicker
           label="To"
           hint=""
+          showBalance
           includeGeneral
           excludeId={src && src !== 'general' ? Number(src) : null}
           value={dst}

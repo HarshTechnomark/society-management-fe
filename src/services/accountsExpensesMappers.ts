@@ -125,6 +125,7 @@ export function mapExpenseDetail(raw: unknown): ExpenseDetail {
         creditPaise: num(x.creditPaise),
       };
     }),
+    journalEntryId: numOrNull(j.id ?? r.journalEntryId),
     canApprove: r.canApprove === true,
     canReverse: r.canReverse === true,
     createdById: numOrNull(

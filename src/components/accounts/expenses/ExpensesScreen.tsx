@@ -149,11 +149,11 @@ function Inner() {
         ) : (
           <div className="overflow-x-auto" data-testid="table-scroll">
             <table
-              className="w-full min-w-[720px] border-collapse text-left text-[14px]"
+              className="w-full min-w-[720px] border-collapse text-left text-[14px] max-[639px]:block max-[639px]:min-w-0"
               aria-busy={list.loading || undefined}
             >
               <caption className="sr-only">Expenses</caption>
-              <thead>
+              <thead className="max-[639px]:sr-only">
                 <tr className="border-b border-[var(--line)] text-[12px] font-semibold uppercase tracking-wide text-muted">
                   {['Date', 'Payee', 'Paid from', 'Amount', 'By', 'Status'].map(h => (
                     <th key={h} scope="col" className="px-3 py-2.5">
@@ -162,7 +162,7 @@ function Inner() {
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="max-[639px]:block">
                 {list.loading || !data
                   ? Array.from({ length: 5 }, (_, i) => (
                       <tr key={i} data-testid="skeleton-row" className="border-b border-[var(--line)]">
@@ -236,12 +236,14 @@ function Row({ x, onOpen }: { x: ExpenseItem; onOpen: () => void }) {
   const st = statusInfo(x.status);
   return (
     <tr
-      className="cursor-pointer border-b border-[var(--line)] last:border-0 hover:bg-white/50"
+      className="cursor-pointer border-b border-[var(--line)] last:border-0 hover:bg-white/50 max-[639px]:grid max-[639px]:grid-cols-[1fr_auto] max-[639px]:gap-x-3 max-[639px]:gap-y-1 max-[639px]:px-1 max-[639px]:py-3"
       data-testid="expense-row"
       onClick={onOpen}
     >
-      <td className="px-3 py-3">{shortDate(x.expenseDate)}</td>
-      <td className="px-3 py-3">
+      <td className="px-3 py-3 max-[639px]:order-3 max-[639px]:p-0 max-[639px]:text-[13px] max-[639px]:text-muted">
+        {shortDate(x.expenseDate)}
+      </td>
+      <td className="min-w-0 px-3 py-3 max-[639px]:order-1 max-[639px]:p-0">
         <button
           type="button"
           className="text-left font-semibold"
@@ -258,10 +260,12 @@ function Row({ x, onOpen }: { x: ExpenseItem; onOpen: () => void }) {
           {x.collectionTitle ? ` · ${x.collectionTitle}` : x.fundName ? ` · ${x.fundName}` : ''}
         </div>
       </td>
-      <td className="px-3 py-3">{x.paidFrom?.name ?? '-'}</td>
-      <td className="px-3 py-3 font-semibold tabular-nums">{inr(x.grossAmountPaise)}</td>
-      <td className="px-3 py-3">{x.createdByName ?? '-'}</td>
-      <td className="px-3 py-3">
+      <td className="px-3 py-3 max-[639px]:hidden">{x.paidFrom?.name ?? '-'}</td>
+      <td className="px-3 py-3 font-semibold tabular-nums max-[639px]:order-2 max-[639px]:p-0 max-[639px]:text-right">
+        {inr(x.grossAmountPaise)}
+      </td>
+      <td className="px-3 py-3 max-[639px]:hidden">{x.createdByName ?? '-'}</td>
+      <td className="px-3 py-3 max-[639px]:order-4 max-[639px]:p-0 max-[639px]:text-right">
         <Chip tone={st.tone}>{st.label}</Chip>
       </td>
     </tr>

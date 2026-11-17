@@ -96,6 +96,28 @@ describe('Funds', () => {
     expect(api.last('PATCH', '/accounts/funds/1')!.body).toMatchObject({ purpose: null });
   });
 
+  it('shows balances in the transfer pickers, and the edit dialog does not say new funds start at zero', async () => {
+    renderIt({});
+    await screen.findAllByTestId('fund-row');
+    await userEvent.click(screen.getAllByRole('button', { name: /^Edit/ })[0]!);
+    const edit = await screen.findByRole('dialog');
+    expect(within(edit).queryByText(/New funds start at zero/)).toBeNull();
+    await userEvent.click(within(edit).getByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: /Transfer between funds/ }));
+    const dlg = await screen.findByRole('dialog');
+    expect(
+      (await within(dlg).findAllByRole('option', { name: 'Sinking fund (₹9,60,000)' })).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('shows money moved to other funds apart from spending when the API sends it', async () => {
+    renderIt({
+      'GET /accounts/funds': ok([{ ...FUNDS[0], outflowFyPaise: 0, movedOutFyPaise: 4500000 }, FUNDS[1]]),
+    });
+    await screen.findAllByTestId('fund-row');
+    expect(screen.getByTestId('fund-moved')).toHaveTextContent('₹45,000');
+  });
+
   it('locks transfers and editing on a lower plan', async () => {
     renderIt({}, BASE);
     await screen.findAllByTestId('fund-row');

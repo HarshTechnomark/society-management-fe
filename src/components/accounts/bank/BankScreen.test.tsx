@@ -85,6 +85,25 @@ describe('Bank accounts', () => {
     });
   });
 
+  it('says the verification was reset only when the server did reset it', async () => {
+    const api = renderIt(
+      {
+        'GET /accounts/bank-accounts': ok([bank({ verificationStatus: 'VERIFIED' })]),
+        'PATCH /accounts/bank-accounts/3': ok(bank({ verificationStatus: 'VERIFIED' })),
+      },
+      BASE,
+    );
+    await screen.findByText('XXXXXX4821');
+    await userEvent.click(screen.getByRole('button', { name: 'Change bank account' }));
+    const dlg = await screen.findByRole('dialog');
+    await userEvent.type(within(dlg).getByLabelText(/^New account number/), '123456789012');
+    await userEvent.type(within(dlg).getByLabelText(/^Confirm account number/), '123456789012');
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Verify and save' }));
+    await waitFor(() => expect(api.last('PATCH', '/accounts/bank-accounts/3')).toBeTruthy());
+    expect(await screen.findByText('Bank account saved.')).toBeInTheDocument();
+    expect(screen.queryByText(/needs to be verified again/)).toBeNull();
+  });
+
   it('verifies and explains the maker-checker refusal', async () => {
     renderIt({ 'POST /accounts/bank-accounts/3/verify': err(409, 'MAKER_CHECKER_VIOLATION') });
     await userEvent.click(await screen.findByRole('button', { name: 'Verify' }));

@@ -32,6 +32,7 @@ export function mapFund(raw: unknown): Fund {
     balancePaise: num(r.balancePaise),
     inflowFyPaise: num(r.inflowFyPaise),
     outflowFyPaise: num(r.outflowFyPaise),
+    movedOutFyPaise: num(r.movedOutFyPaise ?? r.movedOutPaise),
     showToResidents: r.showToResidents !== false && r.showToResidents !== 0,
     status: str(r.status, 'ACTIVE') === 'CLOSED' ? 'CLOSED' : 'ACTIVE',
     version: num(r.version, 1),
@@ -47,6 +48,7 @@ export function mapFundOption(raw: unknown): FundOption & { active: boolean } {
     id: f.id,
     label: str(r.name, str(r.label)),
     fundType: f.fundType,
+    balancePaise: r.balancePaise === undefined || r.balancePaise === null ? undefined : f.balancePaise,
     active: r.isActive !== false && f.status === 'ACTIVE',
   };
 }

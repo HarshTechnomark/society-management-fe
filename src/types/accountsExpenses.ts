@@ -62,6 +62,8 @@ export interface ExpenseDetail extends ExpenseItem {
   files: ExpenseFile[];
   approval: { status: string; levels: number | null; actions: ApprovalAction[] } | null;
   journalLines: { account: string; debitPaise: number; creditPaise: number }[];
+  /** The posted journal entry, when there is one. */
+  journalEntryId: number | null;
   canApprove: boolean;
   canReverse: boolean;
   createdById: number | null;

@@ -55,6 +55,7 @@ function Inner() {
   const funds = list.data ?? [];
   const total = funds.reduce((s, f) => s + f.balancePaise, 0);
   const spent = funds.reduce((s, f) => s + f.outflowFyPaise, 0);
+  const moved = funds.reduce((s, f) => s + f.movedOutFyPaise, 0);
   const done = () => {
     setDialog(null);
     list.reload();
@@ -113,13 +114,18 @@ function Inner() {
             </Card>
             <Card title="Spent this year">
               <div className="text-[24px] font-bold tabular-nums">{inr(spent)}</div>
+              {moved > 0 && (
+                <div className="text-[12.5px] text-muted" data-testid="fund-moved">
+                  Moved to other funds: {inr(moved)} (not counted as spending)
+                </div>
+              )}
             </Card>
           </div>
           <Card>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] border-collapse text-left text-[14px]">
+              <table className="w-full min-w-[720px] border-collapse text-left text-[14px] max-[639px]:block max-[639px]:min-w-0">
                 <caption className="sr-only">Funds</caption>
-                <thead>
+                <thead className="max-[639px]:sr-only">
                   <tr className="border-b border-[var(--line)] text-[12px] font-semibold uppercase tracking-wide text-muted">
                     {['Fund', 'Balance', 'In this year', 'Out this year', 'Residents see', ''].map((h, i) => (
                       <th key={i} scope="col" className="px-3 py-2.5">
@@ -128,14 +134,14 @@ function Inner() {
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="max-[639px]:block">
                   {funds.map(f => (
                     <tr
                       key={f.id}
-                      className="border-b border-[var(--line)] last:border-0"
+                      className="border-b border-[var(--line)] last:border-0 max-[639px]:grid max-[639px]:grid-cols-2 max-[639px]:gap-x-3 max-[639px]:gap-y-1 max-[639px]:px-1 max-[639px]:py-3"
                       data-testid="fund-row"
                     >
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 max-[639px]:order-1 max-[639px]:p-0">
                         <button
                           type="button"
                           className="font-semibold underline"
@@ -146,11 +152,17 @@ function Inner() {
                         </button>
                         <div className="text-[12.5px] text-muted">{KIND[f.fundType] ?? f.fundType}</div>
                       </td>
-                      <td className="px-3 py-3 font-semibold tabular-nums">{inr(f.balancePaise)}</td>
-                      <td className="px-3 py-3 tabular-nums">{inr(f.inflowFyPaise)}</td>
-                      <td className="px-3 py-3 tabular-nums">{inr(f.outflowFyPaise)}</td>
-                      <td className="px-3 py-3">{f.showToResidents ? 'Yes' : 'No'}</td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 font-semibold tabular-nums max-[639px]:order-2 max-[639px]:p-0 max-[639px]:text-right">
+                        {inr(f.balancePaise)}
+                      </td>
+                      <td className="px-3 py-3 tabular-nums max-[639px]:order-3 max-[639px]:p-0 max-[639px]:text-[13px] max-[639px]:text-muted max-[639px]:before:content-['In_this_year_']">
+                        {inr(f.inflowFyPaise)}
+                      </td>
+                      <td className="px-3 py-3 tabular-nums max-[639px]:order-4 max-[639px]:p-0 max-[639px]:text-right max-[639px]:text-[13px] max-[639px]:text-muted max-[639px]:before:content-['Out_this_year_']">
+                        {inr(f.outflowFyPaise)}
+                      </td>
+                      <td className="px-3 py-3 max-[639px]:hidden">{f.showToResidents ? 'Yes' : 'No'}</td>
+                      <td className="px-3 py-3 max-[639px]:order-5 max-[639px]:col-span-2 max-[639px]:p-0">
                         <div className="flex flex-wrap justify-end gap-1.5">
                           {canEdit && premium && (
                             <Button
