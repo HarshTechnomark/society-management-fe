@@ -44,6 +44,7 @@ export const detailRaw = (over: Record<string, unknown> = {}) =>
       actions: [{ action: 'APPROVED', by: { name: 'Meera' }, at: '2026-10-31T05:00:00Z' }],
     },
     journal: { voucherNo: 'VCH/1', lines: [{ account: 'Garden', debitPaise: 180000, creditPaise: 0 }] },
+    canReverse: true,
     ...over,
   });
 

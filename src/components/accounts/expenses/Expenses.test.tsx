@@ -109,6 +109,17 @@ describe('Add expense', () => {
     await waitFor(() => expect(api.calls.filter(c => c.method === 'POST')).toHaveLength(2));
     expect((api.calls.filter(c => c.method === 'POST')[1]!.body as { submit: boolean }).submit).toBe(false);
   });
+  it('asks for the whole chart on the starter plan so cash and bank sources are listed', async () => {
+    const api = renderIt(<ExpensesScreen />);
+    await screen.findAllByTestId('expense-row');
+    await userEvent.click(screen.getByRole('button', { name: 'Add expense' }));
+    await screen.findByRole('dialog');
+    await waitFor(() =>
+      expect(api.fn.mock.calls.some(c => String(c[0]).includes('/accounts/ledger-accounts'))).toBe(true),
+    );
+    const urls = api.fn.mock.calls.map(c => String(c[0])).filter(u => u.includes('ledger-accounts'));
+    expect(urls.every(u => !u.includes('cashBookOnly'))).toBe(true);
+  });
   it('falls back to typed ids when the lists are not built yet', async () => {
     renderIt(<ExpensesScreen />, {
       'GET /accounts/ledger-accounts': err(404, 'NOT_FOUND'),

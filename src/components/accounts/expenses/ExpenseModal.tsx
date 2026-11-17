@@ -60,7 +60,7 @@ export function ExpenseModal({
   const premiumExpenses = useFeature('accounting.expenses');
   const tdsOn = useFeature('accounting.tds');
   const pettyOn = useFeature('accounting.petty_cash');
-  const ledgers = useLoad(() => svc.ledgerOptions(!premiumExpenses), premiumExpenses ? 'all' : 'cb');
+  const ledgers = useLoad(() => svc.ledgerOptions(false), 'all');
   const funds = useLoad(() => svc.funds(), 'funds');
   const ledgerMissing = ledgers.error != null;
   const fundsMissing = funds.error != null;
