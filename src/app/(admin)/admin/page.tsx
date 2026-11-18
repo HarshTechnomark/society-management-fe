@@ -1,6 +1,7 @@
 import { ApprovalsWaitingCard } from '@/components/approvals/home/ApprovalsWaitingCard';
 import { LiveCollectionsCard } from '@/components/payments/collections/LiveCollectionsCard';
 import { SocietyBalanceCard } from '@/components/accounts/balance/SocietyBalanceCard';
+import { IssuesCard } from '@/components/helpdesk/admin/IssuesCard';
 import { SetupBanner } from '@/components/setup/SetupBanner';
 
 export const metadata = { title: 'Society admin' };
@@ -12,6 +13,7 @@ export default function Page() {
       <ApprovalsWaitingCard />
       <SocietyBalanceCard />
       <LiveCollectionsCard />
+      <IssuesCard />
       <div className="glass p-8">
         <h1 className="text-2xl font-bold tracking-tight">Society admin</h1>
         <p className="mt-2 text-muted">

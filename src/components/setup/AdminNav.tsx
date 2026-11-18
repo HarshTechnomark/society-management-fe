@@ -34,6 +34,7 @@ const U = PERMISSIONS.residents.units;
 const R = PERMISSIONS.residents;
 const F = PERMISSIONS.finance;
 const AP = PERMISSIONS.approvals.inbox.view;
+const HD = PERMISSIONS.helpdesk;
 
 /** Links to the admin pages that exist today (modules 02, 03, 05, 07 to 14). */
 export const ADMIN_NAV: NavGroup[] = [
@@ -125,6 +126,13 @@ export const ADMIN_NAV: NavGroup[] = [
       { href: '/admin/accounts/opening-balances', label: 'Opening balances', keys: [F.accounts.view] },
       { href: '/admin/accounts/reports', label: 'Reports', keys: [F.accounts.view] },
       { href: '/admin/accounts/periods', label: 'Periods and year close', keys: [F.accounts.view] },
+    ],
+  },
+  {
+    title: 'Issues',
+    items: [
+      { href: '/admin/issues', label: 'Issues', keys: [HD.tickets.view] },
+      { href: '/admin/settings/helpdesk', label: 'Helpdesk settings', keys: [HD.settings.view] },
     ],
   },
   {

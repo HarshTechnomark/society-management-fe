@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { SwitchAppButton } from '@/components/auth/SwitchAppButton';
 import { Button } from '@/components/ui/Button';
 import { cx } from '@/components/ui/cx';
@@ -29,6 +29,7 @@ export const RESIDENT_NAV: Item[] = [
   { href: '/resident/confirm', label: 'Confirm requests', keys: [RES.household.view] },
   { href: '/resident/tenant', label: 'My tenant', keys: [RES.household.view] },
   { href: '/resident/requests', label: 'Requests', keys: [RES.requests.view] },
+  { href: '/resident/help', label: 'Help', keys: [PERMISSIONS.resident.helpdesk.view] },
   { href: '/resident/approvals', label: 'Approvals', keys: [RES.requests.view] },
   { href: '/resident/directory', label: 'Directory', keys: [RES.community.view] },
   { href: '/resident/committee', label: 'Committee', keys: [RES.home.view] },
@@ -47,6 +48,13 @@ export function ResidentNav({ children }: { children: ReactNode }) {
   const { me } = useMe();
   const path = usePathname() ?? '';
   const items = visibleResidentNav(me);
+  const listRef = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    // Keep the active link visible in the sideways-scrolling row.
+    const el = listRef.current?.querySelector('[aria-current="page"]');
+    if (el && typeof el.scrollIntoView === 'function')
+      el.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, [path]);
   return (
     <div>
       <nav
@@ -62,7 +70,7 @@ export function ResidentNav({ children }: { children: ReactNode }) {
             </Button>
           </div>
         </div>
-        <ul className="mx-auto flex max-w-[1100px] gap-1 overflow-x-auto px-3 py-2">
+        <ul ref={listRef} className="mx-auto flex max-w-[1100px] gap-1 overflow-x-auto px-3 py-2">
           {items.map(i => (
             <li key={i.href} className="shrink-0">
               <Link
