@@ -114,6 +114,9 @@ export function DelegationsScreen() {
                               {x.maxAmountPaise == null ? 'Any amount' : `Up to ${inr(x.maxAmountPaise)}`}
                             </p>
                             <p className="text-[13px] text-muted">{x.reason}</p>
+                            {x.revokeReason && (
+                              <p className="text-[13px] text-muted">Revoked: {x.revokeReason}</p>
+                            )}
                           </div>
                           {canRevoke(x) && (
                             <Button

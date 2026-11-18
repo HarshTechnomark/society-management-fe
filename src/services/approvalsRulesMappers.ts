@@ -115,6 +115,7 @@ export function mapDelegation(raw: unknown): Delegation {
     startsAt: str(d.startsAt),
     endsAt: str(d.endsAt),
     reason: str(d.reason),
+    revokeReason: typeof d.revokeReason === 'string' ? d.revokeReason : null,
     displayStatus: str(d.displayStatus, str(d.status, 'ACTIVE')) as DelegationDisplayStatus,
     version: num(d.version, 1),
   };

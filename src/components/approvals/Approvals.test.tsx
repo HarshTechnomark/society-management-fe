@@ -142,6 +142,7 @@ describe('Inbox', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Select Credit note for A-101' }));
     await userEvent.click(screen.getByRole('button', { name: 'Approve 2 selected' }));
     const dlg = await screen.findByRole('dialog');
+    expect(within(dlg).getByText('Approve 2 items', { selector: 'h2, h3, [id]' })).toBeInTheDocument();
     await userEvent.click(within(dlg).getByRole('button', { name: 'Approve 2' }));
     const res = await within(dlg).findByTestId('bulk-results');
     expect(res).toHaveTextContent('Approved: Shree Ganesh Lift Services');
@@ -264,6 +265,14 @@ describe('Resident requests', () => {
           reason: 'Needs a permit',
           canCancel: false,
         }),
+        requestRaw({
+          id: 5103,
+          title: 'Garden',
+          status: 'CANCELLED',
+          statusLabel: 'Cancelled',
+          reason: 'Plans changed',
+          canCancel: false,
+        }),
       ]),
       'POST /me/approval-requests/5101/cancel': ok({ id: 5101, status: 'CANCELLED' }),
     });
@@ -272,6 +281,7 @@ describe('Resident requests', () => {
     expect(cards[0]).toHaveTextContent('Waiting for Secretary');
     expect(cards[1]).toHaveTextContent('Needs a permit');
     expect(within(cards[1]).queryByRole('button', { name: 'Withdraw' })).toBeNull();
+    expect(cards[2]).toHaveTextContent('Withdrawn: Plans changed');
     await userEvent.click(within(cards[0]).getByRole('button', { name: 'Withdraw' }));
     const dlg = await screen.findByRole('dialog');
     await userEvent.type(within(dlg).getByLabelText(/Reason/), 'Plans changed');

@@ -1,7 +1,8 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { ConfirmReason } from '@/components/common/ConfirmReason';
-import { Page, PageHead } from '@/components/common/PageHead';
+import { EmptyState } from '@/components/common/EmptyState';
+import { Card, Page, PageHead } from '@/components/common/PageHead';
 import { Loading } from '@/components/residents/common';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
@@ -9,6 +10,7 @@ import { Chip } from '@/components/ui/Chip';
 import { Switch } from '@/components/ui/Switch';
 import { useToast } from '@/components/ui/Toast';
 import { PERMISSIONS } from '@/constants/permissions';
+import { useMe } from '@/lib/auth';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { ApiError } from '@/lib/apiClient';
@@ -27,6 +29,8 @@ type Editing = { type: string; rule?: ApprovalRule } | null;
 
 /** Approval rules per type (spec 11.3): list, add, edit, switch on or off, delete, reset, and the simulator. */
 export function RulesScreen() {
+  const { ready } = useMe();
+  const canView = usePermission(PERMISSIONS.settings.approvalRules.view);
   const canEdit = usePermission(PERMISSIONS.settings.approvalRules.edit);
   const toast = useToast();
   const { names } = useRoles();
@@ -54,6 +58,16 @@ export function RulesScreen() {
     }
     load.reload();
   };
+
+  if (ready && !canView)
+    return (
+      <Page>
+        <PageHead title="Approval rules" />
+        <Card>
+          <EmptyState title="You do not have access to this page" />
+        </Card>
+      </Page>
+    );
 
   if (load.error instanceof ApiError && load.error.status === 402) {
     const lock = describePlanLock(load.error, true);

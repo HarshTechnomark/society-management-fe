@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { plural } from '@/lib/plural';
 import { approvalsService } from '@/services/approvals.service';
 import type { ApprovalRow, BulkResult } from '@/types/approvals';
 import { approvalError } from '../format';
@@ -49,7 +50,7 @@ export function BulkApproveDialog({
     <Modal
       open
       onClose={busy ? () => {} : onClose}
-      title={result ? 'Bulk approval finished' : `Approve ${items.length} items`}
+      title={result ? 'Bulk approval finished' : `Approve ${plural(items.length, 'item')}`}
       description={
         result ? undefined : 'Each item is checked again. Items that cannot be approved together are skipped.'
       }

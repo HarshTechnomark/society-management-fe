@@ -369,7 +369,7 @@ export function RuleEditor({
           {isMoney && (
             <Input
               className="sm:col-span-2"
-              label="Ask for a fresh code above (₹)"
+              label="Ask for a fresh code at or above (₹)"
               hint="Empty uses the society setting."
               inputMode="decimal"
               value={f.stepUpRupees}

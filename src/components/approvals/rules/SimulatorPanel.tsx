@@ -122,7 +122,11 @@ export function SimulatorPanel({ types }: { types: { type: string; label: string
                   <p className="mt-1 text-bad">Nobody can approve this step today.</p>
                 )}
                 {s.vacantSlots.length > 0 && (
-                  <p className="mt-1 text-[13px] text-muted">Empty seats: {s.vacantSlots.join(', ')}</p>
+                  <p className="mt-1 text-[13px] text-muted">
+                    {requester !== '' && s.eligibleNow.length === 0
+                      ? `No one available for: ${s.vacantSlots.map(v => v.charAt(0).toUpperCase() + v.slice(1)).join(', ')} (the requester cannot approve their own request)`
+                      : `Empty seats: ${s.vacantSlots.join(', ')}`}
+                  </p>
                 )}
               </li>
             ))}

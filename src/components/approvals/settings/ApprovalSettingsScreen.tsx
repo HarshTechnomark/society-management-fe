@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { EmptyState } from '@/components/common/EmptyState';
 import { Card, Page, PageHead } from '@/components/common/PageHead';
 import { Loading } from '@/components/residents/common';
 import { Alert } from '@/components/ui/Alert';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { PERMISSIONS } from '@/constants/permissions';
+import { useMe } from '@/lib/auth';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { approvalsRulesService } from '@/services/approvalsRules.service';
@@ -23,8 +25,19 @@ const check = (v: string): string | null => {
 
 /** Society approval settings (spec 8.17, 7.6): the amount for a fresh code and the bulk-approve limit. */
 export function ApprovalSettingsScreen() {
+  const { ready } = useMe();
+  const canView = usePermission(PERMISSIONS.settings.approvalRules.view);
   const canEdit = usePermission(PERMISSIONS.settings.approvalRules.edit);
   const load = useLoad(() => approvalsRulesService.settings(), 'settings');
+  if (ready && !canView)
+    return (
+      <Page>
+        <PageHead title="Approval settings" />
+        <Card>
+          <EmptyState title="You do not have access to this page" />
+        </Card>
+      </Page>
+    );
   return (
     <Page>
       <PageHead title="Approval settings" sub="Limits that apply to every approval in the society." />
@@ -98,12 +111,12 @@ function SettingsForm({
       )}
       <fieldset disabled={!canEdit || busy} className="grid max-w-md gap-4 border-0 p-0">
         <Input
-          label="Ask for a fresh code above (₹)"
+          label="Ask for a fresh code at or above (₹)"
           hint="The approver confirms it is them for money above this amount."
           inputMode="decimal"
           value={stepUp}
           onChange={ev => setStepUp(ev.target.value)}
-          error={touched ? e1 : null}
+          error={e1 && (touched || stepUp !== String(initial.stepUpAbovePaise / 100)) ? e1 : null}
         />
         <Input
           label="Bulk approve only items below (₹)"
@@ -111,7 +124,7 @@ function SettingsForm({
           inputMode="decimal"
           value={bulk}
           onChange={ev => setBulk(ev.target.value)}
-          error={touched ? e2 : null}
+          error={e2 && (touched || bulk !== String(initial.bulkApproveBelowPaise / 100)) ? e2 : null}
         />
         {canEdit && (
           <div>

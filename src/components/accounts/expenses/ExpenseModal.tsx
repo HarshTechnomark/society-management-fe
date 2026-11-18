@@ -41,17 +41,8 @@ const MAX_PAISE = 100_000_000_000;
 /** Above this a bill is needed (the seeded bill setting). */
 export const BILL_ABOVE_PAISE = 200000;
 
-/**
- * What the form says about approval, from the API's `approvalThresholdPaise` (module 14 `EXPENSE` rule; the seeded rule
- * approves up to ₹5,000 automatically). Unknown (null) keeps to what is always true.
- */
-export function approvalPolicyText(thresholdPaise: number | null | undefined): string {
-  if (thresholdPaise != null && thresholdPaise > 0)
-    return `Expenses up to ${inr(thresholdPaise)} are approved automatically; above that a second committee member approves.`;
-  if (thresholdPaise === 0)
-    return 'Every expense is approved by a second committee member before it is paid.';
-  return 'A second committee member approves expenses when the approval rules ask for it.';
-}
+/** What the form says about approval: no amounts, the society's rules decide. */
+export const APPROVAL_POLICY_TEXT = "Whether this needs approval depends on your society's approval rules.";
 
 const moneyField = (text: string): number | null | undefined => {
   if (!text.trim()) return undefined;
@@ -64,13 +55,10 @@ const moneyField = (text: string): number | null | undefined => {
  */
 export function ExpenseModal({
   expense,
-  approvalThresholdPaise,
   onClose,
   onSaved,
 }: {
   expense?: ExpenseDetail;
-  /** The API's auto-approve limit, when the screen has it (from any expense it loaded). */
-  approvalThresholdPaise?: number | null;
   onClose: () => void;
   onSaved: (r: ExpenseResult, submitted: boolean) => void;
 }) {
@@ -226,7 +214,7 @@ export function ExpenseModal({
       wide
       onClose={onClose}
       title={expense ? `Edit ${expense.displayId}` : 'Add an expense'}
-      description={`${approvalPolicyText(expense?.approvalThresholdPaise ?? approvalThresholdPaise)} Above ${inr(BILL_ABOVE_PAISE)} a bill is needed.`}
+      description={`${APPROVAL_POLICY_TEXT} Above ${inr(BILL_ABOVE_PAISE)} a bill is needed.`}
       footer={
         <>
           {formError && (

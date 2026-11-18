@@ -115,6 +115,7 @@ export interface Delegation {
   startsAt: string;
   endsAt: string;
   reason: string;
+  revokeReason?: string | null;
   displayStatus: DelegationDisplayStatus;
   version: number;
 }

@@ -180,7 +180,7 @@ describe('settings screen', () => {
       'PATCH /approvals/settings': ok({ stepUpAbovePaise: 5000000, bulkApproveBelowPaise: 2500000 }),
     });
     renderIt(<ApprovalSettingsScreen />);
-    const f = await screen.findByLabelText(/fresh code above/);
+    const f = await screen.findByLabelText(/fresh code at or above/);
     expect(f).toHaveValue('25000');
     expect(screen.getByRole('button', { name: 'Save settings' })).toBeDisabled();
     await userEvent.clear(f);
@@ -194,15 +194,36 @@ describe('settings screen', () => {
     signInAs(EDIT, []);
     mockApi({ 'GET /approvals/settings': ok({ stepUpAbovePaise: 2500000, bulkApproveBelowPaise: 2500000 }) });
     const { unmount } = renderIt(<ApprovalSettingsScreen />);
-    const f = await screen.findByLabelText(/fresh code above/);
+    const f = await screen.findByLabelText(/fresh code at or above/);
     await userEvent.clear(f);
     await userEvent.type(f, '10');
     expect(screen.getByRole('button', { name: 'Save settings' })).toBeDisabled();
     unmount();
     signInAs(VIEW, []);
     renderIt(<ApprovalSettingsScreen />);
-    expect(await screen.findByLabelText(/fresh code above/)).toBeDisabled();
+    expect(await screen.findByLabelText(/fresh code at or above/)).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Save settings' })).toBeNull();
+  });
+});
+
+describe('no access', () => {
+  it('shows a calm no-access state on the rules and settings pages', async () => {
+    signInAs(['approvals.inbox.view'], []);
+    base({ 'GET /approvals/settings': ok({ stepUpAbovePaise: 2500000, bulkApproveBelowPaise: 2500000 }) });
+    const { unmount } = renderIt(<RulesScreen />);
+    expect(await screen.findByText('You do not have access to this page')).toBeInTheDocument();
+    unmount();
+    renderIt(<ApprovalSettingsScreen />);
+    expect(await screen.findByText('You do not have access to this page')).toBeInTheDocument();
+  });
+  it('shows why Save is disabled next to the field', async () => {
+    signInAs(EDIT, []);
+    mockApi({ 'GET /approvals/settings': ok({ stepUpAbovePaise: 2500000, bulkApproveBelowPaise: 2500000 }) });
+    renderIt(<ApprovalSettingsScreen />);
+    const f = await screen.findByLabelText(/fresh code at or above/);
+    await userEvent.clear(f);
+    await userEvent.type(f, '10');
+    expect(await screen.findByText('Enter from ₹1,000 up to ₹10,000,00,000.')).toBeInTheDocument();
   });
 });
 
@@ -253,6 +274,34 @@ describe('delegations screen', () => {
     renderIt(<DelegationsScreen />);
     expect(await screen.findByText(/Not in your plan/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Delegate my approvals' })).toBeNull();
+  });
+  it('does not offer the signed-in user as the delegate', async () => {
+    signInAs(EDIT, ['iam.approval_delegation']);
+    del({
+      'GET /committee/terms/12': ok(
+        termRaw({
+          seats: [
+            seatRaw({ userId: 101, name: 'Me Myself' }),
+            seatRaw({ seatId: 'S2', userId: 12, name: 'Arjun Shah' }),
+          ],
+        }),
+      ),
+    });
+    renderIt(<DelegationsScreen />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Delegate my approvals' }));
+    const dlg = await screen.findByRole('dialog');
+    await within(dlg).findByRole('option', { name: /Arjun Shah/ });
+    expect(within(dlg).queryByRole('option', { name: /Me Myself/ })).toBeNull();
+  });
+  it('shows the revoke reason on a revoked delegation', async () => {
+    signInAs(EDIT, ['iam.approval_delegation']);
+    del({
+      'GET /approvals/delegations': listOf([
+        delegationRaw({ displayStatus: 'REVOKED', revokeReason: 'Back early' }),
+      ]),
+    });
+    renderIt(<DelegationsScreen />);
+    expect(await screen.findByText('Revoked: Back early')).toBeInTheDocument();
   });
   it('validates and creates a delegation in India time', async () => {
     signInAs(EDIT, ['iam.approval_delegation']);

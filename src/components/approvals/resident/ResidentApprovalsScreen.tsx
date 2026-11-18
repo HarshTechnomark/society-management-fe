@@ -78,11 +78,15 @@ export function ResidentApprovalsScreen() {
                     {r.statusLabel || STATUS_LABEL[r.status] || r.status}
                   </Chip>
                 </div>
-                {(r.status === 'REJECTED' || r.status === 'CHANGES_REQUESTED') && r.reason && (
-                  <Alert tone={r.status === 'REJECTED' ? 'bad' : 'warn'} className="mt-2">
-                    {r.reason}
-                  </Alert>
-                )}
+                {(r.status === 'REJECTED' || r.status === 'CHANGES_REQUESTED' || r.status === 'CANCELLED') &&
+                  r.reason && (
+                    <Alert
+                      tone={r.status === 'REJECTED' ? 'bad' : r.status === 'CANCELLED' ? 'info' : 'warn'}
+                      className="mt-2"
+                    >
+                      {r.status === 'CANCELLED' ? `Withdrawn: ${r.reason}` : r.reason}
+                    </Alert>
+                  )}
                 <ol className="mt-3 grid gap-1.5">
                   {r.timeline.map((t, i) => (
                     <li key={i} className="border-l-2 border-[var(--line)] pl-3 text-[13.5px]">

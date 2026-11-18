@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
+import { useMe } from '@/lib/auth';
 import { Textarea } from '@/components/ui/Textarea';
 import { approvalsRulesService } from '@/services/approvalsRules.service';
 import { typeLabel } from '../format';
@@ -24,7 +25,9 @@ export function DelegationDialog({
   onCancel: () => void;
   onCreated: () => void;
 }) {
-  const { members, loading } = useMembers();
+  const { me } = useMe();
+  const { members: all0, loading } = useMembers();
+  const members = all0.filter(m => m.userId !== me?.user.id);
   const [opened] = useState(() => Date.now());
   const [delegate, setDelegate] = useState('');
   const [from, setFrom] = useState(() => indiaNow());
