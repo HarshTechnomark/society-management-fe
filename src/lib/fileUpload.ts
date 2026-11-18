@@ -13,7 +13,9 @@ export type FilePurpose =
   | 'USER_PHOTO'
   | 'HANDOVER_EVIDENCE'
   | 'PAYMENT_PROOF'
-  | 'EXPENSE_BILL';
+  | 'EXPENSE_BILL'
+  | 'TICKET_ATTACHMENT'
+  | 'TICKET_PHOTO';
 
 export interface FileUploader {
   upload(file: File, purpose: FilePurpose, opts?: UploadOptions): Promise<{ fileId: number }>;

@@ -89,9 +89,11 @@ describe('Team screen: committee seat column and term banner (11.1)', () => {
     const r1 = (await screen.findByText('Rajesh Kulkarni')).closest('tr')!;
     await waitFor(() => expect(within(r1).getByText('Chairman', { selector: 'span' })).toBeInTheDocument());
     expect(screen.getByRole('columnheader', { name: /Committee seat/ })).toBeInTheDocument();
-    expect(
-      within(screen.getByText('Meera Iyer').closest('tr')!).getByText('Member · Co-opted'),
-    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        within(screen.getByText('Meera Iyer').closest('tr')!).getByText('Member · Co-opted'),
+      ).toBeInTheDocument(),
+    );
     expect(
       within(screen.getByText('Kiran Patel').closest('tr')!).getByText('No committee seat'),
     ).toBeInTheDocument();
