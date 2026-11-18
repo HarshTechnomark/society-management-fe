@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/Switch';
 import { useToast } from '@/components/ui/Toast';
 import { useFeatureState } from '@/lib/entitlements';
 import { useLoad } from '@/hooks/useLoad';
+import { ApiError } from '@/lib/apiClient';
 import { helpdeskSettingsService as svc } from '@/services/helpdeskSettings.service';
 import type { HelpdeskSettings } from '@/types/helpdesk';
 import { helpdeskError, isStale, plainError } from '../admin/format';
@@ -69,12 +70,14 @@ function PrefsForm({
     Object.fromEntries(PREFS.map(p => [p.key, present[p.key] ?? (p.bool ? false : String(p.min))])),
   );
   const changes = prefChanges(settings, values);
+  const changed = (key: string) => changes.some(c => c.key === key);
 
   const save = async () => {
     setTouched(true);
     setProblem(null);
-    if (Object.keys(errors).some(k => values[k] !== undefined) || changes.length === 0) {
-      if (changes.length === 0) toast.show('Nothing to save.');
+    if (Object.keys(errors).some(k => values[k] !== undefined)) return;
+    if (changes.length === 0) {
+      toast.show('Nothing to save.');
       return;
     }
     setBusy(true);
@@ -83,7 +86,16 @@ function PrefsForm({
       toast.show('Settings saved');
       onSaved();
     } catch (e) {
-      setProblem(isStale(e) ? 'Someone else changed these settings. Reload.' : helpdeskError(e));
+      const detail =
+        e instanceof ApiError && e.code === 'SETTING_VALUE_INVALID'
+          ? (e.errors ?? [])
+              .map(x => x.message)
+              .filter(Boolean)
+              .join(' ')
+          : '';
+      setProblem(
+        isStale(e) ? 'Someone else changed these settings. Reload.' : `${helpdeskError(e)} ${detail}`.trim(),
+      );
     } finally {
       setBusy(false);
     }
@@ -92,7 +104,6 @@ function PrefsForm({
   if (shown.length === 0) return <Alert tone="info">No helpdesk preferences are available yet.</Alert>;
   return (
     <fieldset disabled={!canEdit || busy} className="grid max-w-xl gap-4 border-0 p-0">
-      {problem && <Alert tone="bad">{problem}</Alert>}
       {shown.map(p =>
         p.bool ? (
           <div key={p.key} className="flex items-center justify-between gap-3">
@@ -120,10 +131,11 @@ function PrefsForm({
             inputMode="numeric"
             value={String(values[p.key] ?? '')}
             onChange={e => setValues(s => ({ ...s, [p.key]: e.target.value }))}
-            error={touched ? (errors[p.key] ?? null) : null}
+            error={touched || changed(p.key) ? (errors[p.key] ?? null) : null}
           />
         ),
       )}
+      {problem && <Alert tone="bad">{problem}</Alert>}
       {canEdit && (
         <div>
           <Button loading={busy} onClick={() => void save()}>

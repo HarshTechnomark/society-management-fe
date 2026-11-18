@@ -77,13 +77,16 @@ function Inner({ id }: { id: number }) {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [fresh, setFresh] = useState<ResidentTicket | null>(null);
 
-  /** Runs an action, shows its result and reloads the ticket: rating, Me too and escalating change the version, and buttons stay off until the new one is in. */
+  /** Runs an action, shows its result, keeps the ticket the action returned and reloads it: every action changes the version, and the buttons follow the newest ticket. */
   const run = async (fn: () => Promise<unknown>, done: string) => {
     setBusy(true);
     setProblem(null);
     try {
-      await fn();
+      const r = await fn();
+      if (r && typeof r === 'object' && Array.isArray((r as ResidentTicket).allowedActions))
+        setFresh(r as ResidentTicket);
       toast.show(done);
       setDialog(null);
       t.reload();
@@ -116,7 +119,7 @@ function Inner({ id }: { id: number }) {
         />
       </Page>
     );
-  const d = t.data;
+  const d = fresh && fresh.id === t.data.id && fresh.version > t.data.version ? fresh : t.data;
   const eta = etaText(d);
   const step = stepIndex(d.status);
   const upvoteOk = d.kind === 'BUILDING' && d.myRelation !== 'REQUESTER' && !isTerminal(d.status);

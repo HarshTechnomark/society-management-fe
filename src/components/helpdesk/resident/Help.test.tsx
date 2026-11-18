@@ -118,6 +118,27 @@ describe('Ticket detail', () => {
     );
   });
 
+  it('refetches after confirming and shows the closed ticket buttons', async () => {
+    let closed = false;
+    const api = show(<TicketDetailScreen id={124} />, {
+      'GET /me/tickets/124': () =>
+        closed ? ok(ticketRaw({ status: 'CLOSED', version: 5, allowedActions: ['RATE'] })) : ok(ticketRaw()),
+      'POST /me/tickets/124/confirm': () => {
+        closed = true;
+        return ok(ticketRaw({ status: 'CLOSED', version: 5, allowedActions: ['RATE'] }));
+      },
+    } as Routes);
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirm fixed' }));
+    const dlg = await screen.findByRole('dialog');
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Confirm fixed' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Confirm fixed' })).toBeNull());
+    expect(screen.queryByRole('button', { name: 'Reopen' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Rate' })).toBeEnabled();
+    expect(api.calls.filter(c => c.method === 'GET' && c.path === '/me/tickets/124').length).toBeGreaterThan(
+      1,
+    );
+  });
+
   it('reopens with a reason', async () => {
     const api = show(<TicketDetailScreen id={124} />, {
       ...detail(),

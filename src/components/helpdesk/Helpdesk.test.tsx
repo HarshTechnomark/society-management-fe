@@ -910,6 +910,37 @@ describe('Settings > Helpdesk', () => {
       }),
     );
   });
+  it('shows an inline error for a value below the minimum and the server message when a save is refused', async () => {
+    const raw = { ...settingsRaw(), 'helpdesk.residentDailyTicketLimit': { value: 20, version: 1 } };
+    const api = settings({ 'GET /helpdesk/settings': ok(raw) });
+    await userEvent.click(await screen.findByRole('button', { name: 'Preferences' }));
+    const limit = await screen.findByLabelText(/Most tickets one resident can raise a day/);
+    await userEvent.clear(limit);
+    await userEvent.type(limit, '3');
+    expect(await screen.findByText('Enter a whole number from 5 to 100.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Save preferences' }));
+    expect(api.calls.some(c => c.method === 'PATCH')).toBe(false);
+    expect(screen.getByText('Enter a whole number from 5 to 100.')).toBeInTheDocument();
+    await userEvent.clear(limit);
+    await userEvent.type(limit, '30');
+    expect(screen.queryByText('Enter a whole number from 5 to 100.')).toBeNull();
+  });
+  it('shows the server message when saving a preference is refused', async () => {
+    settings({
+      'PATCH /helpdesk/settings': {
+        status: 400,
+        code: 'SETTING_VALUE_INVALID',
+        message: 'A setting value is not valid',
+        errors: [{ field: 'helpdesk.autoCloseHours', message: 'Must be between 24 and 336' }],
+      },
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'Preferences' }));
+    const hours = await screen.findByLabelText(/Close a resolved ticket after/);
+    await userEvent.clear(hours);
+    await userEvent.type(hours, '96');
+    await userEvent.click(screen.getByRole('button', { name: 'Save preferences' }));
+    expect(await screen.findByText(/Must be between 24 and 336/)).toBeInTheDocument();
+  });
   it('is read only without the edit permission and hidden without the view permission', async () => {
     settings({}, SET_VIEW);
     expect(await screen.findByText(/look at these settings but not change/)).toBeInTheDocument();
