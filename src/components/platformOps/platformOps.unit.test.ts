@@ -70,6 +70,7 @@ describe('platform navigation', () => {
     expect(labels(['platform.dashboard.view', 'platform.jobs.view', 'platform.settings.view'])).toEqual([
       'Dashboard',
       'Jobs and queues',
+      'Templates',
       'Settings',
     ]);
   });

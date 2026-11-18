@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, type ReactNode } from 'react';
+import { InboxBell } from '@/components/communication/resident/InboxBell';
 import { SwitchAppButton } from '@/components/auth/SwitchAppButton';
 import { Button } from '@/components/ui/Button';
 import { cx } from '@/components/ui/cx';
@@ -29,6 +30,9 @@ export const RESIDENT_NAV: Item[] = [
   { href: '/resident/confirm', label: 'Confirm requests', keys: [RES.household.view] },
   { href: '/resident/tenant', label: 'My tenant', keys: [RES.household.view] },
   { href: '/resident/requests', label: 'Requests', keys: [RES.requests.view] },
+  { href: '/resident/notices', label: 'Notices', keys: [PERMISSIONS.resident.notices.view] },
+  { href: '/resident/inbox', label: 'Inbox', keys: [RES.home.view] },
+  { href: '/resident/notification-settings', label: 'Notification settings', keys: [RES.home.view] },
   { href: '/resident/help', label: 'Help', keys: [PERMISSIONS.resident.helpdesk.view] },
   { href: '/resident/approvals', label: 'Approvals', keys: [RES.requests.view] },
   { href: '/resident/directory', label: 'Directory', keys: [RES.community.view] },
@@ -64,6 +68,7 @@ export function ResidentNav({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-2 px-4 pt-2.5">
           <p className="text-[16px] font-bold">SocietyApp</p>
           <div className="flex flex-wrap items-center gap-2">
+            <InboxBell />
             <SwitchAppButton />
             <Button variant="glass" size="sm" onClick={() => void signOut()}>
               Sign out

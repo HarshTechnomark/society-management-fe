@@ -6,6 +6,7 @@ import { SwitchAppButton } from '@/components/auth/SwitchAppButton';
 import { Button } from '@/components/ui/Button';
 import { Drawer } from '@/components/ui/Drawer';
 import { cx } from '@/components/ui/cx';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { APPROVAL_REQUEST_KEYS } from '@/components/approvals/links';
 import { useApprovalCounts } from '@/components/approvals/useApprovalCounts';
 import { PERMISSIONS, type PermissionKey } from '@/constants/permissions';
@@ -35,6 +36,7 @@ const R = PERMISSIONS.residents;
 const F = PERMISSIONS.finance;
 const AP = PERMISSIONS.approvals.inbox.view;
 const HD = PERMISSIONS.helpdesk;
+const CM = PERMISSIONS.communication;
 
 /** Links to the admin pages that exist today (modules 02, 03, 05, 07 to 14). */
 export const ADMIN_NAV: NavGroup[] = [
@@ -129,15 +131,34 @@ export const ADMIN_NAV: NavGroup[] = [
     ],
   },
   {
+    title: 'Communication',
+    items: [
+      { href: '/admin/notices', label: 'Notices', keys: [CM.notices.view] },
+      {
+        href: '/admin/surveys',
+        label: 'Surveys',
+        keys: [CM.surveys.view],
+        feature: 'communication.surveys_with_analytics',
+      },
+    ],
+  },
+  {
     title: 'Issues',
     items: [
       { href: '/admin/issues', label: 'Issues', keys: [HD.tickets.view] },
       { href: '/admin/settings/helpdesk', label: 'Helpdesk settings', keys: [HD.settings.view] },
+      {
+        href: '/admin/emergency',
+        label: 'Emergencies',
+        keys: [PERMISSIONS.communication.emergency.create, PERMISSIONS.security.incidents.view],
+      },
     ],
   },
   {
     title: 'Account',
     items: [
+      { href: '/admin/notifications', label: 'Notifications', keys: [] },
+      { href: '/admin/settings/notifications', label: 'Notification settings', keys: [] },
       { href: '/admin/settings/subscription', label: 'Subscription', keys: [S.subscription.view] },
       { href: '/admin/settings/support-access', label: 'Support access', keys: [S.supportAccess.view] },
       { href: '/admin/settings/data-export', label: 'Data export', keys: [S.dataExport.view] },
@@ -236,7 +257,10 @@ export function AdminNav({ children }: { children: ReactNode }) {
         aria-label="Admin sections"
         className="hidden w-[232px] shrink-0 border-r border-[var(--line)] min-[900px]:sticky min-[900px]:top-0 min-[900px]:block min-[900px]:h-screen min-[900px]:overflow-y-auto min-[900px]:p-4"
       >
-        <p className="px-3 pb-4 pt-2 text-[18px] font-bold tracking-tight">SocietyApp</p>
+        <div className="flex items-center justify-between px-3 pb-4 pt-2">
+          <p className="text-[18px] font-bold tracking-tight">SocietyApp</p>
+          <NotificationBell refreshKey={path} />
+        </div>
         <nav aria-label="Admin">
           {me ? <NavLinks groups={groups} forMe={forMe} /> : <div className="skeleton mx-3 h-40" />}
         </nav>
@@ -245,9 +269,12 @@ export function AdminNav({ children }: { children: ReactNode }) {
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[var(--line)] bg-[rgba(251,247,240,0.95)] px-4 py-2.5 min-[900px]:hidden">
           <p className="text-[16px] font-bold">SocietyApp admin</p>
-          <Button variant="glass" size="sm" aria-haspopup="dialog" onClick={() => setOpen(true)}>
-            Menu
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationBell refreshKey={path} />
+            <Button variant="glass" size="sm" aria-haspopup="dialog" onClick={() => setOpen(true)}>
+              Menu
+            </Button>
+          </div>
         </header>
         <Drawer open={open} onClose={() => setOpen(false)} title="Menu">
           <nav aria-label="Admin menu">

@@ -15,7 +15,8 @@ export type FilePurpose =
   | 'PAYMENT_PROOF'
   | 'EXPENSE_BILL'
   | 'TICKET_ATTACHMENT'
-  | 'TICKET_PHOTO';
+  | 'TICKET_PHOTO'
+  | 'NOTICE_ATTACHMENT';
 
 export interface FileUploader {
   upload(file: File, purpose: FilePurpose, opts?: UploadOptions): Promise<{ fileId: number }>;
