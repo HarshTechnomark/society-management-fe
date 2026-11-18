@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi, navigationMock, ok, resetAll, router, sampleMe } from '@/test/helpers';
 import { setMe } from '@/lib/auth';
-import { ResidentNav } from './ResidentNav';
+import { ResidentNav, visibleResidentNav } from './ResidentNav';
 
 vi.mock('next/navigation', () => navigationMock());
 
@@ -45,5 +45,18 @@ describe('ResidentNav', () => {
     await waitFor(() => expect(assign).toHaveBeenCalledWith('/login?r=signedout'));
     expect(api.last('POST', '/auth/logout')).toBeTruthy();
     expect(localStorage.getItem('sa_signed_in')).toBeNull();
+  });
+
+  it('links to My approvals with resident.requests.view only', async () => {
+    mockApi({ 'GET /auth/apps': ok({ current: 'RESIDENT', available: [] }) });
+    const me = sampleMe({ permissions: ['resident.requests.view'] });
+    expect(visibleResidentNav(me).find(i => i.label === 'Approvals')?.href).toBe('/resident/approvals');
+    expect(
+      visibleResidentNav(sampleMe({ permissions: ['resident.home.view'] })).some(
+        i => i.label === 'Approvals',
+      ),
+    ).toBe(false);
+    render(<ResidentNav>page</ResidentNav>);
+    expect(screen.getByRole('navigation', { name: 'Resident sections' })).toBeInTheDocument();
   });
 });

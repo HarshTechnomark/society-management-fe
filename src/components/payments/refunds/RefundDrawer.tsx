@@ -1,4 +1,6 @@
 'use client';
+import Link from 'next/link';
+import { approvalHref } from '@/components/approvals/links';
 import { KV } from '@/components/residents/common';
 import { Alert } from '@/components/ui/Alert';
 import { Drawer } from '@/components/ui/Drawer';
@@ -21,6 +23,14 @@ export function RefundDrawer({ refund: r, onClose }: { refund: Refund; onClose: 
         </div>
         {r.status === 'REJECTED' && r.rejectedReason && <Alert tone="bad">{r.rejectedReason}</Alert>}
         {r.status === 'FAILED' && r.failureReason && <Alert tone="bad">{r.failureReason}</Alert>}
+        {r.status === 'PENDING_APPROVAL' && (
+          <Link
+            href={approvalHref(r.approvalRequestId, 'PAYMENT_REFUND')}
+            className="text-[14px] font-semibold underline"
+          >
+            Open the approval
+          </Link>
+        )}
         <dl>
           <KV label="Flat">{r.unitLabel || '-'}</KV>
           <KV label="For payment">{r.receiptNo ?? `Payment ${r.paymentId}`}</KV>

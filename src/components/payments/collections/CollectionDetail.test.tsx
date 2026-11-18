@@ -366,7 +366,10 @@ describe('Collection detail', () => {
 
   it('pending approval offers the approval link to an approver only', async () => {
     renderIt({ status: 'PENDING_APPROVAL' }, {}, [...COL_PERMS, 'finance.collections.approve']);
-    expect(await screen.findByRole('link', { name: 'Open the approval' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Open the approval' })).toHaveAttribute(
+      'href',
+      '/admin/approvals/5',
+    );
     expect(screen.queryByRole('button', { name: 'Submit for approval' })).toBeNull();
   });
 

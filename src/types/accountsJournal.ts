@@ -101,6 +101,8 @@ export interface JournalDetail extends JournalItem {
   reversedBy: JournalRef | null;
   reversalReason: string | null;
   rejectionReason: string | null;
+  /** The module 14 request while it waits for approval (or after it was decided). */
+  approvalRequestId: number | null;
   sourceLink: JournalSourceLink | null;
   postedAt: string | null;
   audit: { at: string; action: string; by: string | null; note: string | null }[];

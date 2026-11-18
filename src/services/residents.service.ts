@@ -71,15 +71,6 @@ const arr =
   (raw: unknown): T[] =>
     Array.isArray(raw) ? (map ? (raw as R[]).map(map) : (raw as T[])) : [];
 
-const sourceQuery = (source?: string): string => (source ? `?source=${encodeURIComponent(source)}` : '');
-
-export const approvalsBase = (env: string | undefined = process.env.NODE_ENV): string =>
-  env === 'production' ? '/approvals' : '/dev/approvals';
-
-/** Where the "Open in approvals" links go: module 14's inbox in production, the development page otherwise. */
-export const approvalsPageHref = (env: string | undefined = process.env.NODE_ENV): string =>
-  env === 'production' ? '/admin/approvals' : '/admin/dev-approvals';
-
 export const residentsService = {
   // admin: flats, stats, people
   stats: () => api<Stats>('/residents/stats'),
@@ -154,14 +145,6 @@ export const residentsService = {
   joinRequests: (q: { status?: string; page?: number; limit?: number } = {}) =>
     paged<JoinRequest, RawJoinRequest>('/join-requests', q, normaliseJoinRequest),
   joinRequest: (id: number) => api<RawJoinRequest>(`/join-requests/${id}`).then(normaliseJoinRequest),
-  /** Module 14 inbox actions for the card's `approvalRequestId`. */
-  // Module 14 does not exist yet: outside production these go to the backend's development stand-in (`/dev/approvals`).
-  // `source` tells the development stand-in which module's placeholder holds the request (ids can repeat across modules).
-  approvalApprove: (approvalRequestId: number, source?: string) =>
-    post<unknown>(`${approvalsBase()}/${approvalRequestId}/approve${sourceQuery(source)}`, {}),
-  approvalReject: (approvalRequestId: number, reason: string, source?: string) =>
-    post<unknown>(`${approvalsBase()}/${approvalRequestId}/reject${sourceQuery(source)}`, { reason }),
-
   // moves
   moves: (q: MoveQuery = {}) => paged<MoveRequest>('/move-requests', q),
   createMove: (body: MoveInput) => post<MoveRequest>('/move-requests', body, true),

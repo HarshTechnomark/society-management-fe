@@ -11,7 +11,7 @@ import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { shortDate } from '@/lib/money';
-import { approvalsPageHref } from '@/services/residents.service';
+import { approvalHref } from '@/components/approvals/links';
 import { billingSetupService } from '@/services/billingSetup.service';
 import type { BillingRule } from '@/types/billingSetup';
 import { RateDrawer } from './RateDrawer';
@@ -126,7 +126,10 @@ export function RatesTab() {
                       {describeRate(r.pendingVersion, ctx)}
                       <span className="block text-[12.5px] font-normal text-muted">
                         from {shortDate(r.pendingVersion.effectiveFrom)} ·{' '}
-                        <a className="underline" href={approvalsPageHref()}>
+                        <a
+                          className="underline"
+                          href={approvalHref(r.pendingVersion.approvalRequestId, 'BILLING_RULE_CHANGE')}
+                        >
                           Open in approvals
                         </a>
                       </span>

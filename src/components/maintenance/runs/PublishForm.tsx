@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { inr, shortDate } from '@/lib/money';
 import { ApiError } from '@/lib/apiClient';
-import { approvalsPageHref } from '@/services/residents.service';
+import { approvalHref } from '@/components/approvals/links';
 import { billingRunsService } from '@/services/billingRuns.service';
 import type { Run } from '@/types/billingRuns';
 import { billingRunError, billsText, isCode, periodLabel } from './format';
@@ -103,7 +103,10 @@ export function PublishForm({
           {problem.code === 'APPROVAL_ALREADY_PENDING' && (
             <>
               {' '}
-              <Link className="font-bold underline" href={approvalsPageHref()}>
+              <Link
+                className="font-bold underline"
+                href={approvalHref(run.approvalRequestId, 'BILLING_RUN_PUBLISH')}
+              >
                 Open approvals
               </Link>
             </>
@@ -121,7 +124,11 @@ export function PublishForm({
       />
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <div>{footerLeft}</div>
-        <Button loading={busy} disabled={!!blocked} onClick={() => void submit()}>
+        <Button
+          loading={busy}
+          disabled={!!blocked || typed.trim() !== run.runLabel}
+          onClick={() => void submit()}
+        >
           Submit for approval
         </Button>
       </div>
@@ -145,7 +152,10 @@ export function PublishResult({ run }: { run: Run }) {
       <p className="text-[14px]">{text}</p>
       <p className="mt-3 flex flex-wrap gap-4 text-[14px]">
         {run.status === 'PENDING_APPROVAL' && (
-          <Link className="font-semibold underline" href={approvalsPageHref()}>
+          <Link
+            className="font-semibold underline"
+            href={approvalHref(run.approvalRequestId, 'BILLING_RUN_PUBLISH')}
+          >
             Open in approvals
           </Link>
         )}

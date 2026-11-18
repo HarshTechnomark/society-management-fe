@@ -26,6 +26,8 @@ export interface Deposit {
   deductedPaise: number;
   refundedPaise: number;
   refundRequestedPaise: number;
+  /** The module 14 `DEPOSIT_REFUND` request of the latest refund ask. */
+  refundApprovalRequestId: number | null;
   /** What is still held for the flat: received less deducted and refunded. */
   heldPaise: number;
   isOpening: boolean;

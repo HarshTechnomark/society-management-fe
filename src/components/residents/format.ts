@@ -413,8 +413,13 @@ export function agreementEndInfo(end: string, status?: TenancyStatus): { text: s
   return { text: base, tone: 'neutral' };
 }
 
+/** Dates without a zone are UTC from the API: parse them as UTC, not as the browser's local time. */
+const parseUtc = (iso: string) =>
+  Date.parse(/(Z|[+-]\d{2}:?\d{2})$/i.test(iso) || !iso.includes('T') ? iso : `${iso}Z`);
 export const ageText = (iso?: string, now = Date.now()) => {
   if (!iso) return '';
-  const h = Math.max(0, Math.floor((now - Date.parse(iso)) / 3_600_000));
-  return h < 24 ? `${Math.max(1, h)}h` : `${Math.floor(h / 24)}d`;
+  const m = Math.max(0, Math.floor((now - parseUtc(iso)) / 60_000));
+  if (m < 60) return `${Math.max(1, m)}m`;
+  const h = Math.floor(m / 60);
+  return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`;
 };

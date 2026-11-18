@@ -35,6 +35,7 @@ export interface Refund {
   createdAt: string;
   processedAt: string | null;
   version: number;
+  approvalRequestId?: number | null;
 }
 export interface RefundQuery {
   status?: string;

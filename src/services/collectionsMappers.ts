@@ -106,6 +106,7 @@ export function normaliseDetail(raw: unknown): CollectionDetail {
     lastReminderAt: str(c.lastReminderAt) || null,
     rejectedReason: str(approval.reason, str(c.rejectedReason)),
     approvalStatus: str(approval.status),
+    approvalRequestId: numN(approval.requestId) ?? numN(c.approvalRequestId),
     spentPaise: numN(c.spentPaise),
     expenses: spent(c.expenses),
     timeline: (Array.isArray(c.timeline) ? c.timeline : []).map(t => {

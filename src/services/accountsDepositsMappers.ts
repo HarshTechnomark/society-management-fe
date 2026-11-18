@@ -62,6 +62,8 @@ export function normaliseDeposit(raw: unknown): Deposit {
     deductedPaise: deducted,
     refundedPaise: refunded,
     refundRequestedPaise: num(r.refundRequestedPaise),
+    refundApprovalRequestId:
+      r.refundApprovalRequestId == null ? null : num(r.refundApprovalRequestId) || null,
     heldPaise: r.heldPaise == null ? Math.max(received - deducted - refunded, 0) : num(r.heldPaise),
     isOpening: r.isOpening === true || r.isOpening === 1,
     dueDate: strN(r.dueDate),

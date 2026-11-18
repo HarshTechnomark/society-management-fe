@@ -530,6 +530,12 @@ describe('Requests', () => {
     expect(screen.getByText('AB12CD34')).toBeInTheDocument();
     expect(screen.getByText('Gate pass code')).toBeInTheDocument();
   });
+  it('offers Cancel request on open moves only, not on an approved one', async () => {
+    show(<MyRequestsScreen />, routes);
+    await screen.findByText('Gate pass code');
+    // 3101 and 3103 are still open; the approved move 3102 has no Cancel button.
+    expect(screen.getAllByRole('button', { name: 'Cancel request' })).toHaveLength(2);
+  });
   it('checks dues again and cancels a move with a reason', async () => {
     const api = show(<MyRequestsScreen />, {
       ...routes,

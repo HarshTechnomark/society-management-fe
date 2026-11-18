@@ -6,6 +6,8 @@ import { SwitchAppButton } from '@/components/auth/SwitchAppButton';
 import { Button } from '@/components/ui/Button';
 import { Drawer } from '@/components/ui/Drawer';
 import { cx } from '@/components/ui/cx';
+import { APPROVAL_REQUEST_KEYS } from '@/components/approvals/links';
+import { useApprovalCounts } from '@/components/approvals/useApprovalCounts';
 import { PERMISSIONS, type PermissionKey } from '@/constants/permissions';
 import { hasPermission } from '@/hooks/usePermission';
 import { hasFeature, useEntitlements } from '@/lib/entitlements';
@@ -19,6 +21,8 @@ interface NavItem {
   keys: PermissionKey[];
   /** Hidden (not greyed) when the plan of the society lacks this entitlement. */
   feature?: string;
+  /** Shows the "waiting for me" count of `GET /approvals/counts` next to the label. */
+  badge?: 'approvalsForMe';
 }
 interface NavGroup {
   title: string;
@@ -29,9 +33,26 @@ const S = PERMISSIONS.settings;
 const U = PERMISSIONS.residents.units;
 const R = PERMISSIONS.residents;
 const F = PERMISSIONS.finance;
+const AP = PERMISSIONS.approvals.inbox.view;
 
-/** Links to the admin pages that exist today (modules 02, 03, 05, 07, 08). */
+/** Links to the admin pages that exist today (modules 02, 03, 05, 07 to 14). */
 export const ADMIN_NAV: NavGroup[] = [
+  {
+    title: 'Approvals',
+    items: [
+      // Makers who only submit still reach "Submitted by me".
+      {
+        href: '/admin/approvals',
+        label: 'Approvals',
+        keys: [AP, ...APPROVAL_REQUEST_KEYS],
+        badge: 'approvalsForMe',
+      },
+      { href: '/admin/approvals/rules', label: 'Approval rules', keys: [S.approvalRules.view] },
+      { href: '/admin/approvals/settings', label: 'Approval settings', keys: [S.approvalRules.view] },
+      // Out of plan, the screen explains the upgrade and still lists and revokes old delegations.
+      { href: '/admin/approvals/delegations', label: 'Delegations', keys: [AP, S.approvalRules.view] },
+    ],
+  },
   {
     title: 'Setup',
     items: [
@@ -137,7 +158,15 @@ export function activeHref(path: string): string | null {
   return hits.sort((a, b) => b.length - a.length)[0] ?? null;
 }
 
-function NavLinks({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () => void }) {
+function NavLinks({
+  groups,
+  forMe,
+  onNavigate,
+}: {
+  groups: NavGroup[];
+  forMe: number;
+  onNavigate?: () => void;
+}) {
   const path = usePathname() ?? '';
   const current = activeHref(path);
   return (
@@ -158,6 +187,14 @@ function NavLinks({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () 
                   )}
                 >
                   {i.label}
+                  {i.badge === 'approvalsForMe' && forMe > 0 && (
+                    <span
+                      aria-label={`${forMe} waiting for you`}
+                      className="ml-2 inline-block min-w-[20px] rounded-full bg-bad px-1.5 text-center text-[11.5px] font-bold text-white"
+                    >
+                      {forMe > 99 ? '99+' : forMe}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}
@@ -174,6 +211,9 @@ export function AdminNav({ children }: { children: ReactNode }) {
   useEntitlements(); // the menu follows the plan
   const [open, setOpen] = useState(false);
   const groups = visibleAdminNav(me);
+  const path = usePathname() ?? '';
+  const counts = useApprovalCounts(!!me && hasPermission(me, AP), path);
+  const forMe = counts?.forMe ?? 0;
   const signOutButton = (
     <>
       <SwitchAppButton />
@@ -190,7 +230,7 @@ export function AdminNav({ children }: { children: ReactNode }) {
       >
         <p className="px-3 pb-4 pt-2 text-[18px] font-bold tracking-tight">SocietyApp</p>
         <nav aria-label="Admin">
-          {me ? <NavLinks groups={groups} /> : <div className="skeleton mx-3 h-40" />}
+          {me ? <NavLinks groups={groups} forMe={forMe} /> : <div className="skeleton mx-3 h-40" />}
         </nav>
         <div className="px-3 pt-2">{signOutButton}</div>
       </aside>
@@ -203,7 +243,7 @@ export function AdminNav({ children }: { children: ReactNode }) {
         </header>
         <Drawer open={open} onClose={() => setOpen(false)} title="Menu">
           <nav aria-label="Admin menu">
-            <NavLinks groups={groups} onNavigate={() => setOpen(false)} />
+            <NavLinks groups={groups} forMe={forMe} onNavigate={() => setOpen(false)} />
           </nav>
           <div className="pt-2">{signOutButton}</div>
         </Drawer>

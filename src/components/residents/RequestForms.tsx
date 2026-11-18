@@ -462,6 +462,7 @@ export function TransferForm({
     const e: Record<string, string> = {};
     if (!unit) e.unitId = 'Choose the flat.';
     if (!isoDate(date)) e.effectiveDate = 'Choose the effective date.';
+    if (isoDate(deedDate) && deedDate > today()) e.deedDate = 'The deed date cannot be in the future.';
     if (buyers.some(b => b.name.trim().length < 2 || !isValidMobile(b.mobile)))
       e.buyers = 'Each buyer needs a name and a 10 digit mobile number.';
     else if (Math.abs(buyers.reduce((n, b) => n + Number(b.share || 0), 0) - 100) > 0.001)
@@ -533,7 +534,13 @@ export function TransferForm({
           onChange={e => setDeedNo(e.target.value)}
           error={errs.deedRegistrationNo}
         />
-        <Input label="Deed date" type="date" value={deedDate} onChange={e => setDeedDate(e.target.value)} />
+        <Input
+          label="Deed date"
+          type="date"
+          value={deedDate}
+          error={errs.deedDate}
+          onChange={e => setDeedDate(e.target.value)}
+        />
         <Input
           label="Consideration (₹)"
           inputMode="decimal"

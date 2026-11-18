@@ -55,6 +55,10 @@ export interface NoteSummary {
   appliedToInvoicePaise: number;
   excessToAdvancePaise: number;
   pdfStatus: PdfStatus;
+  /** The approval request of a pending credit note or write-off, when the API sends it. */
+  approvalRequestId?: number | null;
+  /** `CREDIT_NOTE` or `WRITE_OFF` when the API says which approval type it is. */
+  approvalType?: string | null;
   lines: InvoiceLine[];
 }
 

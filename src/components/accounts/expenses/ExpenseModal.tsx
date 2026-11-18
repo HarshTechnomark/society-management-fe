@@ -38,9 +38,11 @@ const STATUTORY_CODES = ['2310', '2320', '2330', '2140'];
 const MAX_BILLS = 5;
 const MAX_PAISE = 100_000_000_000;
 
-/** What the add form says about approval and bills (module 14 rule and the bill setting; these are the seeded defaults). */
-export const APPROVAL_ABOVE_PAISE = 500000;
+/** Above this a bill is needed (the seeded bill setting). */
 export const BILL_ABOVE_PAISE = 200000;
+
+/** What the form says about approval: no amounts, the society's rules decide. */
+export const APPROVAL_POLICY_TEXT = "Whether this needs approval depends on your society's approval rules.";
 
 const moneyField = (text: string): number | null | undefined => {
   if (!text.trim()) return undefined;
@@ -212,7 +214,7 @@ export function ExpenseModal({
       wide
       onClose={onClose}
       title={expense ? `Edit ${expense.displayId}` : 'Add an expense'}
-      description={`Every expense is approved by a second committee member before it is paid. Above ${inr(BILL_ABOVE_PAISE)} a bill is needed.`}
+      description={`${APPROVAL_POLICY_TEXT} Above ${inr(BILL_ABOVE_PAISE)} a bill is needed.`}
       footer={
         <>
           {formError && (

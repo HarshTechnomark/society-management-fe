@@ -97,6 +97,8 @@ export function normaliseNote(raw: unknown): NoteSummary {
     appliedToInvoicePaise: num(n.appliedToInvoicePaise),
     excessToAdvancePaise: num(n.excessToAdvancePaise),
     pdfStatus: str(n.pdfStatus, 'PENDING') as PdfStatus,
+    approvalType: strN(n.approvalType),
+    approvalRequestId: numN(n.approvalRequestId) ?? numN(obj(n.approval).requestId),
     lines: list(n.lines).map(normaliseLine),
   };
 }

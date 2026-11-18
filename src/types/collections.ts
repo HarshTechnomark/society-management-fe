@@ -56,6 +56,7 @@ export interface CollectionDetail extends Collection {
   lastReminderAt: string | null;
   rejectedReason: string;
   approvalStatus: string;
+  approvalRequestId?: number | null;
   /** null when module 13 sends nothing. */
   spentPaise: number | null;
   expenses: SpentLine[];
