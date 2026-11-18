@@ -21,6 +21,7 @@ const LIST_KEYS = [
   'type',
   'status',
   'overdue',
+  'scope',
   'q',
   'from',
   'to',

@@ -401,6 +401,8 @@ export interface MoveRequest {
   gatePassCode: string | null;
   inspectionStatus?: 'NOT_REQUIRED' | 'PENDING' | 'PASSED' | 'DAMAGE_FOUND';
   approvalRequestId?: number | null;
+  /** Why a move was turned down (or cancelled). */
+  decisionReason?: string | null;
   next?: { action: string; payUrl?: string } | null;
   version: number;
 }

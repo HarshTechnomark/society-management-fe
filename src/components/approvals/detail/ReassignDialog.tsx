@@ -1,14 +1,17 @@
 'use client';
 import { useState } from 'react';
+import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
+import { sessionStore } from '@/lib/auth';
 import { useLoad } from '@/hooks/useLoad';
+import { approvalError } from '../format';
 import { committeeService } from '@/services/committee.service';
 import type { ApprovalStep } from '@/types/approvals';
 
-async function members(): Promise<{ userId: number; name: string; designation: string }[]> {
+export async function committeeMembers(): Promise<{ userId: number; name: string; designation: string }[]> {
   const overview = await committeeService.overview();
   if (!overview.current) return [];
   const term = await committeeService.term(overview.current.id);
@@ -23,19 +26,24 @@ async function members(): Promise<{ userId: number; name: string; designation: s
 /** Add a named committee member to a stuck step (spec 8.10). A fresh code is asked for by the API client. */
 export function ReassignDialog({
   step,
+  requesterId,
   onCancel,
   onConfirm,
 }: {
   step: ApprovalStep | undefined;
+  /** The person who sent the request: left out of the list, like the signed-in user. */
+  requesterId?: number | null;
   onCancel: () => void;
   onConfirm: (input: { userId: number; reason: string; slotIndex?: number }) => Promise<void>;
 }) {
-  const load = useLoad(members);
+  const load = useLoad(committeeMembers);
   const [userId, setUserId] = useState('');
   const [slot, setSlot] = useState('');
   const [reason, setReason] = useState('');
   const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+  const meId = sessionStore.get()?.user.id ?? null;
   const needsSlot = step?.mode === 'ALL_OF';
   const r = reason.trim();
   const errors = {
@@ -47,12 +55,15 @@ export function ReassignDialog({
     setTouched(true);
     if (errors.userId || errors.slot || errors.reason) return;
     setBusy(true);
+    setFailure(null);
     try {
       await onConfirm({
         userId: Number(userId),
         reason: r,
         ...(needsSlot ? { slotIndex: Number(slot) } : {}),
       });
+    } catch (e) {
+      setFailure(approvalError(e));
     } finally {
       setBusy(false);
     }
@@ -82,10 +93,12 @@ export function ReassignDialog({
           error={touched ? errors.userId : null}
           options={[
             { value: '', label: load.loading ? 'Loading members' : 'Choose a member' },
-            ...(load.data ?? []).map(m => ({
-              value: String(m.userId),
-              label: `${m.name} (${m.designation})`,
-            })),
+            ...(load.data ?? [])
+              .filter(m => m.userId !== meId && m.userId !== (requesterId ?? null))
+              .map(m => ({
+                value: String(m.userId),
+                label: `${m.name} (${m.designation})`,
+              })),
           ]}
         />
         {needsSlot && step && (
@@ -100,6 +113,7 @@ export function ReassignDialog({
             ]}
           />
         )}
+        {failure && <Alert tone="bad">{failure}</Alert>}
         <Textarea
           label="Reason"
           value={reason}

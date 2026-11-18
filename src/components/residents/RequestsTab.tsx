@@ -5,6 +5,7 @@ import { Pager, useServerList } from '@/components/billing/useServerList';
 import { ConfirmReason } from '@/components/common/ConfirmReason';
 import { DataTable, type Column } from '@/components/common/DataTable';
 import { Card } from '@/components/common/PageHead';
+import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Chip } from '@/components/ui/Chip';
@@ -292,6 +293,11 @@ function MoveDrawer({
       <div className="mb-4">
         <StatusChip status={m.status} labels={MOVE_LABEL} tones={MOVE_TONE} />
       </div>
+      {m.status === 'REJECTED' && m.decisionReason && (
+        <Alert tone="bad" className="mb-4">
+          Rejected: {m.decisionReason}
+        </Alert>
+      )}
       <dl className="mb-5">
         <KV label="Date">{shortDate(m.moveDate)}</KV>
         <KV label="Slot">

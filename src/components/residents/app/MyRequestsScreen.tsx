@@ -169,7 +169,9 @@ function Moves({ units }: { units: Units }) {
                         </>
                       )}
                       {m.status === 'PENDING_DEPOSIT' && <PayLink unitId={m.unitId}>Pay deposit</PayLink>}
-                      {!['COMPLETED', 'REJECTED', 'CANCELLED', 'IN_PROGRESS'].includes(m.status) &&
+                      {!['COMPLETED', 'REJECTED', 'CANCELLED', 'IN_PROGRESS', 'APPROVED'].includes(
+                        m.status,
+                      ) &&
                         canCreate && (
                           <Button variant="danger-soft" onClick={() => setCancel(m)}>
                             Cancel request

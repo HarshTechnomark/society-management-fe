@@ -2,7 +2,16 @@
 import { Chip } from '@/components/ui/Chip';
 import { inr } from '@/lib/money';
 import type { ApprovalRow } from '@/types/approvals';
-import { STATUS_LABEL, STATUS_TONE, ago, progressChip, reasonText, summaryLine, typeLabel } from '../format';
+import {
+  STATUS_LABEL,
+  STATUS_TONE,
+  ago,
+  dateTime,
+  progressChip,
+  reasonText,
+  summaryLine,
+  typeLabel,
+} from '../format';
 
 /** One request in the list: type, title, one summary line, amount and the chips that matter. */
 export function ApprovalRowItem({
@@ -45,6 +54,17 @@ export function ApprovalRowItem({
         {summaryLine(row) !== row.title && (
           <span className="block text-[13.5px]">
             {summaryLine({ ...row, title: '' }).replace(/^ · /, '')}
+          </span>
+        )}
+        {row.status !== 'PENDING' && (row.decidedByName || row.decidedAt || row.decisionComment) && (
+          <span data-testid="decision-line" className="block text-[13px] text-muted">
+            {[
+              row.decidedByName ? `By ${row.decidedByName}` : null,
+              row.decidedAt ? dateTime(row.decidedAt) : null,
+              row.decisionComment ? `"${row.decisionComment}"` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </span>
         )}
         <span className="mt-1 flex flex-wrap gap-1.5">

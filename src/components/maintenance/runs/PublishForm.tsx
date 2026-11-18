@@ -124,7 +124,11 @@ export function PublishForm({
       />
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <div>{footerLeft}</div>
-        <Button loading={busy} disabled={!!blocked} onClick={() => void submit()}>
+        <Button
+          loading={busy}
+          disabled={!!blocked || typed.trim() !== run.runLabel}
+          onClick={() => void submit()}
+        >
           Submit for approval
         </Button>
       </div>

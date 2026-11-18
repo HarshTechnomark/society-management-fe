@@ -60,6 +60,7 @@ export function normaliseRefund(raw: unknown): Refund {
     createdAt: str(r.createdAt),
     processedAt: strN(r.processedAt),
     version: num(r.version, 1),
+    approvalRequestId: numN(r.approvalRequestId) ?? numN(obj(r.approval).requestId),
   };
 }
 

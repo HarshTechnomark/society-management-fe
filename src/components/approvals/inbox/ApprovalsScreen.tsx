@@ -11,20 +11,35 @@ import { Select } from '@/components/ui/Select';
 import { PERMISSIONS } from '@/constants/permissions';
 import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
+import { ApiError } from '@/lib/apiClient';
 import { approvalsService } from '@/services/approvals.service';
 import type { ApprovalRow } from '@/types/approvals';
 import { ApprovalDrawer } from '../detail/ApprovalDrawer';
 import { STATUS_LABEL, plainError, typeLabel } from '../format';
+import { NoSociety, isNoSociety } from '../NoSociety';
 import { ApprovalRowItem } from './ApprovalRowItem';
 import { BulkApproveDialog } from './BulkApproveDialog';
 
-type Tab = 'FOR_ME' | 'SUBMITTED' | 'DECIDED';
+type Tab = 'FOR_ME' | 'SUBMITTED' | 'DECIDED' | 'ALL_PENDING';
 const MAX_BULK = 50;
+
+function Skeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading">
+      {[0, 1, 2].map(i => (
+        <div key={i} className="skeleton mb-2 h-16 w-full" data-testid="skeleton-row" />
+      ))}
+    </div>
+  );
+}
 
 /** The approvals inbox (spec 11.1): pending for me, sent by me and history, with filters, counts and bulk approve. */
 export function ApprovalsScreen() {
   const canInbox = usePermission(PERMISSIONS.approvals.inbox.view);
+  const canRules = usePermission(PERMISSIONS.settings.approvalRules.view);
   const [tab, setTab] = useState<Tab>('FOR_ME');
+  // The "All pending" tab goes away when the server refuses it (403 or 400).
+  const [noAllPending, setNoAllPending] = useState(false);
   const params = useSearchParams();
   const [type, setType] = useState(() => params?.get('type') ?? '');
   const [status, setStatus] = useState('');
@@ -34,7 +49,8 @@ export function ApprovalsScreen() {
   const [picked, setPicked] = useState<number[]>([]);
   const [bulk, setBulk] = useState<ApprovalRow[] | null>(null);
   // Makers without inbox access see "Sent by me" only.
-  const active: Tab = canInbox ? tab : 'SUBMITTED';
+  const showAll = canInbox && canRules && !noAllPending;
+  const active: Tab = !canInbox ? 'SUBMITTED' : tab === 'ALL_PENDING' && !showAll ? 'FOR_ME' : tab;
 
   const counts = useLoad(
     () => (canInbox ? approvalsService.counts() : Promise.resolve(null)),
@@ -49,6 +65,14 @@ export function ApprovalsScreen() {
       page,
       limit: 20,
     };
+    if (active === 'ALL_PENDING') {
+      return approvalsService
+        .inbox({ ...q, status: undefined, overdue: undefined, scope: 'all_pending' })
+        .catch(e => {
+          if (e instanceof ApiError && (e.status === 403 || e.status === 400)) setNoAllPending(true);
+          throw e;
+        });
+    }
     return active === 'SUBMITTED'
       ? approvalsService.submitted(q)
       : approvalsService.inbox({ ...q, view: active });
@@ -90,6 +114,7 @@ export function ApprovalsScreen() {
         { key: 'FOR_ME', label: 'Pending for me', count: c?.forMe },
         { key: 'SUBMITTED', label: 'Submitted by me', count: c?.submittedOpen },
         { key: 'DECIDED', label: 'History' },
+        ...(showAll ? [{ key: 'ALL_PENDING' as const, label: 'All pending', count: c?.allPending }] : []),
       ]
     : [{ key: 'SUBMITTED', label: 'Submitted by me' }];
 
@@ -119,7 +144,7 @@ export function ApprovalsScreen() {
             onChange={e => reset(() => setType(e.target.value))}
             options={typeOptions}
           />
-          {active !== 'FOR_ME' && (
+          {active !== 'FOR_ME' && active !== 'ALL_PENDING' && (
             <Select
               label="State"
               value={status}
@@ -153,7 +178,9 @@ export function ApprovalsScreen() {
           </p>
         )}
 
-        {load.error != null ? (
+        {load.error != null && isNoSociety(load.error) ? (
+          <NoSociety />
+        ) : load.error != null ? (
           <ErrorState
             error={plainError(load.error)}
             action={
@@ -163,20 +190,18 @@ export function ApprovalsScreen() {
             }
           />
         ) : load.loading ? (
-          <div aria-busy="true" aria-label="Loading">
-            {[0, 1, 2].map(i => (
-              <div key={i} className="skeleton mb-2 h-16 w-full" data-testid="skeleton-row" />
-            ))}
-          </div>
+          <Skeleton />
         ) : rows.length === 0 ? (
           <EmptyState
             title={active === 'FOR_ME' ? 'All caught up' : 'Nothing here'}
             text={
               active === 'FOR_ME'
                 ? 'Nothing is waiting for a decision.'
-                : active === 'SUBMITTED'
-                  ? 'Requests you send for approval appear here.'
-                  : 'Decided requests appear here.'
+                : active === 'ALL_PENDING'
+                  ? 'No request is waiting in this society.'
+                  : active === 'SUBMITTED'
+                    ? 'Requests you send for approval appear here.'
+                    : 'Decided requests appear here.'
             }
           />
         ) : (

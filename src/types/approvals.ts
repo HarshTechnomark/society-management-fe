@@ -20,6 +20,11 @@ export interface ApprovalRow {
   approvalsNeeded: number;
   approvalsGiven: number;
   requesterName: string;
+  requesterId: number | null;
+  /** Who decided, when and the note: shown in History when the list sends them. */
+  decidedByName: string | null;
+  decidedAt: string | null;
+  decisionComment: string | null;
   createdAt: string;
   dueAt: string | null;
   isOverdue: boolean;
@@ -44,6 +49,8 @@ export interface ApprovalListQuery {
   type?: string;
   status?: string;
   overdue?: boolean;
+  /** `all_pending`: every open request of the society (people who may view approval rules). */
+  scope?: 'all_pending';
   q?: string;
   sortBy?: ApprovalSort;
   sortOrder?: 'asc' | 'desc';
@@ -124,6 +131,8 @@ export interface ApprovalDetail {
   status: ApprovalStatus;
   round: number;
   ruleName: string | null;
+  /** The person who sent the request (never a valid reassign target). */
+  requesterId: number | null;
   steps: ApprovalStep[];
   facts: ApprovalFact[];
   link: string | null;

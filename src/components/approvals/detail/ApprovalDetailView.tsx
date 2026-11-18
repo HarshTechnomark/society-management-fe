@@ -14,7 +14,7 @@ import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { inr } from '@/lib/money';
 import { approvalsService } from '@/services/approvals.service';
-import type { ApprovalDetail } from '@/types/approvals';
+import type { ApprovalDetail, ApprovalSlot } from '@/types/approvals';
 import {
   ACTION_LABEL,
   STATUS_LABEL,
@@ -27,7 +27,12 @@ import {
   typeLabel,
 } from '../format';
 import { ApproveDialog } from './ApproveDialog';
-import { ReassignDialog } from './ReassignDialog';
+import { ReassignDialog, committeeMembers } from './ReassignDialog';
+
+/** A reassigned seat can arrive named by the user id ("6"): show the member's name instead. */
+const isNamedByUser = (s: ApprovalSlot) => s.type === 'USER' || /^\d+$/.test(s.label.trim());
+const slotName = (s: ApprovalSlot, names: Map<string, string>) =>
+  isNamedByUser(s) ? (names.get(s.ref || s.label.trim()) ?? 'A named member') : s.label;
 
 type Dialog = 'approve' | 'reject' | 'changes' | 'cancel' | 'reassign' | null;
 
@@ -41,6 +46,12 @@ export function ApprovalDetailView({ id, onChanged }: { id: number; onChanged?: 
   const canEditRules = usePermission(PERMISSIONS.settings.approvalRules.edit);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [actingFor, setActingFor] = useState('');
+  const needNames = (load.data?.steps ?? []).some(s => s.slots.some(isNamedByUser));
+  const people = useLoad(
+    () => (needNames ? committeeMembers().catch(() => []) : Promise.resolve([])),
+    String(needNames),
+  );
+  const names = new Map((people.data ?? []).map(m => [String(m.userId), m.name]));
 
   if (load.error != null)
     return (
@@ -141,7 +152,7 @@ export function ApprovalDetailView({ id, onChanged }: { id: number; onChanged?: 
                 </Chip>
               </div>
               <p className="text-[13px] text-muted">
-                {s.slots.map(x => x.label).join(', ')}
+                {s.slots.map(x => slotName(x, names)).join(', ')}
                 {s.requiredCount > 1 ? ` · ${s.approvalsGiven} of ${s.requiredCount} approved` : ''}
                 {s.approvedBy.length > 0 ? ` · approved by ${s.approvedBy.join(', ')}` : ''}
               </p>
@@ -252,12 +263,25 @@ export function ApprovalDetailView({ id, onChanged }: { id: number; onChanged?: 
       {dialog === 'reassign' && (
         <ReassignDialog
           step={current}
+          requesterId={d.requesterId}
           onCancel={() => setDialog(null)}
-          onConfirm={input =>
-            run('Handed to the new approver.', () =>
-              approvalsService.reassign(d.id, { version: v, ...input }),
-            )
-          }
+          onConfirm={async input => {
+            try {
+              await approvalsService.reassign(d.id, { version: v, ...input });
+            } catch (e) {
+              // A changed item reloads quietly; any other refusal is shown inside the dialog.
+              if (!isStale(e)) throw e;
+              toast.show(approvalError(e), 'warning');
+              setDialog(null);
+              load.reload();
+              onChanged?.();
+              return;
+            }
+            toast.show('Handed to the new approver.');
+            setDialog(null);
+            load.reload();
+            onChanged?.();
+          }}
         />
       )}
     </div>

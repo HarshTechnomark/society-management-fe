@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
+import { approvalHref } from '@/components/approvals/links';
 import { ErrorState } from '@/components/common/ErrorState';
 import { KV, Section } from '@/components/residents/common';
 import { Alert } from '@/components/ui/Alert';
@@ -181,7 +182,13 @@ export function PaymentDrawer({
             </div>
             {p.status === 'PENDING_APPROVAL' && (
               <Alert tone="info">
-                Sent for approval. The receipt is issued when a second committee member approves.
+                Sent for approval. The receipt is issued when a second committee member approves.{' '}
+                <Link
+                  href={approvalHref(p.approval?.requestId, 'OFFLINE_PAYMENT')}
+                  className="font-semibold underline"
+                >
+                  Open the approval
+                </Link>
               </Alert>
             )}
             {cq && p.status === 'DEPOSITED' && (

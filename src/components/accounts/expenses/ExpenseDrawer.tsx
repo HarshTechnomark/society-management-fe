@@ -92,7 +92,7 @@ export function ExpenseDrawer({
           {x.status === 'DRAFT' ? 'Edit' : 'Edit and resubmit'}
         </Button>
       )}
-      {canCreate && ['DRAFT', 'CHANGES_REQUESTED'].includes(x.status) && (
+      {canCreate && x.status === 'DRAFT' && (
         <Button size="sm" loading={busy} onClick={() => void submit()}>
           Submit for approval
         </Button>

@@ -391,8 +391,9 @@ describe('New run wizard: step 3, confirm', () => {
     expect(screen.getByText(/A different committee member must approve this run/)).toBeInTheDocument();
     expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('3. Confirm');
     await userEvent.type(box, 'BR-2026-1');
-    await userEvent.click(screen.getByRole('button', { name: 'Submit for approval' }));
-    expect(screen.getByText('Type BR-2026-11 exactly.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit for approval' })).toBeDisabled();
+    await userEvent.type(box, '2');
+    expect(screen.getByRole('button', { name: 'Submit for approval' })).toBeDisabled();
     expect(api.last('POST', '/billing/runs/88/publish')).toBeUndefined();
   });
 

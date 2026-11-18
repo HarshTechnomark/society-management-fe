@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useLoad } from '@/hooks/useLoad';
 import { approvalsService } from '@/services/approvals.service';
 import type { ResidentRequest } from '@/types/approvals';
+import { NoSociety, isNoSociety } from '../NoSociety';
 import {
   STATUS_LABEL,
   STATUS_TONE,
@@ -47,7 +48,9 @@ export function ResidentApprovalsScreen() {
   return (
     <Page>
       <PageHead title="My approvals" sub="Requests you made and where each one stands." />
-      {load.error != null ? (
+      {load.error != null && isNoSociety(load.error) ? (
+        <NoSociety />
+      ) : load.error != null ? (
         <ErrorState
           error={plainError(load.error)}
           action={

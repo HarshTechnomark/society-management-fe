@@ -368,7 +368,7 @@ describe('Collection detail', () => {
     renderIt({ status: 'PENDING_APPROVAL' }, {}, [...COL_PERMS, 'finance.collections.approve']);
     expect(await screen.findByRole('link', { name: 'Open the approval' })).toHaveAttribute(
       'href',
-      '/admin/approvals?type=COLLECTION_PUBLISH',
+      '/admin/approvals/5',
     );
     expect(screen.queryByRole('button', { name: 'Submit for approval' })).toBeNull();
   });

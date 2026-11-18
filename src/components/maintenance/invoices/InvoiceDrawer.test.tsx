@@ -110,9 +110,50 @@ describe('Invoice drawer: reading', () => {
     expect(rows[0]).toHaveTextContent('Issued');
     expect(rows[1]).toHaveTextContent('Waiting for approval');
     expect(rows[2]).toHaveTextContent('Additional charge');
-    expect(screen.getByRole('link', { name: 'Open the approvals page' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Open the approval' })).toHaveAttribute(
       'href',
-      '/admin/approvals?type=CREDIT_NOTE',
+      '/admin/approvals/41',
+    );
+  });
+
+  it('links a pending write-off to the write-off type, and to the request when its id is known', async () => {
+    renderIt(
+      detailRaw({
+        notes: [
+          noteRaw({
+            id: 612,
+            noteNo: null,
+            status: 'PENDING_APPROVAL',
+            reasonCode: 'WRITE_OFF',
+            approvalType: null,
+            approvalRequestId: null,
+          }),
+        ],
+      }),
+    );
+    expect(await screen.findByRole('link', { name: 'Open the approval' })).toHaveAttribute(
+      'href',
+      '/admin/approvals?type=WRITE_OFF',
+    );
+  });
+
+  it('links straight to the request when the API sends its id', async () => {
+    renderIt(
+      detailRaw({
+        notes: [
+          noteRaw({
+            id: 612,
+            noteNo: null,
+            status: 'PENDING_APPROVAL',
+            reasonCode: 'WRITE_OFF',
+            approvalRequestId: 77,
+          }),
+        ],
+      }),
+    );
+    expect(await screen.findByRole('link', { name: 'Open the approval' })).toHaveAttribute(
+      'href',
+      '/admin/approvals/77',
     );
   });
 
@@ -409,7 +450,7 @@ describe('Invoice drawer: cancel and write-off', () => {
     });
     const init = api.fn.mock.calls.find(c => String(c[0]).includes('/cancel'))![1] as RequestInit;
     expect(new Headers(init.headers).get('Idempotency-Key')).toBeTruthy();
-    expect(await screen.findByRole('link', { name: 'Open the approvals page' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Open the approval' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancel invoice' })).toBeDisabled();
   });
 

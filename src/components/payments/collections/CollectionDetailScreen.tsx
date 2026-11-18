@@ -176,7 +176,10 @@ function Inner({ id }: { id: number }) {
         </Button>
       )}
       {status === 'PENDING_APPROVAL' && canApprove && (
-        <Link href={approvalHref(null, 'COLLECTION_PUBLISH')} className="text-[14px] font-semibold underline">
+        <Link
+          href={approvalHref(c.approvalRequestId, 'COLLECTION_PUBLISH')}
+          className="text-[14px] font-semibold underline"
+        >
           Open the approval
         </Link>
       )}

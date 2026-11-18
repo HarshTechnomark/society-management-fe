@@ -390,8 +390,11 @@ describe('Run detail: publish (submit for approval)', () => {
     const api = renderIt({ 'POST /billing/runs/88/publish': ok(runRaw()) });
     const d = await open();
     await userEvent.type(within(d).getByLabelText(/Type BR-2026-11 to confirm/), 'BR-2026-12');
-    await userEvent.click(within(d).getByRole('button', { name: 'Submit for approval' }));
-    expect(within(d).getByText('Type BR-2026-11 exactly.')).toBeInTheDocument();
+    expect(within(d).getByRole('button', { name: 'Submit for approval' })).toBeDisabled();
+    await userEvent.clear(within(d).getByLabelText(/Type BR-2026-11 to confirm/));
+    await userEvent.type(within(d).getByLabelText(/Type BR-2026-11 to confirm/), 'BR-2026-11');
+    expect(within(d).getByRole('button', { name: 'Submit for approval' })).toBeEnabled();
+    await userEvent.clear(within(d).getByLabelText(/Type BR-2026-11 to confirm/));
     expect(api.last('POST', '/billing/runs/88/publish')).toBeUndefined();
   });
 

@@ -117,6 +117,48 @@ describe('Inbox', () => {
       'type=EXPENSE',
     );
   });
+  it('adds an All pending tab for rule viewers that asks for scope=all_pending', async () => {
+    const api = inbox({}, [...PERMS, 'settings.approval_rules.view']);
+    await screen.findAllByTestId('approval-row');
+    await userEvent.click(screen.getByRole('button', { name: /All pending/ }));
+    await waitFor(() => expect(String(api.fn.mock.calls.at(-1)?.[0])).toContain('scope=all_pending'));
+  });
+  it('has no All pending tab without the rules permission', async () => {
+    inbox();
+    await screen.findAllByTestId('approval-row');
+    expect(screen.queryByRole('button', { name: /All pending/ })).toBeNull();
+  });
+  it('hides the All pending tab when the server refuses it', async () => {
+    let refuse = false;
+    inbox({ 'GET /approvals': () => (refuse ? err(403, 'FORBIDDEN') : listOf(ROWS)) } as never, [
+      ...PERMS,
+      'settings.approval_rules.view',
+    ]);
+    await screen.findAllByTestId('approval-row');
+    refuse = true;
+    await userEvent.click(screen.getByRole('button', { name: /All pending/ }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: /All pending/ })).toBeNull());
+  });
+  it('shows a calm choose-a-society state when no society is selected', async () => {
+    inbox({ 'GET /approvals': err(403, 'SOCIETY_NOT_SELECTED') });
+    expect(await screen.findByText('Choose a society first')).toBeInTheDocument();
+    expect(screen.queryByText(/Something went wrong/)).toBeNull();
+  });
+  it('shows who decided, when and the note in History', async () => {
+    inbox({
+      'GET /approvals': listOf([
+        rowRaw({
+          status: 'REJECTED',
+          decidedBy: { name: 'Meera Shah' },
+          decidedAt: '2026-11-12T10:10:00.000Z',
+          decisionComment: 'Quote too high',
+        }),
+      ]),
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'History' }));
+    expect(await screen.findByTestId('decision-line')).toHaveTextContent('By Meera Shah');
+    expect(screen.getByTestId('decision-line')).toHaveTextContent('"Quote too high"');
+  });
   it('shows an empty state when nothing waits', async () => {
     inbox({ 'GET /approvals': listOf([]) });
     expect(await screen.findByText('All caught up')).toBeInTheDocument();
@@ -252,6 +294,13 @@ describe('Detail and decisions', () => {
 });
 
 describe('Resident requests', () => {
+  it('shows a calm state instead of an error when no society is selected', async () => {
+    signInAs([], []);
+    mockApi({ 'GET /me/approval-requests': err(403, 'SOCIETY_NOT_SELECTED') });
+    render(<ResidentApprovalsScreen />);
+    expect(await screen.findByText('Choose a society first')).toBeInTheDocument();
+    expect(screen.queryByText(/Something went wrong/)).toBeNull();
+  });
   it('shows status, reason and timeline, and withdraws with a reason', async () => {
     signInAs([], []);
     const api = mockApi({

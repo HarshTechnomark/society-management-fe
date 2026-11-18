@@ -279,6 +279,14 @@ function Body({
   const charges = inv.lines.filter(l => CHARGE_KINDS.has(l.lineKind));
   const pending = inv.notes.filter(n => n.status === 'PENDING_APPROVAL');
   const waiting = cancelAsked || pending.length > 0;
+  // A pending write-off is a credit note with the WRITE_OFF reason, but its own approval type.
+  const first = pending[0];
+  const waitingHref = cancelAsked
+    ? approvalHref(null, 'INVOICE_CANCEL')
+    : approvalHref(
+        pending.length === 1 ? first?.approvalRequestId : null,
+        first?.approvalType ?? (first?.reasonCode === 'WRITE_OFF' ? 'WRITE_OFF' : 'CREDIT_NOTE'),
+      );
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -293,11 +301,8 @@ function Body({
       {waiting && (
         <Alert tone="warn">
           Waiting for approval.{' '}
-          <a
-            className="font-semibold underline"
-            href={approvalHref(null, cancelAsked ? 'INVOICE_CANCEL' : 'CREDIT_NOTE')}
-          >
-            Open the approvals page
+          <a className="font-semibold underline" href={waitingHref}>
+            Open the approval
           </a>
         </Alert>
       )}
