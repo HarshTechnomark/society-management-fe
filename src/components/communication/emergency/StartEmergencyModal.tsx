@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { useToast } from '@/components/ui/Toast';
+import { ApiError } from '@/lib/apiClient';
 import { useLoad } from '@/hooks/useLoad';
 import { communicationEmergencyService as svc } from '@/services/communicationEmergency.service';
 import { societySetupService } from '@/services/society-setup.service';
@@ -55,7 +56,13 @@ export function StartEmergencyModal({
       toast.show(drill ? 'Drill started' : 'Emergency alert sent', 'success');
       onStarted(b);
     } catch (e) {
-      setError(commError(e));
+      if (e instanceof ApiError && /RATE_LIMIT/.test(e.code)) {
+        setError(
+          drill
+            ? 'You can start 10 drills a day. Try again tomorrow.'
+            : 'You can start 5 real alerts an hour. Try again later.',
+        );
+      } else setError(commError(e));
     } finally {
       setBusy(false);
     }
@@ -66,7 +73,11 @@ export function StartEmergencyModal({
       open
       onClose={onClose}
       title="Emergency broadcast"
-      description="Goes to every resident at once on push, SMS and WhatsApp, ignoring quiet hours."
+      description={
+        drill
+          ? 'A drill goes in-app and push only.'
+          : 'Goes to every resident at once on push, SMS and WhatsApp, ignoring quiet hours.'
+      }
       footer={
         <>
           <Button variant="glass" onClick={onClose} disabled={busy}>
@@ -135,7 +146,7 @@ export function StartEmergencyModal({
       <Checkbox label="This is a drill" checked={drill} onChange={e => setDrill(e.target.checked)} />
       <Alert tone={drill ? 'info' : 'warn'}>
         {drill
-          ? 'A drill goes in the app and as a push message only, and every message starts with DRILL.'
+          ? 'A drill goes in-app and push only, and every message starts with DRILL.'
           : 'This reaches every flat you chose immediately. Use it for real emergencies only.'}
       </Alert>
     </Modal>

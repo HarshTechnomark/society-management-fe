@@ -151,6 +151,8 @@ export interface ActiveEmergency {
   startedAt: string;
   collectResponses: boolean;
   lastUpdateMessage: string | null;
+  /** Changes whenever the alert is updated or re-alerted: a new version may take over the screen again. */
+  version: string;
   myUnits: ActiveUnit[];
   /** The caller's own reply when the alert reached them as staff and not through a flat (`myUnits` is empty). */
   myResponse: ResponseStatus | null;

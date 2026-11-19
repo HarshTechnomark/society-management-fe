@@ -176,6 +176,7 @@ export function mapActive(raw: unknown): ActiveEmergency {
     startedAt: str(r.startedAt),
     collectResponses: r.collectResponses !== false,
     lastUpdateMessage: strOrNull(r.lastUpdateMessage),
+    version: `${str(r.version ?? r.updateCount)}|${str(r.lastRealertAt)}|${str(r.lastUpdateAt)}|${str(r.lastUpdateMessage)}`,
     myUnits: arr(r.myUnits).map(u => ({
       unitId: num(obj(u).unitId),
       label: str(obj(u).label),

@@ -138,3 +138,6 @@ export const istDate = (iso: string | null | undefined) =>
     : '-';
 /** Minutes since `iso`. */
 export const minutesSince = (iso: string, now = Date.now()) => Math.floor((now - Date.parse(iso)) / 60_000);
+
+/** "1 person", "2 people". */
+export const people = (n: number) => `${n} ${n === 1 ? 'person' : 'people'}`;

@@ -22,9 +22,10 @@ export function EmergencyResponseCard({
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState<ResponseStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState<ResponseStatus | null>(null);
+  const [sent, setSent] = useState<Record<number, ResponseStatus>>({});
   const unit = alert.myUnits.find(u => u.unitId === unitId) ?? alert.myUnits[0];
-  const current = sent ?? unit?.response ?? alert.myResponse ?? null;
+  const key = unit?.unitId ?? 0;
+  const current = sent[key] ?? unit?.response ?? (alert.myUnits.length <= 1 ? alert.myResponse : null) ?? null;
 
   const send = async (status: ResponseStatus) => {
     setBusy(status);
@@ -36,7 +37,7 @@ export function EmergencyResponseCard({
         ...(status === 'NEED_HELP' && note.trim() ? { note: note.trim() } : {}),
         ...(alert.myUnits.length > 1 && unitId ? { unitId } : {}),
       });
-      setSent(status);
+      setSent(m => ({ ...m, [key]: status }));
       setHelpOpen(false);
       onAnswered();
     } catch (e) {

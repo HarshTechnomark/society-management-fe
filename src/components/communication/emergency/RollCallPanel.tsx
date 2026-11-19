@@ -9,7 +9,7 @@ import { Select } from '@/components/ui/Select';
 import { usePolling } from '@/components/platformOps/usePolling';
 import { communicationEmergencyService as svc } from '@/services/communicationEmergency.service';
 import type { EmergencyAudience, RollCallStatus, RollCallUnit } from '@/types/communication';
-import { istTime, plainCommError } from '../format';
+import { istTime, plainCommError, people } from '../format';
 
 const STATUS: Record<RollCallStatus, [string, Tone]> = {
   SAFE: ['Safe', 'ok'],
@@ -107,7 +107,7 @@ export function RollCallPanel({
                 </div>
                 {u.status !== 'NO_RESPONSE' && (
                   <p className="mt-1 text-[13px] text-muted">
-                    {u.peopleCount ?? 1} {u.peopleCount === 1 ? 'person' : 'people'} ·{' '}
+                    {people(u.peopleCount ?? 1)} ·{' '}
                     {istTime(u.respondedAt)}
                     {u.note ? ` · ${u.note}` : ''}
                   </p>

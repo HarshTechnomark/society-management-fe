@@ -9,7 +9,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { usePolling } from '@/components/platformOps/usePolling';
 import { communicationEmergencyService as svc } from '@/services/communicationEmergency.service';
 import type { EmergencyDetail } from '@/types/communication';
-import { STATUS_TONE, ago, commError, istTime, minutesSince, plainCommError, typeLabel } from '../format';
+import { STATUS_TONE, ago, commError, istTime, minutesSince, plainCommError, typeLabel, people } from '../format';
 import { RollCallPanel } from './RollCallPanel';
 import { TextActionModal } from './TextActionModal';
 
@@ -90,7 +90,7 @@ export function EmergencyDrawer({
             <Chip tone={statusTone}>{statusLabel}</Chip>
             <span className="text-[13px] text-muted">
               Started {istTime(b.startedAt)}
-              {b.startedByName ? ` by ${b.startedByName}` : ''} · {b.recipientCount} people reached
+              {b.startedByName ? ` by ${b.startedByName}` : ''} · {people(b.recipientCount)} reached
             </span>
           </div>
           <p className="mb-3 text-[15px]">{b.message}</p>
@@ -134,7 +134,7 @@ export function EmergencyDrawer({
                     <div>
                       <p className="text-[15px] font-bold">{n.unitLabel}</p>
                       <p className="text-[13px]">
-                        {n.peopleCount} {n.peopleCount === 1 ? 'person' : 'people'} · {istTime(n.at)}
+                        {people(n.peopleCount)} · {istTime(n.at)}
                         {n.note ? ` · ${n.note}` : ''}
                       </p>
                     </div>

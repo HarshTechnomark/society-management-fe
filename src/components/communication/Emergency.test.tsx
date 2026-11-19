@@ -210,6 +210,7 @@ describe('Emergency drawer', () => {
 });
 
 describe('Resident takeover', () => {
+  beforeEach(() => sessionStorage.clear());
   it('shows the full screen alert, records "I am safe" with the people count, then can be closed', async () => {
     const api = show(
       <EmergencyTakeover />,
@@ -275,6 +276,47 @@ describe('Resident takeover', () => {
     );
   });
 
+  it('keeps the reply state per flat', async () => {
+    show(
+      <EmergencyTakeover />,
+      {
+        'GET /me/emergency-broadcasts/active': ok([
+          activeRaw({
+            myUnits: [
+              { unitId: 12, label: 'C-0801', response: null },
+              { unitId: 13, label: 'D-0101', response: null },
+            ],
+          }),
+        ]),
+        'POST /emergency-broadcasts/31/responses': ok({ responseId: 1, status: 'SAFE', peopleCount: 1, respondedAt: 'x' }),
+      },
+      RESIDENT_COMM_PERMS,
+    );
+    const dlg = await screen.findByRole('alertdialog');
+    await userEvent.click(within(dlg).getByRole('button', { name: 'I’m safe' }));
+    expect(await within(dlg).findByText(/You told us you are safe/)).toBeInTheDocument();
+    await userEvent.selectOptions(within(dlg).getByLabelText('Reply for flat'), '13');
+    expect(within(dlg).queryByText(/You told us you are safe/)).toBeNull();
+  });
+
+  it('shows a real alert before a newer drill, and does not take over again once closed', async () => {
+    show(
+      <EmergencyTakeover />,
+      {
+        'GET /me/emergency-broadcasts/active': ok([
+          activeRaw({ id: 40, isDrill: true, message: 'Drill message here', startedAt: '2026-11-18T10:00:00.000Z' }),
+          activeRaw({ id: 31, message: 'Real smoke alert', startedAt: '2026-11-18T09:00:00.000Z' }),
+        ]),
+      },
+      RESIDENT_COMM_PERMS,
+    );
+    const dlg = await screen.findByRole('alertdialog');
+    expect(within(dlg).getByText(/Real smoke alert/)).toBeInTheDocument();
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Not now' }));
+    expect(sessionStorage.getItem('emergency-seen:31:|||')).toBe('1');
+    expect(await screen.findByText(/Drill message here/)).toBeInTheDocument();
+  });
+
   it('labels drills and renders nothing when no alert is active', async () => {
     show(
       <EmergencyTakeover />,
@@ -282,6 +324,27 @@ describe('Resident takeover', () => {
       RESIDENT_COMM_PERMS,
     );
     expect(await screen.findByText(/DRILL · Fire/)).toBeInTheDocument();
+  });
+});
+
+describe('Gate console banner with several alerts', () => {
+  it('is one compact banner with a count and the newest alert, expandable', async () => {
+    show(
+      <GateEmergencyBanner />,
+      {
+        'GET /gate/emergency-broadcasts/active': ok([
+          activeRaw({ id: 1, message: 'Older one', startedAt: '2026-11-18T08:00:00.000Z' }),
+          activeRaw({ id: 2, message: 'Newest one', startedAt: '2026-11-18T09:00:00.000Z' }),
+        ]),
+      },
+      GATE_PERMS,
+    );
+    const banner = await screen.findByRole('alert');
+    expect(banner).toHaveTextContent('2 active');
+    expect(banner).toHaveTextContent('Newest one');
+    expect(banner).not.toHaveTextContent('Older one');
+    await userEvent.click(screen.getByRole('button', { name: 'Show all' }));
+    expect(banner).toHaveTextContent('Older one');
   });
 });
 
