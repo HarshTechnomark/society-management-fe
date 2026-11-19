@@ -218,6 +218,7 @@ function Inner({ id }: { id: number }) {
   const [error, setError] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [answered, setAnswered] = useState<number[]>([]);
   const s = q.data;
 
   if (q.loading)
@@ -244,16 +245,31 @@ function Inner({ id }: { id: number }) {
   const total = s.questions.length;
   const review = step >= total;
   const flat = s.responseScope === 'FLAT' && s.units.length > 1;
+  const isAnswered = (uid: number) => answered.includes(uid) || s.units.find(u => u.unitId === uid)?.responded === true;
+  const remaining = s.units.filter(u => !isAnswered(u.unitId));
+  const anotherFlat = flat && remaining.length > 0 && (done || s.responded);
+  const startAnother = () => {
+    setValues({});
+    setStep(0);
+    setUnitId(null);
+    setDone(false);
+    setError(null);
+    setProblem(null);
+  };
   const submit = async () => {
     setBusy(true);
     setError(null);
     try {
       const answers = s.questions.map(x => answerFor(x, values[x.id])).filter((a): a is SurveyAnswer => !!a);
       await svc.submitSurvey(s.id, { ...(flat && unitId ? { unitId } : {}), answers });
+      if (flat && unitId) setAnswered(a => [...a, unitId]);
       setDone(true);
     } catch (e) {
       setError(commError(e));
-      if (e instanceof ApiError && e.code === 'SURVEY_ALREADY_RESPONDED') setDone(true);
+      if (e instanceof ApiError && e.code === 'SURVEY_ALREADY_RESPONDED') {
+        if (flat && unitId) setAnswered(a => [...a, unitId]);
+        setDone(true);
+      }
     } finally {
       setBusy(false);
     }
@@ -275,12 +291,32 @@ function Inner({ id }: { id: number }) {
       <PageHead title={s.title} sub={s.closesAt ? `Closes ${istDate(s.closesAt)}` : undefined} />
       {s.results ? (
         <Results s={s} />
-      ) : done || s.responded ? (
+      ) : s.status === 'CANCELLED' ? (
+        <Card>
+          <Alert tone="info">This survey was cancelled.</Alert>
+        </Card>
+      ) : (done || s.responded) && !anotherFlat ? (
         <Card>
           <Alert tone="ok">Thank you. Your answers are recorded.</Alert>
           <Link href="/resident/notices" className={buttonClasses('primary', 'md')}>
             Back to notices
           </Link>
+        </Card>
+      ) : anotherFlat ? (
+        <Card>
+          <Alert tone="ok">Thank you. Your answers are recorded.</Alert>
+          <p className="my-3 text-[14px]">
+            This survey takes one answer for each flat. You have not answered for{' '}
+            {remaining.map(u => u.label).join(', ')} yet.
+          </p>
+          <ul className="mb-3 grid gap-1 text-[13.5px]">
+            {s.units.map(u => (
+              <li key={u.unitId}>
+                {u.label}: {isAnswered(u.unitId) ? 'Answered' : 'Not answered'}
+              </li>
+            ))}
+          </ul>
+          <Button onClick={startAnother}>Answer for another flat</Button>
         </Card>
       ) : s.status !== 'OPEN' ? (
         <Card>
@@ -371,7 +407,9 @@ function Inner({ id }: { id: number }) {
                   onChange={e => setUnitId(Number(e.target.value))}
                   options={[
                     { value: '', label: 'Choose a flat' },
-                    ...s.units.map(u => ({ value: String(u.unitId), label: u.label })),
+                    ...s.units
+                      .filter(u => !isAnswered(u.unitId))
+                      .map(u => ({ value: String(u.unitId), label: u.label })),
                   ]}
                 />
               )}

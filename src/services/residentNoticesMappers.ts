@@ -157,6 +157,6 @@ export function mapSurveyDetail(raw: unknown): SurveyDetail {
     responded: r.responded === true,
     questions: arr(r.questions).map(mapQuestion),
     results: r.results ? mapResults(r.results) : null,
-    units: arr(r.units).map(u => ({ unitId: num(obj(u).unitId ?? obj(u).id), label: str(obj(u).label) })),
+    units: arr(r.units).map(u => ({ unitId: num(obj(u).unitId ?? obj(u).id), label: str(obj(u).label), responded: obj(u).responded === true })),
   };
 }

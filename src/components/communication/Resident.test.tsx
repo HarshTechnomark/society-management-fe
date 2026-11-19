@@ -213,6 +213,41 @@ describe('Survey answering', () => {
     expect(await screen.findByText(/Your answers are recorded/)).toBeInTheDocument();
   });
 
+  it('offers the other flats after one flat is answered', async () => {
+    const api = show(<SurveyScreen id={9} />, {
+      'GET /me/surveys/9': ok(
+        surveyRaw({
+          responseScope: 'FLAT',
+          questions: [{ id: 52, type: 'RATING', prompt: 'Rate the gym', isRequired: true }],
+          units: [
+            { unitId: 1, label: 'A-104' },
+            { unitId: 2, label: 'B-201' },
+          ],
+        }),
+      ),
+      'POST /me/surveys/9/responses': ok({ submissionId: 'u-1', submittedAt: 'x' }),
+    });
+    await userEvent.click(await screen.findByRole('radio', { name: '4' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Review' }));
+    await userEvent.selectOptions(screen.getByLabelText('Answer for flat'), '1');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit answers' }));
+    expect(await screen.findByText('A-104: Answered')).toBeInTheDocument();
+    expect(screen.getByText('B-201: Not answered')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Answer for another flat' }));
+    await userEvent.click(await screen.findByRole('radio', { name: '5' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Review' }));
+    expect(screen.queryByRole('option', { name: 'A-104' })).toBeNull();
+    await userEvent.selectOptions(screen.getByLabelText('Answer for flat'), '2');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit answers' }));
+    await waitFor(() => expect(api.last('POST', '/me/surveys/9/responses')?.body).toMatchObject({ unitId: 2 }));
+    expect(await screen.findByText(/Your answers are recorded/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Answer for another flat' })).toBeNull();
+  });
+  it('says so for a cancelled survey', async () => {
+    show(<SurveyScreen id={9} />, { 'GET /me/surveys/9': ok(surveyRaw({ status: 'CANCELLED' })) });
+    expect(await screen.findByText('This survey was cancelled.')).toBeInTheDocument();
+  });
+
   it('shows results for a closed survey and a closed notice for others', async () => {
     show(<SurveyScreen id={9} />, {
       'GET /me/surveys/9': ok(

@@ -115,7 +115,7 @@ export interface SurveyDetail {
   /** Only when results are visible (CLOSED and `resultsVisibility` allows). */
   results: SurveyResults | null;
   /** The caller's matching flats, when the API sends them (FLAT scope). */
-  units: { unitId: number; label: string }[];
+  units: { unitId: number; label: string; responded?: boolean }[];
 }
 export interface SurveyAnswer {
   questionId: number;
