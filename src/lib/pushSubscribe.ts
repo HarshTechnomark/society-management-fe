@@ -5,9 +5,23 @@ export const pushSupported = (): boolean =>
   'PushManager' in window &&
   typeof Notification !== 'undefined';
 
+/** Thrown when the server has no usable Web Push key (unset or malformed), so push cannot be set up yet. */
+export class PushNotConfiguredError extends Error {
+  constructor() {
+    super('Push notifications are not set up on this server yet.');
+    this.name = 'PushNotConfiguredError';
+  }
+}
+
 function keyBytes(base64Url: string): Uint8Array<ArrayBuffer> {
+  if (!base64Url || !/^[A-Za-z0-9_-]+={0,2}$/.test(base64Url)) throw new PushNotConfiguredError();
   const pad = '='.repeat((4 - (base64Url.length % 4)) % 4);
-  const raw = atob((base64Url + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  let raw: string;
+  try {
+    raw = atob((base64Url + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  } catch {
+    throw new PushNotConfiguredError();
+  }
   return Uint8Array.from(raw, c => c.charCodeAt(0));
 }
 const b64url = (buf: ArrayBuffer | null): string => {
@@ -58,6 +72,7 @@ async function rememberApp(app: string) {
  * POST /me/push-subscriptions. `app` is the app the page runs in.
  */
 export async function subscribeThisDevice(vapidPublicKey: string, app = 'RESIDENT') {
+  const appKey = keyBytes(vapidPublicKey); // checked first: no permission prompt for a key that cannot work
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') {
     rememberRefusal();
@@ -70,7 +85,7 @@ export async function subscribeThisDevice(vapidPublicKey: string, app = 'RESIDEN
     (await reg.pushManager.getSubscription()) ??
     (await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: keyBytes(vapidPublicKey),
+      applicationServerKey: appKey,
     }));
   return {
     endpoint: sub.endpoint,

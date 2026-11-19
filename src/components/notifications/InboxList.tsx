@@ -84,7 +84,7 @@ export function InboxList({
                 {!n.readAt && <span className="sr-only"> (unread)</span>}
               </span>
               {n.body && <span className="block text-[13px] text-muted">{n.body}</span>}
-              <span className="block text-[12px] text-faint">{ago(n.createdAt)} ago</span>
+              <span className="block text-[12px] text-faint">{ago(n.createdAt)}</span>
             </span>
           </button>
         </li>

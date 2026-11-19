@@ -145,11 +145,11 @@ function PrefsForm({ prefs, onReload }: { prefs: Preferences; onReload: () => vo
         </div>
         {prefs.email.bounced && (
           <p className="mt-2 text-[13px] font-medium text-bad">
-            E-mail to {prefs.email.address ?? 'your address'} bounced. Update your e-mail in your profile.
+            Email to {prefs.email.address ?? 'your address'} bounced. Update your email in your profile.
           </p>
         )}
         {!prefs.email.bounced && prefs.email.address && (
-          <p className="mt-2 text-[13px] text-muted">E-mail goes to {prefs.email.address}.</p>
+          <p className="mt-2 text-[13px] text-muted">Email goes to {prefs.email.address}.</p>
         )}
       </Card>
 

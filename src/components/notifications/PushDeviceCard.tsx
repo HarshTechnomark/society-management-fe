@@ -10,6 +10,7 @@ import { ago, commError } from '@/components/communication/format';
 import { useLoad } from '@/hooks/useLoad';
 import {
   PushDeniedError,
+  PushNotConfiguredError,
   pushSupported,
   refusedRecently,
   subscribeThisDevice,
@@ -17,6 +18,20 @@ import {
 } from '@/lib/pushSubscribe';
 import { notificationsService } from '@/services/notifications.service';
 import type { NotificationApp } from '@/types/notifications';
+
+const NOT_SET_UP = 'Push notifications are not set up on this server yet.';
+/** A calm message for each way turning push on can fail; the browser's own error text is never shown. */
+export function pushMessage(e: unknown): string {
+  if (e instanceof PushDeniedError)
+    return 'Notifications are blocked for this browser. You can allow them in the browser settings.';
+  if (e instanceof PushNotConfiguredError) return NOT_SET_UP;
+  if (e instanceof Error && /atob|InvalidCharacterError|applicationServerKey|not valid|vapid/i.test(`${e.name} ${e.message}`))
+    return NOT_SET_UP;
+  if (e instanceof Error && e.name === 'NotAllowedError')
+    return 'Notifications are blocked for this browser. You can allow them in the browser settings.';
+  if (e instanceof Error && e.name === 'NotSupportedError') return 'This browser cannot receive push alerts.';
+  return commError(e);
+}
 
 /**
  * "This device" (spec 8.24, 11.6, 11.7): turn push on or off for this browser, send a test and remove the other
@@ -48,11 +63,7 @@ export function PushDeviceCard({ app }: { app: NotificationApp }) {
       }
       list.reload();
     } catch (e) {
-      setError(
-        e instanceof PushDeniedError
-          ? 'Notifications are blocked for this browser. You can allow them in the browser settings.'
-          : commError(e),
-      );
+      setError(pushMessage(e));
     } finally {
       setBusy(false);
     }

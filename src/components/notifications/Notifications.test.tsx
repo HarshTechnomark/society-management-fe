@@ -226,7 +226,7 @@ describe('Notification settings', () => {
 
   it('warns about a bounced e-mail address', async () => {
     await open(prefsRaw({ email: { address: 'r****@mail.in', bounced: true } }));
-    expect(screen.getByText(/E-mail to r\*\*\*\*@mail.in bounced/)).toBeInTheDocument();
+    expect(screen.getByText(/Email to r\*\*\*\*@mail.in bounced/)).toBeInTheDocument();
   });
 
   it('says so when this browser cannot receive push', async () => {
@@ -292,6 +292,17 @@ describe('Inbox in the resident and platform apps', () => {
     await userEvent.click(screen.getByRole('button', { name: /Approval needed/ }));
     await waitFor(() => expect(router.push).toHaveBeenCalledWith('/resident/notices/12'));
     expect(api.last('POST', '/notifications/77120/read')).toBeTruthy();
+  });
+  it('writes the relative time once ("ago" is not doubled)', async () => {
+    mockApi({
+      'GET /notifications': withUnread(
+        [notificationRaw({ createdAt: new Date(Date.now() - 5 * 60_000).toISOString() })],
+        1,
+      ),
+    });
+    wrap(<NotificationsScreen app="RESIDENT" />);
+    expect(await screen.findByText('5 minutes ago')).toBeInTheDocument();
+    expect(screen.queryByText(/ago ago/)).toBeNull();
   });
   it('marks all read and reloads', async () => {
     const api = mockApi({
@@ -388,6 +399,19 @@ describe('Notification settings in the resident app', () => {
       endpoint: 'https://fcm.googleapis.com/x',
       app: 'RESIDENT',
     });
+  });
+  it('shows a calm message and keeps the toggle off when the server key is unset or invalid', async () => {
+    for (const publicKey of ['', 'not*base64!']) {
+      stubPush();
+      mockApi(routes({ 'GET /public/push/vapid-public-key': ok({ publicKey }) as never }));
+      const { unmount } = wrap(<NotificationSettingsScreen app="RESIDENT" />);
+      const sw = await screen.findByRole('switch', { name: 'Push alerts on this device' });
+      await userEvent.click(sw);
+      expect(await screen.findByText('Push notifications are not set up on this server yet.')).toBeInTheDocument();
+      expect(screen.queryByText(/atob/)).toBeNull();
+      expect(screen.getByRole('switch', { name: 'Push alerts on this device' })).not.toBeChecked();
+      unmount();
+    }
   });
   it('lists this device and other devices, sends a test and removes another device', async () => {
     stubPush();
