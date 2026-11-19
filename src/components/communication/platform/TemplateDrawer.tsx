@@ -14,7 +14,7 @@ import { cx } from '@/components/ui/cx';
 import { useLoad } from '@/hooks/useLoad';
 import { platformCommunicationService as svc } from '@/services/platformCommunication.service';
 import type { TemplateDetail, TemplatePatch, TemplatePreview } from '@/types/platformCommunication';
-import { commError, plainCommError } from '../format';
+import { commError, plainCommError, smsSegments } from '../format';
 
 type Tab = 'IN_APP' | 'PUSH' | 'SMS' | 'WHATSAPP' | 'EMAIL';
 const TABS: { key: Tab; label: string }[] = [
@@ -52,10 +52,20 @@ const TEXT_FIELDS = [
   'whatsappStatus',
 ] as const;
 
+/** A legacy template keeps its text in code: the server takes only DLT and WhatsApp edits for it. */
+export function isLegacyTemplate(t: TemplateDetail & { legacy?: boolean }): boolean {
+  if (typeof t.legacy === 'boolean') return t.legacy;
+  return ![t.inAppTitle, t.inAppBody, t.pushTitle, t.pushBody, t.smsBody, t.emailSubject, t.emailHtml, t.emailText].some(
+    v => v != null && v !== '',
+  );
+}
+const TEXT_ONLY = new Set(['inAppTitle', 'inAppBody', 'pushTitle', 'pushBody', 'smsBody', 'emailSubject', 'emailHtml', 'emailText']);
+
 /** Builds the PATCH body from the fields that changed (spec 8.35). */
-export function patchOf(orig: TemplateDetail, f: Form): TemplatePatch {
+export function patchOf(orig: TemplateDetail, f: Form, legacy = isLegacyTemplate(orig)): TemplatePatch {
   const out: Record<string, unknown> = { version: orig.version };
   for (const k of TEXT_FIELDS) {
+    if (legacy && TEXT_ONLY.has(k)) continue;
     const now = f[k] === '' ? null : f[k];
     if (now !== orig[k]) out[k] = now;
   }
@@ -107,7 +117,7 @@ function Editor({ t, canEdit, onSaved }: { t: TemplateDetail; canEdit: boolean; 
   const [preview, setPreview] = useState<TemplatePreview | null>(null);
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF(x => ({ ...x, [k]: v }));
   const text = (k: (typeof TEXT_FIELDS)[number]) => f[k] ?? '';
-  const patch = patchOf(t, f);
+  const patch = patchOf(t, f, isLegacyTemplate(t));
   const changed = Object.keys(patch).length > 1;
   const smsChanged = patch.smsBody !== undefined;
   const dltSame = smsChanged && patch.smsDltTemplateId === undefined;
@@ -134,6 +144,9 @@ function Editor({ t, canEdit, onSaved }: { t: TemplateDetail; canEdit: boolean; 
     }
   };
   const ro = !canEdit;
+  const legacy = isLegacyTemplate(t);
+  const roText = ro || legacy;
+  const sms = smsSegments(text('smsBody'));
   const pv = (v: TemplatePreview['inApp']) => (typeof v === 'string' ? v : v ? `${v.title}\n${v.body}` : '');
 
   return (
@@ -147,6 +160,11 @@ function Editor({ t, canEdit, onSaved }: { t: TemplateDetail; canEdit: boolean; 
           <span className="text-muted">Variables: {t.variables.map(v => `{{${v.name}}}`).join(' ')}</span>
         )}
       </div>
+      {legacy && (
+        <Alert tone="info">
+          Legacy template: the text is fixed in code; only the SMS DLT id and WhatsApp template can be edited.
+        </Alert>
+      )}
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[14px] font-semibold">Active</span>
         <Switch
@@ -178,14 +196,14 @@ function Editor({ t, canEdit, onSaved }: { t: TemplateDetail; canEdit: boolean; 
             <Input
               label="In-app title"
               maxLength={150}
-              disabled={ro}
+              disabled={roText}
               value={text('inAppTitle')}
               onChange={e => set('inAppTitle', e.target.value)}
             />
             <Textarea
               label="In-app body"
               maxLength={1000}
-              disabled={ro}
+              disabled={roText}
               value={text('inAppBody')}
               onChange={e => set('inAppBody', e.target.value)}
             />
@@ -196,14 +214,14 @@ function Editor({ t, canEdit, onSaved }: { t: TemplateDetail; canEdit: boolean; 
             <Input
               label="Push title"
               maxLength={80}
-              disabled={ro}
+              disabled={roText}
               value={text('pushTitle')}
               onChange={e => set('pushTitle', e.target.value)}
             />
             <Textarea
               label="Push body"
               maxLength={200}
-              disabled={ro}
+              disabled={roText}
               value={text('pushBody')}
               onChange={e => set('pushBody', e.target.value)}
               hint="Shown as 140 characters at most."
@@ -216,10 +234,10 @@ function Editor({ t, canEdit, onSaved }: { t: TemplateDetail; canEdit: boolean; 
               label="SMS text"
               rows={4}
               maxLength={500}
-              disabled={ro}
+              disabled={roText}
               value={text('smsBody')}
               onChange={e => set('smsBody', e.target.value)}
-              hint={`${text('smsBody').length} characters${preview?.sms ? ` · ${preview.sms.segments} segment${preview.sms.segments === 1 ? '' : 's'} (${preview.sms.encoding})` : ''}. Keep it within 2 segments.`}
+              hint={`${sms.chars} characters · ${sms.segments} segment${sms.segments === 1 ? '' : 's'} (${sms.encoding}). Keep it within 2 segments.`}
             />
             <Input
               label="DLT template id"
@@ -278,21 +296,21 @@ function Editor({ t, canEdit, onSaved }: { t: TemplateDetail; canEdit: boolean; 
             <Input
               label="Subject"
               maxLength={150}
-              disabled={ro}
+              disabled={roText}
               value={text('emailSubject')}
               onChange={e => set('emailSubject', e.target.value)}
             />
             <Textarea
               label="HTML"
               rows={6}
-              disabled={ro}
+              disabled={roText}
               value={text('emailHtml')}
               onChange={e => set('emailHtml', e.target.value)}
             />
             <Textarea
               label="Plain text"
               rows={4}
-              disabled={ro}
+              disabled={roText}
               value={text('emailText')}
               onChange={e => set('emailText', e.target.value)}
             />

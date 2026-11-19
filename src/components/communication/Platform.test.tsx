@@ -89,6 +89,48 @@ describe('Templates registry', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save template' }));
     expect(await screen.findByText(/unknown placeholder/)).toBeInTheDocument();
   });
+  it('shows the specific template error the server sends', async () => {
+    show(<TemplateDrawer id={5} canEdit onClose={() => {}} onSaved={() => {}} />, {
+      'GET /platform/notification-templates/5': ok(templateRaw()),
+      'PATCH /platform/notification-templates/5': err(422, 'TEMPLATE_INVALID', [
+        { field: 'smsBody', message: 'Unknown placeholder {{foo}}; SMS is 3 segments, the limit is 2.' },
+      ]),
+    });
+    await userEvent.type(await screen.findByLabelText('In-app title'), '!');
+    await userEvent.click(screen.getByRole('button', { name: 'Save template' }));
+    expect(await screen.findByText(/Unknown placeholder \{\{foo\}\}; SMS is 3 segments/)).toBeInTheDocument();
+  });
+  it('shows legacy templates read only with a note and sends only DLT edits', async () => {
+    const api = show(<TemplateDrawer id={5} canEdit onClose={() => {}} onSaved={() => {}} />, {
+      'GET /platform/notification-templates/5': ok(
+        templateRaw({ templateKey: 'access.grant_added', inAppTitle: null, inAppBody: null, smsBody: null }),
+      ),
+      'PATCH /platform/notification-templates/5': ok(templateRaw()),
+    });
+    expect(await screen.findByText(/Legacy template: the text is fixed in code/)).toBeInTheDocument();
+    expect(screen.getByLabelText('In-app title')).toBeDisabled();
+    expect(screen.getByLabelText('In-app body')).toBeDisabled();
+    await userEvent.click(screen.getByRole('tab', { name: 'SMS' }));
+    expect(screen.getByLabelText('SMS text')).toBeDisabled();
+    await userEvent.type(screen.getByLabelText('DLT template id'), '110700001234');
+    await userEvent.click(screen.getByRole('button', { name: 'Save template' }));
+    await waitFor(() =>
+      expect(api?.last('PATCH', '/platform/notification-templates/5')?.body).toEqual({
+        version: 3,
+        smsDltTemplateId: '110700001234',
+      }),
+    );
+  });
+  it('counts SMS segments live while typing', async () => {
+    show(<TemplateDrawer id={5} canEdit onClose={() => {}} onSaved={() => {}} />, {
+      'GET /platform/notification-templates/5': ok(templateRaw()),
+    });
+    await userEvent.click(await screen.findByRole('tab', { name: 'SMS' }));
+    const box = screen.getByLabelText('SMS text');
+    await userEvent.clear(box);
+    await userEvent.type(box, 'नमस्ते');
+    expect(screen.getByText(/6 characters · 1 segment \(UCS-2\)/)).toBeInTheDocument();
+  });
   it('is read only without platform.settings.edit', async () => {
     show(<TemplateDrawer id={5} canEdit={false} onClose={() => {}} onSaved={() => {}} />, {
       'GET /platform/notification-templates/5': ok(templateRaw()),
