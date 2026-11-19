@@ -73,6 +73,8 @@ export interface EmergencyListQuery {
   from?: string;
   to?: string;
   sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
 }
 export interface StartEmergencyInput {
   type: EmergencyType;
@@ -132,6 +134,8 @@ export interface RespondResult {
   status: ResponseStatus;
   peopleCount: number;
   respondedAt: string;
+  /** Flats that are safe / need help now (the live counters of the alert). */
+  counts: { safe: number; needHelp: number };
 }
 export interface ActiveUnit {
   unitId: number;
@@ -148,4 +152,6 @@ export interface ActiveEmergency {
   collectResponses: boolean;
   lastUpdateMessage: string | null;
   myUnits: ActiveUnit[];
+  /** The caller's own reply when the alert reached them as staff and not through a flat (`myUnits` is empty). */
+  myResponse: ResponseStatus | null;
 }

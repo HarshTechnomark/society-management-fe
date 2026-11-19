@@ -21,7 +21,7 @@ export function EmergencyScreen() {
   const { ready } = useMe();
   const canManage = usePermission(C.emergency.create);
   const canView = useAnyPermission(C.emergency.create, PERMISSIONS.security.incidents.view);
-  const list = useLoad(() => svc.list({ sortOrder: 'desc' }), 'list');
+  const list = useLoad(() => svc.list({ sortOrder: 'desc', limit: 100 }), 'list');
   const [starting, setStarting] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   if (!ready)

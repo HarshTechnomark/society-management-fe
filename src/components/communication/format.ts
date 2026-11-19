@@ -66,6 +66,10 @@ export const COMM_TEXT: Record<string, string> = {
 
 export function commError(e: unknown): string {
   if (!(e instanceof ApiError)) return e instanceof Error ? e.message : 'Something went wrong. Try again.';
+  // a 400 names the field problem ("The range is at most 31 days"): show it as sent
+  const detail = e.errors?.map(x => x.message).filter(Boolean);
+  if ((e.code === 'VALIDATION_FAILED' || e.code === 'SURVEY_ANSWER_INVALID') && detail?.length)
+    return detail.join(' ');
   return COMM_TEXT[e.code] ?? e.message;
 }
 export function plainCommError(e: unknown): unknown {

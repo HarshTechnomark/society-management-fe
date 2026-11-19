@@ -9,8 +9,12 @@ import {
 import type { DeliveryQuery, TemplatePatch, TemplateQuery } from '@/types/platformCommunication';
 
 type Query = Record<string, string | number | boolean | undefined>;
-const pick = (q: object): Query =>
-  Object.fromEntries(Object.entries(q).filter(([, v]) => v !== undefined && v !== '')) as Query;
+const pick = (q: object): Query => {
+  const out = Object.fromEntries(Object.entries(q).filter(([, v]) => v !== undefined && v !== '')) as Query;
+  // the strict query wants `q` of 2 to 80 characters
+  if (typeof out.q === 'string' && out.q.trim().length < 2) delete out.q;
+  return out;
+};
 
 export const platformCommunicationService = {
   templates: async (q: TemplateQuery = {}) => {

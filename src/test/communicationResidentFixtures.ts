@@ -84,6 +84,7 @@ export const activeRaw = (over: Record<string, unknown> = {}) => ({
   collectResponses: true,
   lastUpdateMessage: null,
   myUnits: [{ unitId: 12, label: 'C-0801', response: null }],
+  myResponse: null,
   ...over,
 });
 

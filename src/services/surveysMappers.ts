@@ -99,6 +99,8 @@ export function mapQuestionResult(raw: unknown): QuestionResult {
     answered: num(r.answered),
     options: arr(r.options).map(mapOptionResult),
     average: strOrNull(r.average),
+    min: numOrNull(r.min),
+    max: numOrNull(r.max),
     distribution: dist,
     nps: numOrNull(r.nps),
     promoters: num(r.promoters),

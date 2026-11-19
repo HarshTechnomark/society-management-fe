@@ -14,7 +14,7 @@ import type {
 } from '@/types/communication';
 
 type Obj = Record<string, unknown>;
-const obj = (v: unknown): Obj => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Obj) : {});
+export const obj = (v: unknown): Obj => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Obj) : {});
 const num = (v: unknown, d = 0): number => {
   const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : v;
   return typeof n === 'number' && Number.isFinite(n) ? n : d;
@@ -181,6 +181,7 @@ export function mapActive(raw: unknown): ActiveEmergency {
       label: str(obj(u).label),
       response: respStatus(obj(u).response),
     })),
+    myResponse: respStatus(r.myResponse),
   };
 }
 export const mapActiveList = (raw: unknown): ActiveEmergency[] => rows(raw).map(mapActive);

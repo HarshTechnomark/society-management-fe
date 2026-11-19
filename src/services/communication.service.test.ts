@@ -92,6 +92,22 @@ describe('notice writes', () => {
   });
 });
 
+describe('notice detail people', () => {
+  it('maps approvedBy and author as { id, name }', () => {
+    const n = mapNotice(noticeRaw({ approvedBy: { id: 4, name: 'Sanjay Patil' } }));
+    expect(n.approvedBy).toEqual({ id: 4, name: 'Sanjay Patil' });
+    expect(n.author).toEqual({ id: 21, name: 'Arjun Shah' });
+    expect(mapNotice(noticeRaw()).approvedBy).toBeNull();
+  });
+  it('acknowledges a role notice on the admin route', async () => {
+    const api = mockApi({
+      'POST /notices/412/acknowledge': ok({ noticeId: 412, acknowledgedAt: 'x', revisionNo: 1 }),
+    });
+    expect((await noticesService.acknowledge(412)).acknowledgedAt).toBe('x');
+    expect(api.last('POST', '/notices/412/acknowledge')).toBeTruthy();
+  });
+});
+
 describe('notice detail, preview, templates', () => {
   it('maps the 8.5 shape and sanitises nothing itself', () => {
     const n = mapNotice(
@@ -236,7 +252,24 @@ describe('notifications, preferences and push', () => {
     const r = await notificationsService.list({ unread: true, limit: 15, bogus: 1 } as never);
     expect(r.items[0]).toMatchObject({ id: 77120, tone: 'warn', deepLink: '/approvals/77', readAt: null });
     expect([...url(api).searchParams.keys()].sort()).toEqual(['limit', 'unread']);
+    expect(r.unreadCount).toBe(3);
+    expect(r.total).toBe(12);
     expect(await notificationsService.unreadCount()).toBe(3);
+  });
+  it('uses the platform routes for the platform bell', async () => {
+    const api = mockApi({
+      'GET /platform/notifications': { data: [], extra: { pagination: pagination(0), unreadCount: 0 } },
+      'GET /platform/notifications/unread-count': ok({ count: 2 }),
+      'POST /platform/notifications/read-all': ok({ updated: 0 }),
+    });
+    await notificationsService.list({}, 'platform');
+    expect(await notificationsService.unreadCount('platform')).toBe(2);
+    await notificationsService.markAllRead(undefined, 'platform');
+    expect(api.calls.map(c => c.path)).toEqual([
+      '/platform/notifications',
+      '/platform/notifications/unread-count',
+      '/platform/notifications/read-all',
+    ]);
   });
   it('marks one and all read', async () => {
     const api = mockApi({

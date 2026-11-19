@@ -86,7 +86,12 @@ function Question({ q }: { q: QuestionResult }) {
       {(q.type === 'NUMBER' || q.type === 'DATE') &&
         q.answered > 0 &&
         q.options.length === 0 &&
-        q.average && <p className="text-[13.5px]">Average {q.average}</p>}
+        q.average && (
+          <p className="text-[13.5px]">
+            Average {q.average}
+            {q.min != null && q.max != null && ` (smallest ${q.min}, largest ${q.max})`}
+          </p>
+        )}
     </section>
   );
 }

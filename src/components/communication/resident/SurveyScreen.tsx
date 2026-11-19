@@ -58,12 +58,13 @@ export function problemFor(q: SurveyQuestion, v: Value | undefined): string | nu
   if (!a) return q.isRequired ? 'This question needs an answer.' : null;
   if (a.number !== undefined) {
     const [lo, hi] = q.type === 'RATING' ? [1, 5] : q.type === 'NPS' ? [0, 10] : [q.minValue, q.maxValue];
-    if (!Number.isInteger(a.number) && q.type !== 'NUMBER') return 'Choose a whole number.';
+    // the API takes whole numbers for every numeric question
+    if (!Number.isInteger(a.number)) return 'Enter a whole number.';
     if (lo != null && a.number < lo) return `Enter ${lo} or more.`;
     if (hi != null && a.number > hi) return `Enter ${hi} or less.`;
   }
-  if (a.text && q.maxLength && a.text.length > q.maxLength)
-    return `Keep it within ${q.maxLength} characters.`;
+  if (a.text && a.text.length > (q.maxLength ?? 500))
+    return `Keep it within ${q.maxLength ?? 500} characters.`;
   if (a.optionKeys && q.maxSelections && a.optionKeys.length > q.maxSelections)
     return `Choose at most ${q.maxSelections}.`;
   return null;

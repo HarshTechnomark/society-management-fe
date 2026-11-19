@@ -16,12 +16,25 @@ import type { DeliveryQuery } from '@/types/platformCommunication';
 import { istTime, plainCommError } from '../format';
 
 const CHANNELS = ['IN_APP', 'PUSH', 'SMS', 'WHATSAPP', 'EMAIL'];
-const STATUSES = ['QUEUED', 'SENT', 'DELIVERED', 'READ', 'FAILED', 'SKIPPED'];
+const STATUSES = [
+  'QUEUED',
+  'DEFERRED',
+  'SENDING',
+  'SENT',
+  'DELIVERED',
+  'READ',
+  'FAILED',
+  'SKIPPED',
+  'CANCELLED',
+];
 const TONE: Record<string, Tone> = {
   DELIVERED: 'ok',
   READ: 'ok',
   SENT: 'info',
   QUEUED: 'neutral',
+  DEFERRED: 'neutral',
+  SENDING: 'info',
+  CANCELLED: 'neutral',
   FAILED: 'bad',
   SKIPPED: 'warn',
 };
@@ -64,7 +77,7 @@ export function DeliveriesScreen() {
             label="Recipient"
             value={recipient}
             onChange={e => setRecipient(e.target.value)}
-            hint="10-digit mobile or email address."
+            hint="10-digit mobile or email address. Dates may be at most 31 days apart."
           />
           <Input
             label="Template key"

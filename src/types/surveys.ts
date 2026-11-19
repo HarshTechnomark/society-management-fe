@@ -97,6 +97,9 @@ export interface QuestionResult {
   answered: number;
   options: OptionResult[];
   average: string | null;
+  /** NUMBER questions: the smallest and largest answer. */
+  min: number | null;
+  max: number | null;
   distribution: Record<string, number>;
   nps: number | null;
   promoters: number;

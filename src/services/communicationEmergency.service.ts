@@ -1,6 +1,6 @@
 /** Module 16 emergency broadcast calls (spec 8.25 to 8.30). The audience picks the route group. */
 import { api, apiEnvelope, apiList } from '@/lib/apiClient';
-import { mapActiveList, mapDetail, mapListItem, mapRollCall } from './communicationEmergencyMappers';
+import { mapActiveList, mapDetail, mapListItem, mapRollCall, obj } from './communicationEmergencyMappers';
 import type {
   EmergencyAudience,
   EmergencyListQuery,
@@ -56,6 +56,10 @@ export const communicationEmergencyService = {
       status: r?.status === 'NEED_HELP' ? 'NEED_HELP' : 'SAFE',
       peopleCount: Number(r?.peopleCount ?? 1),
       respondedAt: String(r?.respondedAt ?? ''),
+      counts: {
+        safe: Number(obj(r?.counts).safe ?? 0),
+        needHelp: Number(obj(r?.counts).needHelp ?? 0),
+      },
     })),
   /** POST /emergency-broadcasts/:id/responses/:responseId/attend (8.29), "Help on the way". */
   attend: (id: number, responseId: number, note?: string) =>

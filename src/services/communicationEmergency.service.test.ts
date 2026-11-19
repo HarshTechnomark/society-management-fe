@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { err, mockApi, ok, resetAll } from '@/test/helpers';
 import { activeRaw, broadcastRaw, rollCallRaw } from '@/test/communicationResidentFixtures';
-import { mapDetail, mapRollCall } from './communicationEmergencyMappers';
+import { mapActive, mapDetail, mapRollCall } from './communicationEmergencyMappers';
 import { communicationEmergencyService as svc } from './communicationEmergency.service';
 
 beforeEach(resetAll);
@@ -103,5 +103,27 @@ describe('emergency calls', () => {
     await expect(svc.realert(31, { version: 2 })).rejects.toMatchObject({
       code: 'EMERGENCY_REALERT_TOO_SOON',
     });
+  });
+});
+
+describe('emergency replies and active alerts (real shapes)', () => {
+  it('reads the 201 reply with the live counters', async () => {
+    mockApi({
+      'POST /emergency-broadcasts/31/responses': ok({
+        responseId: 5,
+        status: 'SAFE',
+        peopleCount: 3,
+        respondedAt: '2026-11-18T09:00:00.000Z',
+        counts: { safe: 21, needHelp: 1 },
+      }),
+    });
+    const r = await svc.respond(31, 'me', { status: 'SAFE', peopleCount: 3 });
+    expect(r).toMatchObject({ responseId: 5, peopleCount: 3, counts: { safe: 21, needHelp: 1 } });
+  });
+  it('carries the staff reply of an alert that reached the caller without a flat', () => {
+    const a = mapActive(activeRaw({ myUnits: [], myResponse: 'NEED_HELP' }));
+    expect(a.myUnits).toEqual([]);
+    expect(a.myResponse).toBe('NEED_HELP');
+    expect(mapActive(activeRaw()).myResponse).toBeNull();
   });
 });
