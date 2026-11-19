@@ -28,14 +28,14 @@ export const TONE_DOT: Record<NotificationItem['tone'], string> = {
 
 /**
  * Deep links are app-relative (`/notices/12`, `/surveys/3`, `/emergency/9`, `/settings/notifications`); the admin app
- * lives under `/admin` and the resident app under `/resident`. The admin screens list by status, so a notice, survey or
- * alert link opens the list.
+ * lives under `/admin` and the resident app under `/resident`. A notice or survey link opens the list with that item's
+ * drawer (`?open=<id>`); an alert link opens the list.
  */
 export const adminLink = (deepLink: string | null): string | null => {
   if (!deepLink) return null;
   if (/^https?:\/\//i.test(deepLink)) return null;
-  const m = /^\/(notices|surveys|emergency)\/\d+\/?$/.exec(deepLink);
-  if (m) return `/admin/${m[1]}`;
+  const m = /^\/(notices|surveys|emergency)\/(\d+)\/?$/.exec(deepLink);
+  if (m) return m[1] === 'emergency' ? '/admin/emergency' : `/admin/${m[1]}?open=${m[2]}`;
   return deepLink === '/admin' || deepLink.startsWith('/admin/')
     ? deepLink
     : `/admin${deepLink.startsWith('/') ? '' : '/'}${deepLink}`;

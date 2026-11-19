@@ -1,5 +1,6 @@
 'use client';
-import { useState, type ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState, type ReactNode } from 'react';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Page, PageHead } from '@/components/common/PageHead';
@@ -38,7 +39,11 @@ export function NoticesScreen({
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
-  const [openId, setOpenId] = useState<number | null>(null);
+  const deep = Number(useSearchParams()?.get('open'));
+  const [openId, setOpenId] = useState<number | null>(Number.isInteger(deep) && deep > 0 ? deep : null); // `?open=<id>` from a notification
+  useEffect(() => {
+    if (Number.isInteger(deep) && deep > 0) setOpenId(deep); // the bell can change the query on this same page
+  }, [deep]);
   const [composing, setComposing] = useState<{ id?: number } | null>(null);
   const [tick, setTick] = useState(0);
 

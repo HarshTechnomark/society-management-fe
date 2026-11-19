@@ -441,7 +441,7 @@ describe('Notification settings in the resident app', () => {
 
 describe('Notification helpers', () => {
   it('maps the backend deep links per app', () => {
-    expect(adminLink('/notices/12')).toBe('/admin/notices');
+    expect(adminLink('/notices/12')).toBe('/admin/notices?open=12');
     expect(adminLink('/emergency/3')).toBe('/admin/emergency');
     expect(adminLink('/settings/notifications')).toBe('/admin/settings/notifications');
     expect(residentLink('/notices/12')).toBe('/resident/notices/12');

@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Page, PageHead } from '@/components/common/PageHead';
@@ -41,6 +42,11 @@ export function SurveysScreen() {
   const [tick, setTick] = useState(0);
   const [editing, setEditing] = useState<{ id?: number } | null>(null);
   const [results, setResults] = useState<SurveyListItem | null>(null);
+  const deep = Number(useSearchParams()?.get('open'));
+  const [deepId, setDeepId] = useState<number | null>(Number.isInteger(deep) && deep > 0 ? deep : null); // `?open=<id>`
+  useEffect(() => {
+    if (Number.isInteger(deep) && deep > 0) setDeepId(deep); // the bell can change the query on this same page
+  }, [deep]);
   const [cancelling, setCancelling] = useState<SurveyListItem | null>(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
@@ -227,6 +233,14 @@ export function SurveysScreen() {
             setEditing(null);
             refresh();
           }}
+        />
+      )}
+      {!results && deepId != null && (
+        <SurveyResultsDrawer
+          id={deepId}
+          title="Survey"
+          canExport={canExport}
+          onClose={() => setDeepId(null)}
         />
       )}
       {results && (
