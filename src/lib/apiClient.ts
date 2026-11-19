@@ -294,3 +294,9 @@ export async function apiList<T>(
   const json = await request(path, opts);
   return { data: (json?.data ?? []) as T[], pagination: json?.pagination as Pagination };
 }
+
+/** The whole JSON envelope, for list endpoints with extra top-level fields (`unreadCount`, `byFloor`). */
+export async function apiEnvelope(path: string, opts: Options = {}): Promise<Record<string, unknown>> {
+  const json = await request(path, opts);
+  return (json ?? {}) as Record<string, unknown>;
+}

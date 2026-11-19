@@ -50,6 +50,8 @@ describe('Platform navigation shell', () => {
       ['Support', '/platform/support'],
       ['Platform health', '/platform/health'],
       ['Announcements', '/platform/announcements'],
+      ['Templates', '/platform/templates'],
+      ['Deliveries', '/platform/deliveries'],
       ['Audit trail', '/platform/audit'],
       ['Platform team', '/platform/team'],
       ['Settings', '/platform/settings'],
@@ -76,7 +78,7 @@ describe('Platform navigation shell', () => {
       within(sheet)
         .getAllByRole('link')
         .map(a => a.textContent),
-    ).toEqual(['Dashboard', 'Platform health']);
+    ).toEqual(['Dashboard', 'Platform health', 'Deliveries']);
     await userEvent.click(within(sheet).getByRole('link', { name: 'Platform health' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
