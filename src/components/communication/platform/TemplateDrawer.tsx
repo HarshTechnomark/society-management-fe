@@ -118,7 +118,16 @@ export function TemplateDrawer({
       ) : !q.data ? (
         <ErrorState error={plainCommError(q.error)} action={<Button onClick={q.reload}>Try again</Button>} />
       ) : (
-        <Editor key={q.data.version} t={q.data} canEdit={canEdit} onSaved={onSaved} />
+        <Editor
+          key={q.data.version}
+          t={q.data}
+          canEdit={canEdit}
+          onSaved={() => {
+            // Reload the drawer's own row too: a second save must send the new version.
+            q.reload();
+            onSaved();
+          }}
+        />
       )}
     </Drawer>
   );

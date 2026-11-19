@@ -80,6 +80,19 @@ describe('Templates registry', () => {
       }),
     );
   });
+  it('reloads its own row after a save, so a second save sends the new version', async () => {
+    const onSaved = vi.fn();
+    const api = show(<TemplateDrawer id={5} canEdit onClose={() => {}} onSaved={onSaved} />, {
+      'GET /platform/notification-templates/5': ok(templateRaw()),
+      'PATCH /platform/notification-templates/5': ok(templateRaw({ version: 4 })),
+    });
+    await userEvent.type(await screen.findByLabelText('In-app title'), '!');
+    await userEvent.click(screen.getByRole('button', { name: 'Save template' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(api.calls.filter(c => c.method === 'GET' && c.path === '/platform/notification-templates/5')).toHaveLength(2),
+    );
+  });
   it('shows the server wording for an invalid template', async () => {
     show(<TemplateDrawer id={5} canEdit onClose={() => {}} onSaved={() => {}} />, {
       'GET /platform/notification-templates/5': ok(templateRaw()),
