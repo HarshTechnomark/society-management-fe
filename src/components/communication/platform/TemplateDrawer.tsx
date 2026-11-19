@@ -55,11 +55,27 @@ const TEXT_FIELDS = [
 /** A legacy template keeps its text in code: the server takes only DLT and WhatsApp edits for it. */
 export function isLegacyTemplate(t: TemplateDetail & { legacy?: boolean }): boolean {
   if (typeof t.legacy === 'boolean') return t.legacy;
-  return ![t.inAppTitle, t.inAppBody, t.pushTitle, t.pushBody, t.smsBody, t.emailSubject, t.emailHtml, t.emailText].some(
-    v => v != null && v !== '',
-  );
+  return ![
+    t.inAppTitle,
+    t.inAppBody,
+    t.pushTitle,
+    t.pushBody,
+    t.smsBody,
+    t.emailSubject,
+    t.emailHtml,
+    t.emailText,
+  ].some(v => v != null && v !== '');
 }
-const TEXT_ONLY = new Set(['inAppTitle', 'inAppBody', 'pushTitle', 'pushBody', 'smsBody', 'emailSubject', 'emailHtml', 'emailText']);
+const TEXT_ONLY = new Set([
+  'inAppTitle',
+  'inAppBody',
+  'pushTitle',
+  'pushBody',
+  'smsBody',
+  'emailSubject',
+  'emailHtml',
+  'emailText',
+]);
 
 /** Builds the PATCH body from the fields that changed (spec 8.35). */
 export function patchOf(orig: TemplateDetail, f: Form, legacy = isLegacyTemplate(orig)): TemplatePatch {

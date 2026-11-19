@@ -16,7 +16,7 @@ import { useLoad } from '@/hooks/useLoad';
 import { usePermission } from '@/hooks/usePermission';
 import { surveysService } from '@/services/surveys.service';
 import type { SurveyListItem } from '@/types/surveys';
-import { STATUS_LABEL, dateTime, noticeError, pct, plainError, statusTone } from './format';
+import { STATUS_LABEL, dateTime, isStale, noticeError, pct, plainError, statusTone } from './format';
 import { SurveyEditor } from './SurveyEditor';
 import { SurveyResultsDrawer } from './SurveyResultsDrawer';
 
@@ -48,6 +48,7 @@ export function SurveysScreen() {
     if (Number.isInteger(deep) && deep > 0) setDeepId(deep); // the bell can change the query on this same page
   }, [deep]);
   const [cancelling, setCancelling] = useState<SurveyListItem | null>(null);
+  const [deleting, setDeleting] = useState<SurveyListItem | null>(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -65,7 +66,8 @@ export function SurveysScreen() {
       setReason('');
       refresh();
     } catch (e) {
-      toast.show(noticeError(e), 'error');
+      toast.show(noticeError(e, 'survey'), 'error');
+      if (isStale(e)) refresh(); // the latest is shown now
     } finally {
       setBusy(null);
     }
@@ -129,7 +131,8 @@ export function SurveysScreen() {
                     <span className="text-[15px] font-bold">{s.title}</span>
                   </div>
                   <p className="mt-1 text-[12.5px] text-muted">
-                    {s.questionCount} questions{s.closesAt && ` · closes ${dateTime(s.closesAt)}`}
+                    {s.questionCount === 1 ? '1 question' : `${s.questionCount} questions`}
+                    {s.closesAt && ` · closes ${dateTime(s.closesAt)}`}
                   </p>
                   {s.status !== 'DRAFT' && (
                     <div className="mt-2">
@@ -188,13 +191,7 @@ export function SurveysScreen() {
                         size="xs"
                         variant="danger-soft"
                         loading={busy === `del${s.id}`}
-                        onClick={() =>
-                          void act(
-                            `del${s.id}`,
-                            () => surveysService.remove(s.id, s.version),
-                            'Draft deleted',
-                          )
-                        }
+                        onClick={() => setDeleting(s)}
                       >
                         Delete
                       </Button>
@@ -251,6 +248,36 @@ export function SurveysScreen() {
           onClose={() => setResults(null)}
         />
       )}
+      <Modal
+        open={!!deleting}
+        onClose={() => setDeleting(null)}
+        title="Delete this draft?"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleting(null)}>
+              Keep it
+            </Button>
+            <Button
+              variant="danger"
+              loading={deleting ? busy === `del${deleting.id}` : false}
+              onClick={() =>
+                deleting &&
+                void act(
+                  `del${deleting.id}`,
+                  () => surveysService.remove(deleting.id, deleting.version),
+                  'Draft deleted',
+                ).then(() => setDeleting(null))
+              }
+            >
+              Delete draft
+            </Button>
+          </>
+        }
+      >
+        <p className="text-[14px]">
+          “{deleting?.title}” will be removed for good. Published surveys are not affected.
+        </p>
+      </Modal>
       <Modal
         open={!!cancelling}
         onClose={() => setCancelling(null)}

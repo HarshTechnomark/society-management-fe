@@ -11,7 +11,7 @@ import { useLoad } from '@/hooks/useLoad';
 import { todayIST } from '@/lib/indiaDate';
 import { noticesService } from '@/services/notices.service';
 import type { Notice, ReceiptFilter, ReceiptQuery } from '@/types/notices';
-import { dateTime, noticeError, pct, plainError } from './format';
+import { dateTime, humanise, noticeError, pct, plainError } from './format';
 
 function Meter({ label, part, whole }: { label: string; part: number; whole: number }) {
   const p = pct(part, whole);
@@ -86,21 +86,23 @@ export function ReceiptsPanel({ notice, canExport }: { notice: Notice; canExport
       ) : (
         <>
           <div className="grid gap-3">
-            <Meter label="Reached" part={s.reached} whole={s.recipients} />
-            <Meter label="Read" part={s.read} whole={s.recipients} />
-            {notice.requiresAck && <Meter label="Acknowledged" part={s.acknowledged} whole={s.recipients} />}
+            <Meter label="Reached (people)" part={s.reached} whole={s.recipients} />
+            <Meter label="Read (people)" part={s.read} whole={s.recipients} />
+            {notice.requiresAck && (
+              <Meter label="Acknowledged (people)" part={s.acknowledged} whole={s.recipients} />
+            )}
           </div>
           {s.byBuilding.length > 0 && (
-            <div className="mt-3" aria-label="By tower (read)">
-              <p className="mb-1 text-[13px] font-semibold">By tower (read)</p>
+            <div className="mt-3" aria-label="By tower (flats read)">
+              <p className="mb-1 text-[13px] font-semibold">By tower (flats read)</p>
               {s.byBuilding.map(b => (
                 <div key={b.buildingId} className="mb-1.5 flex items-center gap-2 text-[12.5px]">
                   <span className="w-16 shrink-0">{b.code}</span>
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-[rgba(20,35,44,0.1)]">
                     <div className="h-full bg-navy" style={{ width: `${pct(b.unitsRead, b.units)}%` }} />
                   </div>
-                  <span className="w-14 shrink-0 text-right text-muted">
-                    {b.unitsRead}/{b.units}
+                  <span className="w-20 shrink-0 text-right text-muted">
+                    {b.unitsRead}/{b.units} flats
                   </span>
                 </div>
               ))}
@@ -151,8 +153,10 @@ export function ReceiptsPanel({ notice, canExport }: { notice: Notice; canExport
                             {r.name}
                             <span className="block text-[12px] text-muted">{r.mobile}</span>
                           </td>
-                          <td className="pr-2">{r.relation}</td>
-                          <td className="pr-2">{r.reachedVia ?? 'Unreached'}</td>
+                          <td className="pr-2">{r.relationLabel ?? humanise(r.relation)}</td>
+                          <td className="pr-2">
+                            {r.reachedVia ? (r.channelLabel ?? humanise(r.reachedVia)) : 'Unreached'}
+                          </td>
                           <td className="pr-2">{r.firstReadAt ? dateTime(r.firstReadAt) : '-'}</td>
                           <td>{r.acknowledgedAt ? dateTime(r.acknowledgedAt) : '-'}</td>
                         </tr>

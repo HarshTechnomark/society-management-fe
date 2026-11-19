@@ -118,9 +118,17 @@ export function NoticesScreen({
           </div>
         ) : items.length === 0 ? (
           <EmptyState
-            title="No notices"
-            text="Write one and reach everyone in minutes."
-            action={canCreate ? <Button onClick={() => setComposing({})}>New notice</Button> : undefined}
+            title={q.trim() || category || segment !== 'ALL' ? 'No notices match your search' : 'No notices'}
+            text={
+              q.trim() || category || segment !== 'ALL'
+                ? 'Try other words or clear the filters.'
+                : 'Write one and reach everyone in minutes.'
+            }
+            action={
+              q.trim() || category || segment !== 'ALL' ? undefined : canCreate ? (
+                <Button onClick={() => setComposing({})}>New notice</Button>
+              ) : undefined
+            }
           />
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2" aria-label="Notices">

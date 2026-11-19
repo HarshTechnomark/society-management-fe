@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { ErrorState } from '@/components/common/ErrorState';
+import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Chip } from '@/components/ui/Chip';
@@ -165,6 +166,8 @@ export function composerProblems(f: Form, now = Date.now()): Record<string, stri
     const t = f.scheduledAt ? new Date(f.scheduledAt).getTime() : NaN;
     if (!(t >= now + 5 * 60_000)) p.scheduledAt = 'Pick a time at least 5 minutes from now.';
   }
+  const left = /\[[^\]\n]{1,40}\]/.exec(`${f.title} ${stripTags(f.body)}`);
+  if (left) p.placeholder = `Replace ${left[0]} with the real details before sending.`;
   if (!audienceInput(f.audience)) p.audience = 'Choose who should receive this.';
   if (f.kind === 'UTILITY_SHUTDOWN' && (!f.outageStartsAt || !f.outageEndsAt))
     p.outage = 'Add when the outage starts and ends.';
@@ -282,7 +285,11 @@ function ComposerForm({
   const smsNote = form.channels.includes('SMS') ? 'SMS counts toward your monthly SMS limit.' : null;
 
   const applyTemplate = (key: string) => {
-    const t = templates.data?.find(x => x.key === key);
+    const all = templates.data ?? [];
+    const t =
+      all.find(x => x.key === key && x.locale === form.locale) ??
+      all.find(x => x.key === key && x.locale === 'en-IN') ??
+      all.find(x => x.key === key);
     if (!t) return;
     setForm(f => ({
       ...f,
@@ -330,8 +337,10 @@ function ComposerForm({
       });
     }
     const body = toInput(form);
+    // PATCH is strict: `kind` is fixed when the notice is created and the API rejects it on update
+    const { kind: _kind, ...patch } = body;
     return notice
-      ? noticesService.update(notice.id, { ...body, version: notice.version })
+      ? noticesService.update(notice.id, { ...patch, version: notice.version })
       : noticesService.create(body);
   };
 
@@ -444,7 +453,8 @@ function ComposerForm({
               ...Array.from(
                 new Map(
                   (templates.data ?? [])
-                    .filter(t => t.locale === form.locale || t.locale === 'en-IN')
+                    .filter(t => t.locale === 'en-IN' || t.locale === form.locale)
+                    .sort((a, b) => Number(a.locale === form.locale) - Number(b.locale === form.locale))
                     .map(t => [t.key, t]),
                 ).values(),
               ).map(t => ({
@@ -454,6 +464,7 @@ function ComposerForm({
             ]}
           />
         )}
+        {showErrors && problems.placeholder && <Alert tone="warn">{problems.placeholder}</Alert>}
         <Input
           label="Title"
           placeholder="Water cut in Tower A on Saturday"

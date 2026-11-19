@@ -1,4 +1,5 @@
 import { ApiError } from '@/lib/apiClient';
+import { readableFieldErrors } from '@/components/notices/admin/format';
 import type { Tone } from '@/components/ui/Chip';
 import type { EmergencyStatus, EmergencyType } from '@/types/communication';
 
@@ -69,7 +70,7 @@ export function commError(e: unknown): string {
   // a 400 names the field problem ("The range is at most 31 days"): show it as sent
   const detail = e.errors?.map(x => x.message).filter(Boolean);
   if ((e.code === 'VALIDATION_FAILED' || e.code === 'SURVEY_ANSWER_INVALID') && detail?.length)
-    return detail.join(' ');
+    return readableFieldErrors(e.errors ?? []);
   // template saves explain exactly what is wrong (placeholder, DLT id, segment limit): show that, not the general line
   if (e.code === 'TEMPLATE_INVALID' || e.code === 'TEMPLATE_DLT_REQUIRED') {
     if (detail?.length) return detail.join(' ');
@@ -78,7 +79,9 @@ export function commError(e: unknown): string {
 }
 
 const GSM7 = new Set(
-  '@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&\'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà'.split(''),
+  '@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&\'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà'.split(
+    '',
+  ),
 );
 const GSM7_EXT = new Set('^{}\\[~]|€'.split(''));
 /** SMS length the way a phone counts it: GSM-7 (160 / 153 per part) or UCS-2 (70 / 67 per part). */
@@ -87,7 +90,11 @@ export function smsSegments(text: string): { chars: number; segments: number; en
   const gsm = cs.every(c => GSM7.has(c) || GSM7_EXT.has(c));
   if (gsm) {
     const units = cs.reduce((n, c) => n + (GSM7_EXT.has(c) ? 2 : 1), 0);
-    return { chars: cs.length, segments: units === 0 ? 0 : units <= 160 ? 1 : Math.ceil(units / 153), encoding: 'GSM-7' };
+    return {
+      chars: cs.length,
+      segments: units === 0 ? 0 : units <= 160 ? 1 : Math.ceil(units / 153),
+      encoding: 'GSM-7',
+    };
   }
   const units = text.length;
   return { chars: cs.length, segments: units <= 70 ? 1 : Math.ceil(units / 67), encoding: 'UCS-2' };

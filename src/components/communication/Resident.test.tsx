@@ -239,7 +239,9 @@ describe('Survey answering', () => {
     expect(screen.queryByRole('option', { name: 'A-104' })).toBeNull();
     await userEvent.selectOptions(screen.getByLabelText('Answer for flat'), '2');
     await userEvent.click(screen.getByRole('button', { name: 'Submit answers' }));
-    await waitFor(() => expect(api.last('POST', '/me/surveys/9/responses')?.body).toMatchObject({ unitId: 2 }));
+    await waitFor(() =>
+      expect(api.last('POST', '/me/surveys/9/responses')?.body).toMatchObject({ unitId: 2 }),
+    );
     expect(await screen.findByText(/Your answers are recorded/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Answer for another flat' })).toBeNull();
   });

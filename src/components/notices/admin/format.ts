@@ -110,11 +110,36 @@ const ERROR_TEXT: Record<string, string> = {
   SOCIETY_SUSPENDED: 'The society is suspended, so changes cannot be saved.',
   FEATURE_NOT_IN_PLAN: 'This is not part of your plan.',
 };
+const FIELD_NAME: Record<string, string> = {
+  kind: 'type',
+  ackDueAt: 'reply-by time',
+  expiresAt: 'expiry',
+  fileIds: 'attachments',
+  editNote: 'edit note',
+  requiresAck: 'acknowledgement',
+  isPinned: 'pin',
+};
+/** Field messages of a 400 as sentences; a bare "Unknown field" never reaches the screen. */
+export function readableFieldErrors(errs: { field?: string; message: string }[]): string {
+  return errs
+    .map(x => {
+      if (/^unknown field/i.test(x.message) || /unrecognized key/i.test(x.message)) {
+        const f = x.field ? (FIELD_NAME[x.field] ?? x.field) : '';
+        return f
+          ? `The ${f} cannot be changed here. Reload and try again.`
+          : 'Something in this form cannot be saved. Reload and try again.';
+      }
+      return x.message;
+    })
+    .filter(Boolean)
+    .join(' ');
+}
 /** Readable text for an API error. Field messages of a 400 are shown as sent. */
-export const noticeError = (e: unknown): string => {
+export const noticeError = (e: unknown, what: 'notice' | 'survey' = 'notice'): string => {
   if (!(e instanceof ApiError)) return e instanceof Error ? e.message : 'Something went wrong. Try again.';
   const detail = e.errors?.map(x => x.message).filter(Boolean);
-  if (e.code === 'VALIDATION_FAILED' && detail?.length) return detail.join(' ');
+  if (e.code === 'VALIDATION_FAILED' && detail?.length) return readableFieldErrors(e.errors ?? []);
+  if (isStale(e)) return `This ${what} changed. Showing the latest.`;
   if (e.code === 'FEATURE_NOT_IN_PLAN') return e.message || ERROR_TEXT.FEATURE_NOT_IN_PLAN;
   return ERROR_TEXT[e.code] ?? e.message;
 };
@@ -133,3 +158,20 @@ export const isoToLocal = (iso: string | null | undefined): string => {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
+
+/** "OWNER" -> "Owner", "IN_APP" -> "In-app" when the API sends no label of its own. */
+export function humanise(v: string | null | undefined): string {
+  if (!v) return '';
+  const known: Record<string, string> = {
+    IN_APP: 'In-app',
+    SMS: 'SMS',
+    WHATSAPP: 'WhatsApp',
+    PUSH: 'Push',
+    EMAIL: 'Email',
+  };
+  if (known[v]) return known[v];
+  const t = v.toLowerCase().replace(/_/g, ' ');
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+/** "1 question", "2 questions". */
+export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;

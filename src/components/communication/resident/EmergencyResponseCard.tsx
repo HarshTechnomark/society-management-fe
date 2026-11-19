@@ -25,7 +25,8 @@ export function EmergencyResponseCard({
   const [sent, setSent] = useState<Record<number, ResponseStatus>>({});
   const unit = alert.myUnits.find(u => u.unitId === unitId) ?? alert.myUnits[0];
   const key = unit?.unitId ?? 0;
-  const current = sent[key] ?? unit?.response ?? (alert.myUnits.length <= 1 ? alert.myResponse : null) ?? null;
+  const current =
+    sent[key] ?? unit?.response ?? (alert.myUnits.length <= 1 ? alert.myResponse : null) ?? null;
 
   const send = async (status: ResponseStatus) => {
     setBusy(status);

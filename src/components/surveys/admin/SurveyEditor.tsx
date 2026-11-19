@@ -150,7 +150,7 @@ function EditorForm({
       } else toast.show('Draft saved');
       onSaved();
     } catch (e) {
-      setProblem(noticeError(e));
+      setProblem(noticeError(e, 'survey'));
     } finally {
       setBusy(null);
     }

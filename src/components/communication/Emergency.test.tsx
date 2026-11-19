@@ -288,7 +288,12 @@ describe('Resident takeover', () => {
             ],
           }),
         ]),
-        'POST /emergency-broadcasts/31/responses': ok({ responseId: 1, status: 'SAFE', peopleCount: 1, respondedAt: 'x' }),
+        'POST /emergency-broadcasts/31/responses': ok({
+          responseId: 1,
+          status: 'SAFE',
+          peopleCount: 1,
+          respondedAt: 'x',
+        }),
       },
       RESIDENT_COMM_PERMS,
     );
@@ -304,7 +309,12 @@ describe('Resident takeover', () => {
       <EmergencyTakeover />,
       {
         'GET /me/emergency-broadcasts/active': ok([
-          activeRaw({ id: 40, isDrill: true, message: 'Drill message here', startedAt: '2026-11-18T10:00:00.000Z' }),
+          activeRaw({
+            id: 40,
+            isDrill: true,
+            message: 'Drill message here',
+            startedAt: '2026-11-18T10:00:00.000Z',
+          }),
           activeRaw({ id: 31, message: 'Real smoke alert', startedAt: '2026-11-18T09:00:00.000Z' }),
         ]),
       },

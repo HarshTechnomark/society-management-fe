@@ -16,7 +16,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { NoticesScreen } from './admin/NoticesScreen';
 import { composerProblems, toInput } from './admin/NoticeComposer';
 import { EMPTY_AUDIENCE, audienceInput } from './admin/AudienceBuilder';
-import { isoToLocal, localToIso, noticeError, pct, stripTags } from './admin/format';
+import { humanise, isoToLocal, localToIso, noticeError, pct, stripTags } from './admin/format';
 import { sanitizeNoticeHtml } from './admin/sanitize';
 import { ApiError } from '@/lib/apiClient';
 
@@ -167,11 +167,11 @@ describe('Notice drawer', () => {
   it('shows the three meters and tower bars, and the full table on View all', async () => {
     const { dlg } = await open();
     const rec = await within(dlg).findByRole('region', { name: 'Read receipts' });
-    expect(await within(rec).findByRole('progressbar', { name: 'Reached' })).toBeInTheDocument();
+    expect(await within(rec).findByRole('progressbar', { name: 'Reached (people)' })).toBeInTheDocument();
     expect(within(rec).getByText('132 of 141')).toBeInTheDocument();
     expect(within(rec).getByText('101 of 141')).toBeInTheDocument();
     expect(within(rec).getByText('64 of 141')).toBeInTheDocument();
-    expect(within(rec).getByText('51/64')).toBeInTheDocument();
+    expect(within(rec).getByText('51/64 flats')).toBeInTheDocument();
     await userEvent.click(within(rec).getByRole('button', { name: 'View all' }));
     const table = within(rec).getByRole('table');
     expect(within(table).getByText('A-101')).toBeInTheDocument();
@@ -184,7 +184,7 @@ describe('Notice drawer', () => {
     URL.revokeObjectURL = vi.fn();
     const { api, dlg } = await open({}, { 'GET /notices/412/receipts/export': ok('csv') as never });
     const rec = await within(dlg).findByRole('region', { name: 'Read receipts' });
-    await within(rec).findByRole('progressbar', { name: 'Reached' });
+    await within(rec).findByRole('progressbar', { name: 'Reached (people)' });
     await userEvent.click(within(rec).getByRole('button', { name: 'View all' }));
     await userEvent.click(within(rec).getByRole('button', { name: 'Not acknowledged' }));
     await waitFor(() =>
@@ -208,7 +208,7 @@ describe('Notice drawer', () => {
     wrap(<NoticesScreen />);
     await userEvent.click(await screen.findByRole('button', { name: /Open Water cut/ }));
     const rec = await screen.findByRole('region', { name: 'Read receipts' });
-    await within(rec).findByRole('progressbar', { name: 'Reached' });
+    await within(rec).findByRole('progressbar', { name: 'Reached (people)' });
     await userEvent.click(within(rec).getByRole('button', { name: 'View all' }));
     expect(within(rec).queryByRole('button', { name: 'Export CSV' })).not.toBeInTheDocument();
     expect(within(rec).queryByRole('button', { name: 'Unreached' })).not.toBeInTheDocument();
@@ -442,6 +442,25 @@ describe('Notice composer', () => {
     expect(within(dlg).getByLabelText('Outage starts')).toBeInTheDocument();
   });
 
+  it('edits a saved draft without sending `kind` (the PATCH body is strict)', async () => {
+    const api = mockApi({
+      ...baseRoutes(),
+      'GET /notices/412': ok(noticeRaw({ status: 'DRAFT' })),
+      'GET /notices/412/receipts': { data: receiptsRaw(), extra: { pagination: pagination() } },
+      'POST /notices/audience-preview': ok(previewRaw()),
+      'PATCH /notices/412': ok(noticeRaw({ status: 'DRAFT', version: 4 })),
+    });
+    wrap(<NoticesScreen />);
+    await userEvent.click(await screen.findByRole('button', { name: /Open Water cut/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    const dlg = await screen.findByRole('dialog', { name: /notice/i });
+    await userEvent.click(await within(dlg).findByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(api.last('PATCH', '/notices/412')).toBeTruthy());
+    const body = api.last('PATCH', '/notices/412')!.body as Record<string, unknown>;
+    expect(body).not.toHaveProperty('kind');
+    expect(body).toMatchObject({ version: 3 });
+  });
+
   it('edits only text after publish and needs a note', async () => {
     const api = mockApi({
       ...baseRoutes(),
@@ -572,10 +591,21 @@ describe('Notice helpers', () => {
     expect(stripTags('<p>a&nbsp;<b>b</b></p>')).toBe('a b');
     expect(isoToLocal(localToIso('2026-12-01T10:30'))).toBe('2026-12-01T10:30');
     expect(isoToLocal(null)).toBe('');
-    expect(noticeError(new ApiError(409, 'STALE_VERSION', 'x'))).toMatch(/Someone changed this notice/);
+    expect(noticeError(new ApiError(409, 'STALE_VERSION', 'x'))).toMatch(/This notice changed. Showing the latest/);
     expect(
       noticeError(new ApiError(400, 'VALIDATION_FAILED', 'x', [{ field: 'title', message: 'Too short' }])),
     ).toBe('Too short');
     expect(noticeError(new ApiError(500, 'ODD', 'Odd thing'))).toBe('Odd thing');
+    const unk = noticeError(new ApiError(400, 'VALIDATION_FAILED', 'x', [{ field: 'kind', message: 'Unknown field' }]));
+    expect(unk).not.toMatch(/^Unknown field/);
+    expect(unk).toMatch(/type/);
+    expect(noticeError(new ApiError(409, 'STALE_VERSION', 'x'), 'survey')).toBe(
+      'This survey changed. Showing the latest.',
+    );
+    expect(humanise('OWNER')).toBe('Owner');
+    expect(humanise('IN_APP')).toBe('In-app');
+    expect(composerProblems(form({ body: '<p>Tank cleaning on [date] at the tower.</p>' })).placeholder).toMatch(
+      /\[date\]/,
+    );
   });
 });

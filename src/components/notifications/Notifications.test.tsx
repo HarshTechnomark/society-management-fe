@@ -407,7 +407,9 @@ describe('Notification settings in the resident app', () => {
       const { unmount } = wrap(<NotificationSettingsScreen app="RESIDENT" />);
       const sw = await screen.findByRole('switch', { name: 'Push alerts on this device' });
       await userEvent.click(sw);
-      expect(await screen.findByText('Push notifications are not set up on this server yet.')).toBeInTheDocument();
+      expect(
+        await screen.findByText('Push notifications are not set up on this server yet.'),
+      ).toBeInTheDocument();
       expect(screen.queryByText(/atob/)).toBeNull();
       expect(screen.getByRole('switch', { name: 'Push alerts on this device' })).not.toBeChecked();
       unmount();

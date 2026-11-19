@@ -30,6 +30,13 @@ export function SurveyScreen({ id }: { id: number }) {
 /** What a person typed or picked for one question, kept as simple values until submit. */
 type Value = { key?: string; keys?: string[]; text?: string };
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** `2026-12-12` -> "12 Dec 2026" (no time zone shift for a plain date). */
+export const dayLabel = (d: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+  return m ? `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}` : d;
+};
+
 export function answerFor(q: SurveyQuestion, v: Value | undefined): SurveyAnswer | null {
   if (!v) return null;
   switch (q.type) {
@@ -245,7 +252,8 @@ function Inner({ id }: { id: number }) {
   const total = s.questions.length;
   const review = step >= total;
   const flat = s.responseScope === 'FLAT' && s.units.length > 1;
-  const isAnswered = (uid: number) => answered.includes(uid) || s.units.find(u => u.unitId === uid)?.responded === true;
+  const isAnswered = (uid: number) =>
+    answered.includes(uid) || s.units.find(u => u.unitId === uid)?.responded === true;
   const remaining = s.units.filter(u => !isAnswered(u.unitId));
   const anotherFlat = flat && remaining.length > 0 && (done || s.responded);
   const startAnother = () => {
@@ -385,7 +393,7 @@ function Inner({ id }: { id: number }) {
                         : x.options.find(o => o.key === a.optionKey)?.label
                       : a?.optionKeys
                         ? a.optionKeys.map(k => x.options.find(o => o.key === k)?.label ?? k).join(', ')
-                        : (a?.number ?? a?.text ?? a?.date);
+                        : (a?.number ?? a?.text ?? (a?.date ? dayLabel(a.date) : undefined));
                   return (
                     <li key={x.id} className="rounded-2xl bg-white/60 p-3 text-[14px]">
                       <span className="font-semibold">{x.prompt}</span>

@@ -25,7 +25,10 @@ export function pushMessage(e: unknown): string {
   if (e instanceof PushDeniedError)
     return 'Notifications are blocked for this browser. You can allow them in the browser settings.';
   if (e instanceof PushNotConfiguredError) return NOT_SET_UP;
-  if (e instanceof Error && /atob|InvalidCharacterError|applicationServerKey|not valid|vapid/i.test(`${e.name} ${e.message}`))
+  if (
+    e instanceof Error &&
+    /atob|InvalidCharacterError|applicationServerKey|not valid|vapid/i.test(`${e.name} ${e.message}`)
+  )
     return NOT_SET_UP;
   if (e instanceof Error && e.name === 'NotAllowedError')
     return 'Notifications are blocked for this browser. You can allow them in the browser settings.';

@@ -25,7 +25,11 @@ export function GateEmergencyBanner() {
     <div role="alert" className="sticky top-0 z-40 bg-[#a3201a] px-4 py-2.5 text-white">
       <div className="flex flex-wrap items-center justify-between gap-2 text-[14.5px] font-semibold">
         <span className="min-w-0 truncate">
-          {many && <span className="mr-2 rounded-full bg-white/25 px-2 py-0.5 text-[12.5px]">{list.length} active</span>}
+          {many && (
+            <span className="mr-2 rounded-full bg-white/25 px-2 py-0.5 text-[12.5px]">
+              {list.length} active
+            </span>
+          )}
           {line(newest)}
         </span>
         <span className="flex items-center gap-2">

@@ -189,8 +189,10 @@ export interface ReceiptItem {
   unitLabel: string;
   name: string;
   relation: string;
+  relationLabel?: string;
   mobile: string;
   reachedVia: string | null;
+  channelLabel?: string;
   firstReadAt: string | null;
   acknowledgedAt: string | null;
   remindersSent: number;

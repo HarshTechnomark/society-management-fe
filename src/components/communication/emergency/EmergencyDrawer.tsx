@@ -9,7 +9,16 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { usePolling } from '@/components/platformOps/usePolling';
 import { communicationEmergencyService as svc } from '@/services/communicationEmergency.service';
 import type { EmergencyDetail } from '@/types/communication';
-import { STATUS_TONE, ago, commError, istTime, minutesSince, plainCommError, typeLabel, people } from '../format';
+import {
+  STATUS_TONE,
+  ago,
+  commError,
+  istTime,
+  minutesSince,
+  plainCommError,
+  typeLabel,
+  people,
+} from '../format';
 import { RollCallPanel } from './RollCallPanel';
 import { TextActionModal } from './TextActionModal';
 

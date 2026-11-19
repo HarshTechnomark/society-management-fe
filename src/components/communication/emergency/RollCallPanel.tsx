@@ -107,8 +107,7 @@ export function RollCallPanel({
                 </div>
                 {u.status !== 'NO_RESPONSE' && (
                   <p className="mt-1 text-[13px] text-muted">
-                    {people(u.peopleCount ?? 1)} ·{' '}
-                    {istTime(u.respondedAt)}
+                    {people(u.peopleCount ?? 1)} · {istTime(u.respondedAt)}
                     {u.note ? ` · ${u.note}` : ''}
                   </p>
                 )}

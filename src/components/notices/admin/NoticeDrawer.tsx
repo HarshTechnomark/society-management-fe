@@ -107,12 +107,17 @@ function NoticeBody({
   const [busy, setBusy] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
-  const run = async (key: string, fn: () => Promise<unknown>, done: string, then?: () => void) => {
+  const run = async (
+    key: string,
+    fn: () => Promise<unknown>,
+    done: string | ((r: unknown) => string),
+    then?: () => void,
+  ) => {
     setBusy(key);
     setProblem(null);
     try {
-      await fn();
-      toast.show(done);
+      const r = await fn();
+      toast.show(typeof done === 'function' ? done(r) : done);
       setDialog(null);
       setReason('');
       if (then) then();
@@ -194,7 +199,15 @@ function NoticeBody({
     add(
       'remind',
       'Remind unacknowledged',
-      () => void run('remind', () => noticesService.remind(n.id, n.version), 'Reminder queued'),
+      () =>
+        void run(
+          'remind',
+          () => noticesService.remind(n.id, n.version),
+          r => {
+            const q = (r as { queuedFor?: number } | undefined)?.queuedFor;
+            return q ? `Reminder queued for ${q} ${q === 1 ? 'person' : 'people'}` : 'Reminder queued';
+          },
+        ),
     );
   if (published && canEdit)
     add(
