@@ -82,7 +82,7 @@ export interface Notice {
   expiresAt: string | null;
   attachments: NoticeAttachment[];
   approval: { requestId: number; status: string; statusLabel: string } | null;
-  approvedBy: string | null;
+  approvedBy: { id: number; name: string } | null;
   lastDecisionReason: string | null;
   recalledReason: string | null;
   utility: { type: string; startsAt: string | null; endsAt: string | null; restoredAt: string | null } | null;

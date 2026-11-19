@@ -81,7 +81,8 @@ export const stripTags = (html: string) =>
 const ERROR_TEXT: Record<string, string> = {
   STALE_VERSION: 'Someone changed this notice. Reload and try again.',
   INVALID_STATE: 'This notice cannot be changed in its current state. Reload and check.',
-  NOTICE_NOT_FOUND: 'This notice was not found.',
+  NOTICE_NOT_FOUND: 'This notice was not found, or it was not sent to you.',
+  MAKER_CHECKER_VIOLATION: 'You cannot decide on a notice you wrote yourself.',
   NOTICE_AUDIENCE_INVALID: 'One of the chosen towers, flats or roles is not valid any more.',
   NOTICE_AUDIENCE_EMPTY: 'Nobody would receive this notice. Change who it is for.',
   NOTICE_ACTION_INVALID: 'One of the buttons points to something that is not open.',
@@ -96,6 +97,7 @@ const ERROR_TEXT: Record<string, string> = {
   FILE_NOT_LINKABLE: 'One of the attachments cannot be used.',
   APPROVAL_ALREADY_PENDING: 'An approval is already open for this notice.',
   SURVEY_NOT_FOUND: 'This survey was not found.',
+  NOTICE_ACK_NOT_REQUIRED: 'This notice does not need an acknowledgement.',
   SURVEY_QUESTIONS_REQUIRED: 'Add at least one question before opening the survey.',
   SURVEY_CLOSE_INVALID: 'The closing time must be between 1 hour and 90 days from now.',
   SURVEY_AUDIENCE_EMPTY: 'Nobody would receive this survey. Change who it is for.',

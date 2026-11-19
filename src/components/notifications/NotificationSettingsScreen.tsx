@@ -12,11 +12,17 @@ import { Switch } from '@/components/ui/Switch';
 import { useToast } from '@/components/ui/Toast';
 import { useLoad } from '@/hooks/useLoad';
 import { ApiError } from '@/lib/apiClient';
-import { pushSupported, subscribeThisDevice, unsubscribeThisDevice } from '@/lib/pushSubscribe';
 import { notificationsService } from '@/services/notifications.service';
-import { PREF_CHANNELS, type PrefChannel, type Preferences, type QuietMode } from '@/types/notifications';
-import { noticeError, plainError } from '@/components/notices/admin/format';
+import {
+  PREF_CHANNELS,
+  type NotificationApp,
+  type PrefChannel,
+  type Preferences,
+  type QuietMode,
+} from '@/types/notifications';
+import { commError, plainCommError } from '@/components/communication/format';
 import { LOCALES, categoryLabel } from './format';
+import { PushDeviceCard } from './PushDeviceCard';
 import { draftOf, quietProblem, toBody, type PrefsDraft } from './prefs';
 
 const CHANNEL_LABEL: Record<PrefChannel, string> = {
@@ -26,8 +32,8 @@ const CHANNEL_LABEL: Record<PrefChannel, string> = {
   EMAIL: 'Email',
 };
 
-/** Settings > Notifications (spec 11.6): the preference matrix, quiet hours, language, WhatsApp opt-in and this device. */
-export function NotificationSettingsScreen() {
+/** Settings > Notifications (spec 11.6, 11.7): the preference matrix, quiet hours, language, WhatsApp opt-in and this device. Admin, resident and platform apps share it. */
+export function NotificationSettingsScreen({ app }: { app: NotificationApp }) {
   const load = useLoad(() => notificationsService.preferences(), 'prefs');
   return (
     <Page>
@@ -37,7 +43,7 @@ export function NotificationSettingsScreen() {
       />
       {load.error != null ? (
         <ErrorState
-          error={plainError(load.error)}
+          error={plainCommError(load.error)}
           action={
             <Button size="sm" onClick={load.reload}>
               Try again
@@ -49,7 +55,7 @@ export function NotificationSettingsScreen() {
       ) : (
         <PrefsForm key={load.data.version} prefs={load.data} onReload={load.reload} />
       )}
-      <ThisDevice />
+      <PushDeviceCard app={app} />
     </Page>
   );
 }
@@ -75,9 +81,7 @@ function PrefsForm({ prefs, onReload }: { prefs: Preferences; onReload: () => vo
       onReload();
     } catch (e) {
       const isStale = e instanceof ApiError && e.code === 'STALE_VERSION';
-      setProblem(
-        isStale ? 'Your settings were changed somewhere else. Reload and try again.' : noticeError(e),
-      );
+      setProblem(isStale ? 'Your settings were changed somewhere else. Reload and try again.' : commError(e));
       setStale(isStale);
     } finally {
       setBusy(false);
@@ -143,6 +147,9 @@ function PrefsForm({ prefs, onReload }: { prefs: Preferences; onReload: () => vo
           <p className="mt-2 text-[13px] font-medium text-bad">
             E-mail to {prefs.email.address ?? 'your address'} bounced. Update your e-mail in your profile.
           </p>
+        )}
+        {!prefs.email.bounced && prefs.email.address && (
+          <p className="mt-2 text-[13px] text-muted">E-mail goes to {prefs.email.address}.</p>
         )}
       </Card>
 
@@ -210,75 +217,5 @@ function PrefsForm({ prefs, onReload }: { prefs: Preferences; onReload: () => vo
         </Button>
       </div>
     </>
-  );
-}
-
-/** "This device": push toggle and "Send test" for this browser's subscription. */
-function ThisDevice() {
-  const toast = useToast();
-  const supported = pushSupported();
-  const subs = useLoad(() => notificationsService.pushList().catch(() => []), 'push');
-  const mine = subs.data?.find(s => s.isThisDevice && s.status === 'ACTIVE') ?? null;
-  const [busy, setBusy] = useState(false);
-
-  const toggle = async (on: boolean) => {
-    setBusy(true);
-    try {
-      if (on) {
-        const key = await notificationsService.vapidKey();
-        const reg = await subscribeThisDevice(key);
-        await notificationsService.pushRegister({ ...reg, app: 'ADMIN' });
-        toast.show('Push alerts are on for this device');
-      } else if (mine) {
-        await notificationsService.pushRemove(mine.id);
-        await unsubscribeThisDevice().catch(() => undefined);
-        toast.show('Push alerts are off for this device');
-      }
-      subs.reload();
-    } catch (e) {
-      toast.show(noticeError(e), 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
-  const test = async () => {
-    if (!mine) return;
-    try {
-      await notificationsService.pushTest(mine.id);
-      toast.show('Test alert sent');
-    } catch (e) {
-      toast.show(noticeError(e), 'error');
-    }
-  };
-  return (
-    <Card title="This device" className="mt-4">
-      {!supported ? (
-        <p className="text-[13.5px] text-muted">This browser cannot receive push alerts.</p>
-      ) : (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-[14px] font-semibold">Push alerts on this device</p>
-            <p className="text-[12.5px] text-muted">
-              {subs.data?.length
-                ? `${subs.data.filter(s => s.status === 'ACTIVE').length} device(s) registered.`
-                : 'Not registered yet.'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {mine && (
-              <Button size="sm" variant="glass" onClick={() => void test()}>
-                Send test
-              </Button>
-            )}
-            <Switch
-              label="Push alerts on this device"
-              checked={!!mine}
-              disabled={busy || subs.loading}
-              onChange={v => void toggle(v)}
-            />
-          </div>
-        </div>
-      )}
-    </Card>
   );
 }

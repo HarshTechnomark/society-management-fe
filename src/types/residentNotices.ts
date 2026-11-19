@@ -79,6 +79,7 @@ export interface SurveyQuestion {
 export interface SurveyListItem {
   id: number;
   title: string;
+  status: string;
   closesAt: string | null;
   questionCount: number;
   responded: boolean;
@@ -127,71 +128,4 @@ export interface SurveyAnswer {
 export interface SurveySubmitResult {
   submissionId: string;
   submittedAt: string;
-}
-
-export interface InboxItem {
-  id: number;
-  templateKey: string;
-  category: string;
-  tone: 'info' | 'ok' | 'warn' | 'bad';
-  title: string;
-  body: string;
-  deepLink: string | null;
-  readAt: string | null;
-  createdAt: string;
-}
-export interface InboxPage {
-  items: InboxItem[];
-  total: number;
-  pages: number;
-  unreadCount: number;
-}
-export interface InboxQuery {
-  unread?: boolean;
-  category?: string;
-  page?: number;
-  limit?: number;
-}
-
-export type PrefChannel = 'PUSH' | 'SMS' | 'WHATSAPP' | 'EMAIL';
-export interface PrefCategory {
-  key: string;
-  locked: boolean;
-  channels: Record<PrefChannel, boolean>;
-}
-export interface QuietHours {
-  mode: 'SOCIETY_DEFAULT' | 'CUSTOM' | 'OFF';
-  start: string;
-  end: string;
-}
-export interface Preferences {
-  locale: string | null;
-  effectiveLocale: string;
-  categories: PrefCategory[];
-  quietHours: QuietHours;
-  whatsapp: { optIn: boolean; optInAt: string | null; available: boolean };
-  email: { address: string; bounced: boolean };
-  version: number;
-}
-export interface PreferencesInput {
-  version: number;
-  locale: string | null;
-  categories: Record<string, Record<PrefChannel, boolean>>;
-  quietHours: { mode: QuietHours['mode']; start?: string; end?: string };
-  whatsappOptIn: boolean;
-}
-export interface PushSubscriptionRow {
-  id: number;
-  app: string;
-  deviceLabel: string;
-  status: string;
-  createdAt: string;
-  lastSuccessAt: string | null;
-  isThisDevice: boolean;
-}
-export interface PushRegistration {
-  endpoint: string;
-  keys: { p256dh: string; auth: string };
-  expirationTime?: number | null;
-  app: 'PLATFORM' | 'ADMIN' | 'RESIDENT' | 'GATE' | 'WORK';
 }

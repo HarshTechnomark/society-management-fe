@@ -1,7 +1,7 @@
-import { NotificationSettingsScreen } from '@/components/communication/resident/NotificationSettingsScreen';
+import { NotificationSettingsScreen } from '@/components/notifications/NotificationSettingsScreen';
 
 export const metadata = { title: 'Notification settings' };
 
 export default function Page() {
-  return <NotificationSettingsScreen />;
+  return <NotificationSettingsScreen app="RESIDENT" />;
 }

@@ -5,11 +5,13 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/Button';
 import { cx } from '@/components/ui/cx';
 import { notificationsService } from '@/services/notifications.service';
-import type { NotificationItem } from '@/types/notifications';
-import { TONE_DOT, adminLink, ago } from './format';
+import type { InboxScope, NotificationApp, NotificationItem } from '@/types/notifications';
+import { TONE_DOT, ago, linkFor } from './format';
 
 /** The inbox rows: tone dot, title, text, time. A click marks the item read and opens its deep link. */
 export function InboxList({
+  app,
+  scope = 'society',
   items,
   loading,
   error,
@@ -17,6 +19,8 @@ export function InboxList({
   onRead,
   onNavigate,
 }: {
+  app: NotificationApp;
+  scope?: InboxScope;
   items: NotificationItem[];
   loading: boolean;
   error: unknown;
@@ -47,12 +51,12 @@ export function InboxList({
   if (items.length === 0) return <EmptyState title="All caught up" text="New alerts will show up here." />;
   const open = (n: NotificationItem) => {
     if (!n.readAt) {
-      void notificationsService.markRead(n.id).then(
+      void notificationsService.markRead(n.id, scope).then(
         () => onRead(n.id),
         () => undefined,
       );
     }
-    const link = adminLink(n.deepLink);
+    const link = linkFor(app, n.deepLink);
     if (link) {
       onNavigate?.();
       router.push(link);

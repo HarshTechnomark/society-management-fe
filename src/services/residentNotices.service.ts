@@ -1,34 +1,13 @@
-/** Module 16 resident calls: notice board, surveys (8.18, 8.19, 8.34), inbox (8.20, 8.21), preferences and push (8.23, 8.24). */
-import { api, apiEnvelope, apiList } from '@/lib/apiClient';
-import {
-  mapInboxPage,
-  mapNoticeDetail,
-  mapNoticePage,
-  mapPreferences,
-  mapPushList,
-  mapSurveyDetail,
-  mapSurveyList,
-} from './residentNoticesMappers';
-import type {
-  AckResult,
-  InboxQuery,
-  NoticeQuery,
-  PreferencesInput,
-  PushRegistration,
-  SurveyAnswer,
-  SurveySubmitResult,
-} from '@/types/residentNotices';
+/** Module 16 resident calls: notice board and surveys (8.17 to 8.19, 8.34). The inbox, preferences and push calls live in `notifications.service`. */
+import { api, apiList } from '@/lib/apiClient';
+import { mapNoticeDetail, mapNoticePage, mapSurveyDetail, mapSurveyList } from './residentNoticesMappers';
+import type { AckResult, NoticeQuery, SurveyAnswer, SurveySubmitResult } from '@/types/residentNotices';
 
 type Query = Record<string, string | number | boolean | undefined>;
 const pick = (q: object): Query =>
   Object.fromEntries(Object.entries(q).filter(([, v]) => v !== undefined && v !== '')) as Query;
 const post = <T>(path: string, body: unknown = {}, idempotent = false) =>
   api<T>(path, { method: 'POST', body, idempotent });
-
-/** `platform` is the platform console bell (8.22, same shapes). */
-export type InboxScope = 'society' | 'platform';
-const inboxBase = (scope: InboxScope) =>
-  scope === 'platform' ? '/platform/notifications' : '/notifications';
 
 export const residentNoticesService = {
   /** GET /me/notices (8.19). */
@@ -58,28 +37,4 @@ export const residentNoticesService = {
         submittedAt: String(r?.submittedAt ?? ''),
       }),
     ),
-
-  /** GET /notifications (8.20): `unreadCount` sits beside `data`. */
-  inbox: async (q: InboxQuery = {}, scope: InboxScope = 'society') =>
-    mapInboxPage(await apiEnvelope(inboxBase(scope), { query: pick(q), plan: false, activity: false })),
-  unreadCount: (background = true, scope: InboxScope = 'society') =>
-    api<{ count?: number }>(`${inboxBase(scope)}/unread-count`, { plan: false, activity: !background }).then(
-      r => Number(r?.count ?? 0),
-    ),
-  markRead: (id: number, scope: InboxScope = 'society') => post<unknown>(`${inboxBase(scope)}/${id}/read`),
-  markAllRead: (category?: string, scope: InboxScope = 'society') =>
-    post<{ updated?: number }>(`${inboxBase(scope)}/read-all`, category ? { category } : {}),
-
-  /** GET and PUT /me/notification-preferences (8.23). */
-  preferences: () => api<unknown>('/me/notification-preferences', { plan: false }).then(mapPreferences),
-  savePreferences: (body: PreferencesInput) =>
-    api<unknown>('/me/notification-preferences', { method: 'PUT', body }).then(mapPreferences),
-
-  /** Push subscriptions (8.24). */
-  pushList: () => api<unknown>('/me/push-subscriptions', { plan: false }).then(mapPushList),
-  pushRegister: (body: PushRegistration) =>
-    post<{ id: number; status: string }>('/me/push-subscriptions', body),
-  pushRevoke: (id: number) => api<void>(`/me/push-subscriptions/${id}`, { method: 'DELETE' }),
-  pushTest: (id: number) => post<unknown>(`/me/push-subscriptions/${id}/test`),
-  vapidKey: () => api<{ publicKey: string }>('/public/push/vapid-public-key', { plan: false }),
 };

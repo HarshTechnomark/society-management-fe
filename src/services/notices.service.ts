@@ -1,6 +1,7 @@
 /** Module 16 admin notice calls (spec 8.1 to 8.17). */
 import { api, apiBlob, apiList } from '@/lib/apiClient';
 import { arr, mapList, mapNotice, mapPreview, mapReceipts, mapTemplate, obj } from './noticesMappers';
+import { str } from './helpdeskMappers';
 import type {
   AudienceInput,
   AudiencePreview,
@@ -101,6 +102,13 @@ export const noticesService = {
   /** POST /notices/:id/restored */
   restored: (id: number, body: { version: number; message?: string }): Promise<Notice> =>
     api<unknown>(`/notices/${id}/restored`, { method: 'POST', body }).then(mapNotice),
+
+  /** POST /notices/:id/acknowledge: the role recipient's own acknowledgement -> `{ noticeId, acknowledgedAt, revisionNo }` (idempotent). */
+  acknowledge: async (id: number): Promise<{ acknowledgedAt: string }> => ({
+    acknowledgedAt: str(
+      obj(await api<unknown>(`/notices/${id}/acknowledge`, { method: 'POST', body: {} })).acknowledgedAt,
+    ),
+  }),
 
   /** GET /notices/:id/receipts */
   receipts: async (id: number, q: ReceiptQuery = {}): Promise<Receipts> => {

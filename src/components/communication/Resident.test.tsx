@@ -1,25 +1,21 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { err, mockApi, navigationMock, ok, resetAll, router } from '@/test/helpers';
+import { err, mockApi, navigationMock, ok, resetAll } from '@/test/helpers';
 import { signInAs } from '@/test/residentsHelpers';
 import { ToastProvider } from '@/components/ui/Toast';
 import {
   RESIDENT_COMM_PERMS,
   noticeDetailRaw,
   noticeRaw,
-  preferencesRaw,
   surveyRaw,
 } from '@/test/communicationResidentFixtures';
 import type { SurveyQuestion } from '@/types/residentNotices';
 import { safeHtml } from './safeHtml';
-import { InboxBell } from './resident/InboxBell';
-import { InboxScreen } from './resident/InboxScreen';
 import { NoticeBoardScreen } from './resident/NoticeBoardScreen';
 import { NoticeDetailScreen } from './resident/NoticeDetailScreen';
-import { NotificationSettingsScreen } from './resident/NotificationSettingsScreen';
 import { SurveyScreen, answerFor, problemFor } from './resident/SurveyScreen';
-import { residentLink, actionHref } from './resident/format';
+import { actionHref } from './resident/format';
 
 vi.mock('next/navigation', () => navigationMock());
 beforeEach(resetAll);
@@ -44,10 +40,7 @@ describe('safeHtml and links', () => {
     expect(out).not.toContain('javascript:');
     expect(out).toContain('href="https://e.in"');
   });
-  it('maps deep links and action targets', () => {
-    expect(residentLink('/notices/12')).toBe('/resident/notices/12');
-    expect(residentLink('/emergency/3')).toBe('/resident/emergency-alert');
-    expect(residentLink(null)).toBeNull();
+  it('maps action targets', () => {
     expect(actionHref({ type: 'PAY_COLLECTION', refId: 2, url: null })).toBe('/resident/pay/collections/2');
     expect(actionHref({ type: 'PAY_DUES', refId: null, url: null })).toBe('/resident/bills');
   });
@@ -256,130 +249,5 @@ describe('Survey answering', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Review' }));
     await userEvent.click(screen.getByRole('button', { name: 'Submit answers' }));
     expect(await screen.findByText(/Your answers are recorded/)).toBeInTheDocument();
-  });
-});
-
-describe('Inbox', () => {
-  const item = (over: object = {}) => ({
-    id: 77,
-    templateKey: 'approvals.pending',
-    category: 'APPROVALS',
-    tone: 'warn',
-    title: 'Approval needed',
-    body: 'Arjun wrote a notice.',
-    deepLink: '/notices/12',
-    readAt: null,
-    createdAt: '2026-11-18T05:40:00.000Z',
-    ...over,
-  });
-  it('lists items with the unread count, marks one read and opens its link', async () => {
-    const api = show(<InboxScreen />, {
-      'GET /notifications': ok([item()], 'OK', { pagination: page, unreadCount: 3 }),
-      'POST /notifications/77/read': ok(),
-    });
-    expect(await screen.findByText('3 unread')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /Approval needed/ }));
-    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/resident/notices/12'));
-    expect(api.last('POST', '/notifications/77/read')).toBeTruthy();
-  });
-  it('marks all read and reloads', async () => {
-    const api = show(<InboxScreen />, {
-      'GET /notifications': ok([item()], 'OK', { pagination: page, unreadCount: 1 }),
-      'POST /notifications/read-all': ok({ updated: 1 }),
-    });
-    await userEvent.click(await screen.findByRole('button', { name: 'Mark all read' }));
-    await waitFor(() => expect(api.last('POST', '/notifications/read-all')).toBeTruthy());
-    await waitFor(() => expect(api.calls.filter(c => c.path === '/notifications')).toHaveLength(2));
-  });
-  it('the platform scope uses the platform routes', async () => {
-    const api = show(<InboxScreen scope="platform" />, {
-      'GET /platform/notifications': ok([], 'OK', { pagination: page, unreadCount: 0 }),
-    });
-    expect(await screen.findByText('You are all caught up')).toBeInTheDocument();
-    expect(api.calls[0].path).toBe('/platform/notifications');
-  });
-  it('the bell shows the unread count and links to the inbox', async () => {
-    show(<InboxBell />, { 'GET /notifications/unread-count': ok({ count: 4 }) });
-    expect(await screen.findByRole('link', { name: 'Inbox, 4 unread' })).toHaveAttribute(
-      'href',
-      '/resident/inbox',
-    );
-  });
-});
-
-describe('Notification settings', () => {
-  const routes = (over: Routes = {}): Routes => ({
-    'GET /me/notification-preferences': ok(preferencesRaw()),
-    'GET /me/push-subscriptions': ok([]),
-    ...over,
-  });
-  it('locks emergency rows and saves only switchable categories with the version', async () => {
-    const api = show(
-      <NotificationSettingsScreen />,
-      routes({ 'PUT /me/notification-preferences': ok({ ...preferencesRaw(), version: 5 }) }),
-    );
-    const sms = await screen.findByRole('switch', { name: 'Payments by SMS' });
-    expect(screen.getByRole('switch', { name: 'Emergency by SMS' })).toBeDisabled();
-    await userEvent.click(sms);
-    await userEvent.click(screen.getByRole('switch', { name: 'WhatsApp messages' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Save settings' }));
-    await waitFor(() =>
-      expect(api.last('PUT', '/me/notification-preferences')?.body).toEqual({
-        version: 4,
-        locale: null,
-        categories: { PAYMENTS: { PUSH: true, SMS: false, WHATSAPP: true, EMAIL: true } },
-        quietHours: { mode: 'SOCIETY_DEFAULT' },
-        whatsappOptIn: true,
-      }),
-    );
-  });
-  it('requires different custom quiet hours and sends them', async () => {
-    const api = show(
-      <NotificationSettingsScreen />,
-      routes({ 'PUT /me/notification-preferences': ok(preferencesRaw()) }),
-    );
-    await userEvent.selectOptions(await screen.findByLabelText('Quiet hours'), 'CUSTOM');
-    const to = screen.getByLabelText('To');
-    await userEvent.clear(to);
-    await userEvent.type(to, '22:00');
-    expect(screen.getByRole('button', { name: 'Save settings' })).toBeDisabled();
-    await userEvent.clear(to);
-    await userEvent.type(to, '06:30');
-    await userEvent.click(screen.getByRole('button', { name: 'Save settings' }));
-    await waitFor(() =>
-      expect(api.last('PUT', '/me/notification-preferences')?.body).toMatchObject({
-        quietHours: { mode: 'CUSTOM', start: '22:00', end: '06:30' },
-      }),
-    );
-  });
-  it('lists this device and sends a test when the browser supports push', async () => {
-    vi.stubGlobal('PushManager', class {});
-    vi.stubGlobal('Notification', class {});
-    Object.defineProperty(navigator, 'serviceWorker', { value: {}, configurable: true });
-    const api = show(
-      <NotificationSettingsScreen />,
-      routes({
-        'GET /me/push-subscriptions': ok([
-          {
-            id: 8,
-            app: 'RESIDENT',
-            deviceLabel: 'Pixel',
-            status: 'ACTIVE',
-            createdAt: 'x',
-            lastSuccessAt: null,
-            isThisDevice: true,
-          },
-        ]),
-        'POST /me/push-subscriptions/8/test': ok(),
-      }),
-    );
-    await userEvent.click(await screen.findByRole('button', { name: 'Send test' }));
-    await waitFor(() => expect(api.last('POST', '/me/push-subscriptions/8/test')).toBeTruthy());
-    vi.unstubAllGlobals();
-    Reflect.deleteProperty(navigator, 'serviceWorker');
-  });
-  it('says so when the browser cannot do push', async () => {
-    show(<NotificationSettingsScreen />, routes());
-    expect(await screen.findByText(/does not support phone notifications/)).toBeInTheDocument();
   });
 });

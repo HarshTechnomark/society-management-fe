@@ -131,7 +131,7 @@ export function mapNotice(raw: unknown): Notice {
           statusLabel: str(ap.statusLabel, str(ap.status)),
         }
       : null,
-    approvedBy: strOrNull(r.approvedBy),
+    approvedBy: author(r.approvedBy),
     lastDecisionReason: strOrNull(r.lastDecisionReason),
     recalledReason: strOrNull(r.recalledReason),
     utility: hasUtility

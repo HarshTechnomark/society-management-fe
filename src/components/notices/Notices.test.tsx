@@ -156,7 +156,7 @@ describe('Notice drawer', () => {
   };
 
   it('renders the sanitised body and the details', async () => {
-    const { dlg } = await open({ approvedBy: 'Sanjay Patil' });
+    const { dlg } = await open({ approvedBy: { id: 4, name: 'Sanjay Patil' } });
     const body = within(dlg).getByTestId('notice-body');
     expect(body.querySelector('strong')).toHaveTextContent('Store water');
     expect(body.querySelector('script')).toBeNull();

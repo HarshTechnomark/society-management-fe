@@ -1,7 +1,7 @@
-import { InboxScreen } from '@/components/communication/resident/InboxScreen';
+import { NotificationsScreen } from '@/components/notifications/NotificationsScreen';
 
 export const metadata = { title: 'Notifications' };
 
 export default function Page() {
-  return <InboxScreen scope="platform" />;
+  return <NotificationsScreen app="PLATFORM" />;
 }

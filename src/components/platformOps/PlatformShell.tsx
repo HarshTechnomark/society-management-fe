@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
-import { InboxBell } from '@/components/communication/resident/InboxBell';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { SwitchAppButton } from '@/components/auth/SwitchAppButton';
 import { Drawer } from '@/components/ui/Drawer';
 import { Button } from '@/components/ui/Button';
@@ -124,7 +124,7 @@ export function PlatformShell({ children }: { children: ReactNode }) {
           {me ? <NavLinks groups={groups} /> : <div className="skeleton mx-3 h-40" />}
         </nav>
         <div className="flex flex-wrap items-center gap-2 px-3 pt-2">
-          <InboxBell scope="platform" />
+          <NotificationBell app="PLATFORM" />
           {signOutButton}
         </div>
       </aside>
@@ -132,7 +132,7 @@ export function PlatformShell({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[var(--line)] bg-[rgba(251,247,240,0.95)] px-4 py-2.5 min-[900px]:hidden">
           <p className="text-[16px] font-bold">SocietyApp platform</p>
           <span className="flex items-center gap-2">
-            <InboxBell scope="platform" />
+            <NotificationBell app="PLATFORM" />
             <Button variant="glass" size="sm" aria-haspopup="dialog" onClick={() => setOpen(true)}>
               Menu
             </Button>

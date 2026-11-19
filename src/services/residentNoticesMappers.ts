@@ -1,15 +1,9 @@
 /** Response mapping for the module 16 resident calls (tolerant of missing fields). */
 import type {
-  InboxItem,
-  InboxPage,
   NoticeAction,
   NoticeDetail,
   NoticeItem,
   NoticePage,
-  Preferences,
-  PrefCategory,
-  PrefChannel,
-  PushSubscriptionRow,
   SurveyDetail,
   SurveyListItem,
   SurveyQuestion,
@@ -114,6 +108,7 @@ export const mapSurveyList = (raw: unknown): SurveyListItem[] =>
     return {
       id: num(r.id),
       title: str(r.title),
+      status: str(r.status, 'OPEN'),
       closesAt: strOrNull(r.closesAt),
       questionCount: num(r.questionCount),
       responded: r.responded === true,
@@ -165,74 +160,3 @@ export function mapSurveyDetail(raw: unknown): SurveyDetail {
     units: arr(r.units).map(u => ({ unitId: num(obj(u).unitId ?? obj(u).id), label: str(obj(u).label) })),
   };
 }
-
-const TONES = ['info', 'ok', 'warn', 'bad'];
-export function mapInboxItem(raw: unknown): InboxItem {
-  const r = obj(raw);
-  return {
-    id: num(r.id),
-    templateKey: str(r.templateKey),
-    category: str(r.category, 'SYSTEM'),
-    tone: (TONES.includes(str(r.tone)) ? str(r.tone) : 'info') as InboxItem['tone'],
-    title: str(r.title),
-    body: str(r.body),
-    deepLink: strOrNull(r.deepLink),
-    readAt: strOrNull(r.readAt),
-    createdAt: str(r.createdAt),
-  };
-}
-export const mapInboxPage = (env: Obj): InboxPage => {
-  const p = obj(env.pagination);
-  return {
-    items: rows(env.data).map(mapInboxItem),
-    total: num(p.total, rows(env.data).length),
-    pages: num(p.totalPages, 1),
-    unreadCount: num(env.unreadCount),
-  };
-};
-
-const CH: PrefChannel[] = ['PUSH', 'SMS', 'WHATSAPP', 'EMAIL'];
-function mapCategory(raw: unknown): PrefCategory {
-  const r = obj(raw);
-  const c = obj(r.channels);
-  return {
-    key: str(r.key),
-    locked: r.locked === true,
-    channels: Object.fromEntries(CH.map(k => [k, c[k] !== false])) as Record<PrefChannel, boolean>,
-  };
-}
-export function mapPreferences(raw: unknown): Preferences {
-  const r = obj(raw);
-  const q = obj(r.quietHours);
-  const w = obj(r.whatsapp);
-  const e = obj(r.email);
-  const mode = str(q.mode, 'SOCIETY_DEFAULT');
-  return {
-    locale: strOrNull(r.locale),
-    effectiveLocale: str(r.effectiveLocale, 'en-IN'),
-    categories: arr(r.categories).map(mapCategory),
-    quietHours: {
-      mode: (mode === 'CUSTOM' || mode === 'OFF'
-        ? mode
-        : 'SOCIETY_DEFAULT') as Preferences['quietHours']['mode'],
-      start: str(q.start, '22:00'),
-      end: str(q.end, '07:00'),
-    },
-    whatsapp: { optIn: w.optIn === true, optInAt: strOrNull(w.optInAt), available: w.available !== false },
-    email: { address: str(e.address), bounced: e.bounced === true },
-    version: num(r.version, 1),
-  };
-}
-export const mapPushList = (raw: unknown): PushSubscriptionRow[] =>
-  rows(raw).map(x => {
-    const r = obj(x);
-    return {
-      id: num(r.id),
-      app: str(r.app),
-      deviceLabel: str(r.deviceLabel, 'This device'),
-      status: str(r.status, 'ACTIVE'),
-      createdAt: str(r.createdAt),
-      lastSuccessAt: strOrNull(r.lastSuccessAt),
-      isThisDevice: r.isThisDevice === true,
-    };
-  });

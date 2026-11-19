@@ -259,7 +259,7 @@ export function AdminNav({ children }: { children: ReactNode }) {
       >
         <div className="flex items-center justify-between px-3 pb-4 pt-2">
           <p className="text-[18px] font-bold tracking-tight">SocietyApp</p>
-          <NotificationBell refreshKey={path} />
+          <NotificationBell app="ADMIN" refreshKey={path} />
         </div>
         <nav aria-label="Admin">
           {me ? <NavLinks groups={groups} forMe={forMe} /> : <div className="skeleton mx-3 h-40" />}
@@ -270,7 +270,7 @@ export function AdminNav({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[var(--line)] bg-[rgba(251,247,240,0.95)] px-4 py-2.5 min-[900px]:hidden">
           <p className="text-[16px] font-bold">SocietyApp admin</p>
           <div className="flex items-center gap-2">
-            <NotificationBell refreshKey={path} />
+            <NotificationBell app="ADMIN" refreshKey={path} />
             <Button variant="glass" size="sm" aria-haspopup="dialog" onClick={() => setOpen(true)}>
               Menu
             </Button>

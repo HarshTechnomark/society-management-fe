@@ -182,6 +182,14 @@ function NoticeBody({
           'Schedule cancelled',
         ),
     );
+  // A notice for role recipients can be acknowledged by them here (POST /notices/:id/acknowledge); it is idempotent.
+  if (published && n.requiresAck && n.audience.type === 'ROLES')
+    add(
+      'ack',
+      'Acknowledge',
+      () => void run('ack', () => noticesService.acknowledge(n.id), 'Acknowledged'),
+      'primary',
+    );
   if (published && canEdit && n.requiresAck)
     add(
       'remind',
@@ -268,7 +276,7 @@ function NoticeBody({
         <Row label="Audience">{n.audience.label}</Row>
         <Row label="Written by">
           {n.author?.name ?? '-'}
-          {n.approvedBy && ` · approved by ${n.approvedBy}`}
+          {n.approvedBy && ` · approved by ${n.approvedBy.name}`}
         </Row>
         <Row label="Acknowledgement">
           {n.requiresAck ? (n.ackDueAt ? `Required by ${dateTime(n.ackDueAt)}` : 'Required') : 'Not required'}

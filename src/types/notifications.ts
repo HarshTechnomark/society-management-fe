@@ -15,7 +15,13 @@ export interface NotificationList {
   items: NotificationItem[];
   total: number;
   totalPages: number;
+  /** `unreadCount` sits next to `data` and `pagination` in the list envelope. */
+  unreadCount: number;
 }
+/** Which bell: the society inbox (`/notifications`) or the platform console inbox (`/platform/notifications`). */
+export type InboxScope = 'society' | 'platform';
+/** Which app the page runs in; decides links, the push `app` field and the screens' wording. */
+export type NotificationApp = 'ADMIN' | 'RESIDENT' | 'PLATFORM';
 export type PrefChannel = 'PUSH' | 'SMS' | 'WHATSAPP' | 'EMAIL';
 export const PREF_CHANNELS: PrefChannel[] = ['PUSH', 'SMS', 'WHATSAPP', 'EMAIL'];
 export interface PrefCategory {
@@ -48,4 +54,11 @@ export interface PushSubscriptionRow {
   createdAt: string;
   lastSuccessAt: string | null;
   isThisDevice: boolean;
+}
+export interface PushRegistration {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  expirationTime?: number | null;
+  /** Must match the app the request comes from (the API answers 422 otherwise). */
+  app: 'PLATFORM' | 'ADMIN' | 'RESIDENT' | 'GATE' | 'WORK';
 }

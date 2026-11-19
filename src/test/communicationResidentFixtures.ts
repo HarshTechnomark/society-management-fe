@@ -146,19 +146,6 @@ export const surveyRaw = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-export const preferencesRaw = () => ({
-  locale: null,
-  effectiveLocale: 'hi-IN',
-  categories: [
-    { key: 'PAYMENTS', locked: false, channels: { PUSH: true, SMS: true, WHATSAPP: true, EMAIL: true } },
-    { key: 'EMERGENCY', locked: true, channels: { PUSH: true, SMS: true, WHATSAPP: true, EMAIL: true } },
-  ],
-  quietHours: { mode: 'SOCIETY_DEFAULT', start: '22:00', end: '07:00' },
-  whatsapp: { optIn: false, optInAt: null, available: true },
-  email: { address: 'r****@mail.in', bounced: false },
-  version: 4,
-});
-
 export const templateRaw = (over: Record<string, unknown> = {}) => ({
   id: 5,
   templateKey: 'payments.receipt',

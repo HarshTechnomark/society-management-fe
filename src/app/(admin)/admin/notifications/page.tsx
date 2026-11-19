@@ -3,5 +3,5 @@ import { NotificationsScreen } from '@/components/notifications/NotificationsScr
 export const metadata = { title: 'Notifications' };
 
 export default function Page() {
-  return <NotificationsScreen />;
+  return <NotificationsScreen app="ADMIN" />;
 }

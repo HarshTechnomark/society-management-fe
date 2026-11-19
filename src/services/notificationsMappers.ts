@@ -31,12 +31,14 @@ export function mapItem(raw: unknown): NotificationItem {
 export function mapNotifications(
   rows: unknown,
   pagination?: { total?: number; totalPages?: number },
+  unreadCount = 0,
 ): NotificationList {
   const items = arr(rows).map(mapItem);
   return {
     items,
     total: pagination?.total ?? items.length,
     totalPages: Math.max(1, pagination?.totalPages ?? 1),
+    unreadCount: num(unreadCount),
   };
 }
 

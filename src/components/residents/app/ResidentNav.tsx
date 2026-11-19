@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { InboxBell } from '@/components/communication/resident/InboxBell';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { SwitchAppButton } from '@/components/auth/SwitchAppButton';
 import { Button } from '@/components/ui/Button';
 import { cx } from '@/components/ui/cx';
@@ -68,7 +68,7 @@ export function ResidentNav({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-2 px-4 pt-2.5">
           <p className="text-[16px] font-bold">SocietyApp</p>
           <div className="flex flex-wrap items-center gap-2">
-            <InboxBell />
+            <NotificationBell app="RESIDENT" />
             <SwitchAppButton />
             <Button variant="glass" size="sm" onClick={() => void signOut()}>
               Sign out
